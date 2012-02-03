@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/common/common.iml" filepath="$PROJECT_DIR$/common/common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/csv/csv.iml" filepath="$PROJECT_DIR$/csv/csv.iml" />
+      <module fileurl="file://$PROJECT_DIR$/erlang-commons.iml" filepath="$PROJECT_DIR$/erlang-commons.iml" />
+      <module fileurl="file://$PROJECT_DIR$/eunit/eunit.iml" filepath="$PROJECT_DIR$/eunit/eunit.iml" />
+      <module fileurl="file://$PROJECT_DIR$/io/io.iml" filepath="$PROJECT_DIR$/io/io.iml" />
+      <module fileurl="file://$PROJECT_DIR$/leveldb/leveldb.iml" filepath="$PROJECT_DIR$/leveldb/leveldb.iml" />
+      <module fileurl="file://$PROJECT_DIR$/yaws/yaws.iml" filepath="$PROJECT_DIR$/yaws/yaws.iml" />
+    </modules>
+  </component>
+</project>
+
