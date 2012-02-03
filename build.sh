@@ -14,3 +14,4 @@ do
     cp -v -r $m/ebin $MODOUT
     [ -d $m/include ] && cp -v -r $m/include $MODOUT
 done
+exit 0
