@@ -15,8 +15,11 @@ nlist(Pid, Path) ->
     end.
 
 nlist_filter(Pid, Mask) when is_list(Mask) ->
+    nlist_filter(Pid, strikead_file:compile_mask(Mask));
+
+nlist_filter(Pid, Filter) when is_function(Filter) ->
     case nlist(Pid) of
-        {ok, List} -> {ok, lists:filter(strikead_file:compile_mask(Mask), List)};
+        {ok, List} -> {ok, lists:filter(Filter, List)};
         X -> X
     end.
 
