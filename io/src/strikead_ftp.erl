@@ -1,22 +1,27 @@
 -module(strikead_ftp).
 
--export([nlist/1, nlist/2, nlist_filter/2, nlist_filter/3, find/2, download/4, download/3, download/6, ftp_error/2, user/3]).
+-export([nlist_filter/2, nlist_filter/3, find/2, download/4, download/3, download/6, ftp_error/2]).
+% FTP Wrappers
+-export([nlist/1, nlist/2, user/3, recv/3, cd/2, recv_bin/2]).
 
 nlist(Pid) ->
-    case ftp:nlist(Pid) of
+    case apply_ftp(nlist,[Pid]) of
         {ok, Listing} -> {ok, string:tokens(Listing, "\r\n")};
-        E -> ftp_error(E, none)
+        E -> E
     end.
 
 nlist(Pid, Path) ->
-    case ftp:nlist(Pid, Path) of
+    case apply_ftp(nlist,[Pid, Path]) of
         {ok, Listing} -> {ok, string:tokens(Listing, "\r\n")};
-        E -> ftp_error(E, Path)
+        E -> E
     end.
 
 nlist_filter(Pid, Mask) when is_list(Mask) ->
+    nlist_filter(Pid, strikead_file:compile_mask(Mask));
+
+nlist_filter(Pid, Filter) when is_function(Filter) ->
     case nlist(Pid) of
-        {ok, List} -> {ok, lists:filter(strikead_file:compile_mask(Mask), List)};
+		{ok, List} -> {ok, lists:filter(Filter, List)};
         E -> E
     end.
 
@@ -26,13 +31,14 @@ nlist_filter(Pid, Path, Mask) when is_list(Mask) ->
 nlist_filter(Pid, Path, Filter) when is_function(Filter) ->
     case nlist(Pid, Path) of
         {ok, List} -> {ok, lists:filter(Filter, List)};
-        X -> X
+       	E -> E
     end.
 
 find(Pid, Mask) when is_list(Mask) ->
     case nlist_filter(Pid, Mask) of
         {ok, [F|_]} -> {ok, F};
-        _ -> not_found
+        {ok, []} -> not_found;
+        E -> E
     end.
 
 download(Host, Login, Password, Dest, Path, Mask) when is_list(Mask) ->
@@ -55,17 +61,11 @@ download(_Pid, _Dest, []) -> ok;
 download(Pid, Dest, [{F,DF}|T]) ->
     ok = strikead_file:mkdirs(Dest),
 	DestFile = Dest ++ "/" ++ DF,
-    case ftp:recv(Pid, F, DestFile) of
+    case recv(Pid, F, DestFile) of
         ok -> download(Pid, Dest, T);
-        E -> ftp_error(E)
+        E -> E
     end;
 download(Pid, Dest, [F|T]) -> download(Pid, Dest, [{F,lists:last(string:tokens(F, "/"))} | T]).
-
-ftp_error(E = {error, Code}) ->
-	case strikead_io:is_posix_error(E) of
-		true -> strikead_io:posix_error(E);
-		_ -> {error, Code, ftp:formaterror(E)}
-	end.
 
 ftp_error(E = {error, Code}, Target) ->
 	case strikead_io:is_posix_error(E) of
@@ -73,8 +73,13 @@ ftp_error(E = {error, Code}, Target) ->
 		_ -> {error, Code, ftp:formaterror(E), Target}
 	end.
 
-user(Pid, Login, Password) ->
-	case ftp:user(Pid, Login, Password) of
-		ok -> ok;
-		E -> ftp_error(E)
+user(Pid, Login, Password) -> apply_ftp(user,[Pid, Login, Password]).
+recv(Pid, Source, Dest) -> apply_ftp(recv, [Pid, Source, Dest]).
+cd(Pid, Path) -> apply_ftp(cd, [Pid, Path]).
+recv_bin(Pid, Path) -> apply_ftp(recv_bin, [Pid, Path]).
+
+apply_ftp(Command, Args) ->
+	case apply(ftp, Command, Args) of
+		E = {error, _} -> ftp_error(E, Args);
+		X -> X
 	end.
