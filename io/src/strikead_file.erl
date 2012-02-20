@@ -33,7 +33,7 @@ compile_mask([H | T], Acc) -> compile_mask(T, Acc ++ [H]).
 exists(Path) ->
 	case strikead_io:apply_io(file, read_file_info, [Path]) of
 		{ok, _} -> true;
-		{error, enoent, _, _} -> false;
+		{error, {enoent, _, _}} -> false;
 		E -> E
 	end.
 

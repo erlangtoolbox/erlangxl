@@ -70,7 +70,7 @@ download(Pid, Dest, [F|T]) -> download(Pid, Dest, [{F,lists:last(string:tokens(F
 ftp_error(E = {error, Code}, Target) ->
 	case strikead_io:is_posix_error(E) of
 		true -> strikead_io:posix_error(E, Target);
-		_ -> {error, Code, ftp:formaterror(E), Target}
+		_ -> {error, {Code, ftp:formaterror(E), Target}}
 	end.
 
 user(Pid, Login, Password) -> apply_ftp(user,[Pid, Login, Password]).
