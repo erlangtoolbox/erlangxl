@@ -1,6 +1,6 @@
 -module(strikead_yaws).
 
--export([get/1, get/2, any/2, opt/2, params/2, errors/1]).
+-export([get/1, get/2, any/2, opt/1, opt/2, params/2, errors/1]).
 
 get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
 
@@ -12,6 +12,8 @@ get(Name, Message) ->
             X when is_tuple(X) -> {error, io_lib:format("Single parameter '~p' expected", [Name])}
         end
     end.
+
+opt(Name) -> opt(Name, undefined).
 
 opt(Name, Default) ->
     fun(Args) ->
