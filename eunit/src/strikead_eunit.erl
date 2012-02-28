@@ -4,9 +4,16 @@
 
 -export([resource/2]).
 
-resource(Module, Name) ->
-	case code:which(Module) of
-		E = non_existing -> throw({E, Module});
-		X -> filename:dirname(X) ++ "/../test/" ++ Name
-	end.
+resource(Module, Name) -> within(Module, fun(Path) -> filename:join(Path, Name) end).
 
+explode(Module, Name, Target) ->
+    within(Module, fun(Path) ->
+        strikead_file:copy(filename:join(Path, Name), Target)
+    end).
+
+
+within(Module, Fun) ->
+    case code:which(Module) of
+        non_existing -> {error, {non_existing, Module}};
+        X -> Fun(filename:dirname(X) ++ "/../test")
+    end.

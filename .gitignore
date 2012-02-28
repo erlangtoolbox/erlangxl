@@ -1,6 +1,11 @@
 build
 dist
-ebin
+common/ebin
+csv/ebin
+eunit/ebin
+io/ebin
+leveldb/ebin
+yaws/ebin
 .idea/workspace.xml
 .eunit
 data.index
