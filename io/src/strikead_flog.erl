@@ -25,7 +25,7 @@ current_log(Location) ->
 
 handle_call({log, List}, _From, State=[Location, Format]) ->
     File = current_log(Location),
-    case strikead_autofile:using(File, [append], fun(F) -> Format(F, List) end) of
+    case strikead_file:using(File, [append], fun(F) -> Format(F, List) end) of
         {ok, _} -> done;
         {error, E} -> error_logger:error_msg("cannot open ~p:~p~n", [File, E])
     end,

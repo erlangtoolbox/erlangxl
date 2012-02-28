@@ -19,7 +19,7 @@ pread_test() ->
 
 lines_test() ->
     F = strikead_eunit:resource(?MODULE, "vmfile.txt"),
-    Io = strikead_autofile:using(F, [read], fun(File) -> strikead_stream:to_list(strikead_io:parse_lines(File)) end),
+    Io = strikead_file:using(F, [read], fun(File) -> strikead_stream:to_list(strikead_io:parse_lines(File)) end),
     Vm = strikead_auto:using(strikead_vmfile, [F, [{segment, 50}]], fun(File) -> strikead_stream:to_list(strikead_vmfile:parse_lines(File)) end),
     Io = Vm.
 

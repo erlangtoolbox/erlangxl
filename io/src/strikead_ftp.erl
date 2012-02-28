@@ -1,8 +1,11 @@
 -module(strikead_ftp).
 
+-compile({parse_transform, do}).
+
+-behaviour(strikead_autoresource).
+-export([open/1, close/1, using/4]).
 -export([nlist_filter/2, nlist_filter/3, find/2, download/4, download/3, download/6, ftp_error/2]).
-% FTP Wrappers
--export([nlist/1, nlist/2, user/3, recv/3, cd/2, recv_bin/2]).
+-export([nlist/1, nlist/2, user/3, recv/3, cd/2, recv_bin/2, open/1]).
 
 nlist(Pid) ->
     case apply_ftp(nlist,[Pid]) of
@@ -83,3 +86,16 @@ apply_ftp(Command, Args) ->
 		E = {error, _} -> ftp_error(E, Args);
 		X -> X
 	end.
+
+%%
+% autoresource
+%%
+open([Host, Username, Password]) ->
+    do([error_m||
+        Pid <- apply_ftp(open, [Host]),
+        user(Pid, Username, Password),
+        {ok, Pid}
+    ]).
+
+close(D) -> ftp:close(D).
+using(Host, Username, Password, F) -> strikead_auto:using(?MODULE, [Host, Username, Password], F).

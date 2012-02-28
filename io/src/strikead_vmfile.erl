@@ -11,7 +11,7 @@
 open([Path, Options]) -> open(Path, Options).
 
 open(Path, [{segment, SegmentSize}]) ->
-    strikead_autofile:using(Path, [read, raw, binary], fun(File) ->
+    strikead_file:using(Path, [read, raw, binary], fun(File) ->
         {Segments, DataSize} = read_segments([], File, SegmentSize, 0),
         #file_descriptor{module=?MODULE, data=#handle{segment_size=SegmentSize, segments=Segments, data_size=DataSize}}
     end);

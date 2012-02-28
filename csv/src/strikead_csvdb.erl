@@ -61,7 +61,7 @@ start_index(Path, ExtractF) ->
 
 
 index(ExtractF, Path, IndexPath) ->
-    {ok, {IndexHeader,IndexTree}} = strikead_autofile:using(Path, [read], fun(File) ->
+    {ok, {IndexHeader,IndexTree}} = strikead_file:using(Path, [read], fun(File) ->
         case strikead_stream:to_pair(strikead_io:parse_lines(File)) of
             [] -> {empty_file, Path};
             [{HeaderLine, _Offset} | Lines] ->
