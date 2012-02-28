@@ -59,7 +59,6 @@ write_terms(File, L) -> write_terms(File, [L]).
         Src :: file:filename(),
         DestinationDir :: file:filename().
 copy(Src, Dst) ->
-    erlang:display("copy" ++ Src ++ " to " ++ Dst),
     case read_file_info(Src) of
         {ok, #file_info{type=regular}} ->
             DestinationFile = filename:join(Dst, filename:basename(Src)),
