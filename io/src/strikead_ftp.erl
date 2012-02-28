@@ -5,7 +5,7 @@
 -behaviour(strikead_autoresource).
 -export([open/1, close/1, using/4]).
 -export([nlist_filter/2, nlist_filter/3, find/2, download/4, download/3, download/6, ftp_error/2]).
--export([nlist/1, nlist/2, user/3, recv/3, cd/2, recv_bin/2, open/1]).
+-export([nlist/1, nlist/2, user/3, recv/3, cd/2, recv_bin/2]).
 
 nlist(Pid) ->
     case apply_ftp(nlist,[Pid]) of
@@ -97,5 +97,5 @@ open([Host, Username, Password]) ->
         {ok, Pid}
     ]).
 
-close(D) -> ftp:close(D).
+close(Pid) -> ftp:close(Pid).
 using(Host, Username, Password, F) -> strikead_auto:using(?MODULE, [Host, Username, Password], F).

@@ -1,5 +1,5 @@
 -module(strikead_io).
--export([lines/1, parse_lines/1, posix_error/2, apply_io/3]).
+-export([lines/1, parse_lines/1, posix_error/2, apply_io/3, is_posix_error/1]).
 
 lines(IoDevice) -> strikead_stream:map(fun({L, _}) -> L end, parse_lines(IoDevice)).
 
