@@ -37,7 +37,7 @@ load_cache(ForPath) ->
                 {ok, Data} ->
                     [Header, Tree] = binary_to_term(Data),
                     error_logger:info_report("index loaded"),
-                    {ok, Header, Tree};
+                    {ok, {Header, Tree}};
                 {error, Reason} ->
                     error_logger:error_report({no_index_cache, Reason}),
                     nocache;
@@ -50,8 +50,8 @@ load_cache(ForPath) ->
 
 start_index(Path, ExtractF) ->
 	error_logger:info_report("start indexing..."),
-    {Header, Tree} = case load_cache(Path) of
-        {ok, H, T} -> {H, T};
+    {ok, {Header, Tree}} = case load_cache(Path) of
+        R = {ok, _} -> R;
         _ -> index(ExtractF, Path, cache_path(Path))
     end,
     error_logger:info_report("indexing finished. Loading data into memory...."),
@@ -61,7 +61,7 @@ start_index(Path, ExtractF) ->
 
 
 index(ExtractF, Path, IndexPath) ->
-    {ok, {IndexHeader,IndexTree}} = strikead_file:using(Path, [read], fun(File) ->
+    strikead_file:using(Path, [read], fun(File) ->
         case strikead_stream:to_pair(strikead_io:parse_lines(File)) of
             [] -> {empty_file, Path};
             [{HeaderLine, _Offset} | Lines] ->
@@ -74,8 +74,7 @@ index(ExtractF, Path, IndexPath) ->
                 save_cache(IndexPath, H, T),
                 {H, T}
         end
-    end),
-    {IndexHeader,IndexTree}.
+    end).
 
 
 progress(I) when I rem 10000 == 0 -> error_logger:info_report(io_lib:format("progress: ~p",[I]));
