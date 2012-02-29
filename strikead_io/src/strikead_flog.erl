@@ -41,7 +41,7 @@ terminate(Reason, _State) -> error_logger:error_report({terminated, Reason}), ok
 
 tsv_format_string([H|T]) -> lists:foldl( fun(X, S)  -> S  ++ "\t" ++ tsv_symbol(X) end, tsv_symbol(H), T) ++ "~n".
 
-tsv_symbol(X) when is_binary(X); is_atom(X) -> "~s";
+tsv_symbol(X) when is_binary(X); is_atom(X); is_list(X) andalso length(X) == 0 -> "~s";
 tsv_symbol([X|_]) when is_number(X) -> "~s";
 tsv_symbol(_) -> "~5000p".
 
