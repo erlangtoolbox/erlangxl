@@ -3,7 +3,7 @@
 -behavior(gen_server).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
--export([start_link/3, log/2, format_tsv/2, format_terms/2, stop/1]).
+-export([start_link/3, log/2, format_tsv/2, format_terms/2, format_tsv_timestamp/2, stop/1]).
 
 start_link(Name, Location, Format) when is_atom(Name)->
     R = {ok, _} = gen_server:start_link({local, Name}, ?MODULE, [Location, Format], []),
@@ -47,6 +47,8 @@ tsv_symbol(_) -> "~5000p".
 
 format_tsv(IoDevice, List)->
     io:format(IoDevice, tsv_format_string(List), List).
+
+format_tsv_timestamp(IoDevice, List)-> format_tsv([strikead_calendar:format("yyyy-MM-dd HH:mm:ss", calendar:universal_time()) | List]).
 
 format_terms(IoDevice, Terms)->
     io:format(IoDevice, "~5000p~n", [Terms]).
