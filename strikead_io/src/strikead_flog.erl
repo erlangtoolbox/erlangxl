@@ -48,7 +48,7 @@ tsv_symbol(_) -> "~5000p".
 format_tsv(IoDevice, List)->
     io:format(IoDevice, tsv_format_string(List), List).
 
-format_tsv_timestamp(IoDevice, List)-> format_tsv([strikead_calendar:format("yyyy-MM-dd HH:mm:ss", calendar:universal_time()) | List]).
+format_tsv_timestamp(IoDevice, List)-> format_tsv(IoDevice, [strikead_calendar:format("yyyy-MM-dd HH:mm:ss", calendar:universal_time()) | List]).
 
 format_terms(IoDevice, Terms)->
     io:format(IoDevice, "~5000p~n", [Terms]).
