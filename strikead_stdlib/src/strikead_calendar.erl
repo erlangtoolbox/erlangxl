@@ -1,31 +1,57 @@
 -module(strikead_calendar).
 
--export([advance/2, format/2, now_millis/0]).
+-export([format/2, now_millis/0, add/3]).
 
--spec advance(From, By) -> calendar:datetime() when
-    From :: calendar:datetime(),
-    By :: calendar:datetime().
-advance({{Year, Mon, Date},{Hour, Min, Sec}}, {{YearA, MonA, DateA}, {HourA, MinA, SecA}}) ->
-    {AMA, SR} = advance_item(Sec, SecA, 0, 59),
-    {AHA, MR} = advance_item(Min, MinA + AMA, 0, 59),
-    {ADA, HR} = advance_item(Hour, HourA + AHA, 0, 23),
-    {AYDA, AMoA, DR} = advance_date(Year, Mon, Date, DateA + ADA),
-    {AYA, MoR} = advance_item(AMoA-1, MonA, 0, 11),
-    YR = AYA + AYDA + YearA,
-    {{YR,MoR+1,DR}, {HR,MR,SR}}.
+% add code is borrowed from http://code.google.com/p/dateutils
+% Copyright (c) 2009 Jonas Enlund
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in
+% all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+% THE SOFTWARE.
 
 
-advance_item(Value, Adv, Min, Max) -> {(Value + Adv) div (Max - Min + 1), (Value + Adv) rem (Max - Min + 1)}.
-advance_date(Year, Mon, Date, Adv) -> advance_date(Year, Mon, Date + Adv).
-advance_date(Year, Mon, Adv) ->
-    Ldom = calendar:last_day_of_the_month(Year, Mon),
-    if
-        Adv =< Ldom -> {Year, Mon, Adv};
-        true -> case Mon of
-            12 -> advance_date(Year + 1, 1, Adv - Ldom);
-            _ ->  advance_date(Year, Mon + 1, Adv - Ldom)
-        end
-    end.
+-spec add(calendar:datetime(), integer(), Item) -> calendar:datetime() when
+    Item :: seconds | minutes | hours | days | weeks | months | years.
+
+add(DateTime, N, seconds) ->
+    T1 = calendar:datetime_to_gregorian_seconds(DateTime),
+    T2 = T1 + N,
+    calendar:gregorian_seconds_to_datetime(T2);
+
+add(DateTime, N, minutes) -> add(DateTime, 60*N, seconds);
+add(DateTime, N, hours) -> add(DateTime, 60*N, minutes);
+
+add(DateTime, N, days) -> add(DateTime, 24*N, hours);
+
+add(DateTime, N, weeks) -> add(DateTime, 7*N, days);
+
+add({{YYYY, MM, DD}=Date, Time}, 0, months) ->
+    case calendar:valid_date(Date) of
+        true  -> {Date, Time};
+        false -> add({{YYYY, MM, DD-1}, Time}, 0, months) % Rolling back illegal 31,29
+    end;
+
+add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM < 12 -> add({{YYYY, MM+1, DD}, Time}, N-1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM =:= 12 -> add({{YYYY+1, 1, DD}, Time}, N-1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM > 1 -> add({{YYYY, MM-1, DD}, Time}, N+1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM =:= 1 -> add({{YYYY-1, 12, DD}, Time}, N+1, months);
+add(Date, N, years) -> add(Date, 12*N, months).
+
+% end of Jonas Enlund
 
 day_of_week_name({Date, _}) ->
     case calendar:day_of_the_week(Date) of
