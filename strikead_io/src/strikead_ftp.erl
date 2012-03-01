@@ -77,8 +77,11 @@ ftp_error(E = {error, Code}, Target) ->
 	end.
 
 user(Pid, Login, Password) -> apply_ftp(user,[Pid, Login, Password]).
-recv(Pid, Source, Dest) -> apply_ftp(recv, [Pid, Source, Dest]).
+
+recv(Pid, Source, Dest) -> apply_ftp(type, [Pid, binary]), apply_ftp(recv, [Pid, Source, Dest]).
+
 cd(Pid, Path) -> apply_ftp(cd, [Pid, Path]).
+
 recv_bin(Pid, Path) -> apply_ftp(recv_bin, [Pid, Path]).
 
 apply_ftp(Command, Args) ->
@@ -98,4 +101,5 @@ open([Host, Username, Password]) ->
     ]).
 
 close(Pid) -> ftp:close(Pid).
+
 using(Host, Username, Password, F) -> strikead_auto:using(?MODULE, [Host, Username, Password], F).
