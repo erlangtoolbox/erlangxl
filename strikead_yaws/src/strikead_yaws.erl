@@ -1,6 +1,6 @@
 -module(strikead_yaws).
 
--export([get/1, get/2, any/2, any_as/2, opt/1, opt/2, opt/3, params/2, errors/1]).
+-export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1]).
 
 get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
 
@@ -44,11 +44,11 @@ find_any(Alts, Args) ->
             end
         end, strikead_stream:to_stream(Alts)).
 
-any_as(Name, Alts) ->
+as(Name, F) ->
     fun(Args) ->
-        case find_any(Alts, Args) of
-            not_found -> {Name, undefined};
-            {ok, _, X} -> {ok, Name, X}
+        case F(Args) of
+            {ok, _, X} -> {ok, Name, X};
+            X -> X
         end
     end.
 

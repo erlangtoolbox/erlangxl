@@ -19,9 +19,9 @@ any_test() ->
     Args = mkargs(),
     ?assertEqual({[{a, "b"}],[]}, strikead_yaws:params([strikead_yaws:any([strikead_yaws:get(x), strikead_yaws:opt(a)], "Not found")], Args)).
 
-any_as_test() ->
+as_test() ->
     Args = mkargs(),
-    ?assertEqual({[{z, "b"}],[]}, strikead_yaws:params([strikead_yaws:any_as(z, [strikead_yaws:get(x), strikead_yaws:opt(a)])], Args)).
+    ?assertEqual({[{z, "b"}],[]}, strikead_yaws:params([strikead_yaws:as(z, strikead_yaws:any([strikead_yaws:get(x), strikead_yaws:opt(a)], "Not Found"))], Args)).
 
 
 mkargs() ->
