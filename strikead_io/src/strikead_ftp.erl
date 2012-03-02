@@ -76,7 +76,11 @@ ftp_error(E = {error, Code}, Target) ->
 
 user(Pid, Login, Password) -> apply_ftp(user,[Pid, Login, Password]).
 
-recv(Pid, Source, Dest) -> apply_ftp(type, [Pid, binary]), apply_ftp(recv, [Pid, Source, Dest]).
+recv(Pid, Source, Dest) ->
+    do([error_m ||
+        ok <- apply_ftp(type, [Pid, binary]),
+	apply_ftp(recv, [Pid, Source, Dest])
+    ]).
 
 cd(Pid, Path) -> apply_ftp(cd, [Pid, Path]).
 
