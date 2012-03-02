@@ -7,8 +7,8 @@ copy_file_test() ->
     os:cmd("rm -rf /tmp/test"),
     ok = strikead_file:write_file("/tmp/test/x", "data"),
     ?assertEqual(ok, strikead_file:copy("/tmp/test/x", "/tmp/test/y")),
-    ?assertFilesEqual("/tmp/test/x", "/tmp/test/y/x").
-
+    ?assertFilesEqual("/tmp/test/x", "/tmp/test/y/x"),
+    os:cmd("rm -rf /tmp/test").
 
 copy_recursive_test() ->
     os:cmd("rm -rf /tmp/test"),
@@ -21,7 +21,5 @@ copy_recursive_test() ->
     ?assertFilesEqual("/tmp/test/a/a", "/tmp/test/y/a/a"),
     ?assertFilesEqual("/tmp/test/a/b/c", "/tmp/test/y/a/b/c"),
     ?assertFilesEqual("/tmp/test/a/b/c", "/tmp/test/y/a/b/d"),
-    ?assert(filelib:is_dir("/tmp/test/y/a/b/e")).
-
-
-
+    ?assert(filelib:is_dir("/tmp/test/y/a/b/e")),
+    os:cmd("rm -rf /tmp/test").
