@@ -44,12 +44,11 @@ find(Pid, Mask) when is_list(Mask) ->
         E -> E
     end.
 
-download(Host, Login, Password, Dest, Path, Mask) when is_list(Mask) ->
-    download(Host, Login, Password, Dest, Path, strikead_file:compile_mask(Mask));
+download(Host, Username, Password, Dest, Path, Mask) when is_list(Mask) ->
+    download(Host, Username, Password, Dest, Path, strikead_file:compile_mask(Mask));
 
-download(Host, Login, Password, Dest, Path, Filter) when is_function(Filter) ->
-    strikead_auto:using(ftp, Host, fun(Pid)->
-        ok = user(Pid, Login, Password),
+download(Host, Username, Password, Dest, Path, Filter) when is_function(Filter) ->
+    using(Host, Username, Password, fun(Pid)->
         download(Pid, Dest, Path, Filter)
     end).
 
@@ -60,14 +59,13 @@ download(Pid, Dest, Path, Filter) when is_function(Filter) ->
     download(Pid, Dest, nlist_filter(Pid, Path, Filter)).
 
 download(_Pid, _Dest, []) -> ok;
-
 download(Pid, Dest, [{F,DF}|T]) ->
-    ok = strikead_file:mkdirs(Dest),
-	DestFile = Dest ++ "/" ++ DF,
-    case recv(Pid, F, DestFile) of
-        ok -> download(Pid, Dest, T);
-        E -> E
-    end;
+    DestFile = Dest ++ "/" ++ DF,
+    do([error_m ||
+        strikead_file:mkdirs(Dest),
+        recv(Pid, F, DestFile),
+        download(Pid, Dest, T)
+    ]);
 download(Pid, Dest, [F|T]) -> download(Pid, Dest, [{F,lists:last(string:tokens(F, "/"))} | T]).
 
 ftp_error(E = {error, Code}, Target) ->
