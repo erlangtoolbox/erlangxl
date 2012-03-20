@@ -1,0 +1,12 @@
+{rec, [
+ 	{req_int, integer, {optional, 1}},
+ 	{opt_str, string, {optional, "default"}},
+ 	{opt_int_def, integer, {optional, 1}},
+ 	{opt_list_int_def, {list, integer}, {optional, []}}
+] }.
+
+{rec2, [
+	{opt_rec_def, rec, optional},
+	{opt_rec, rec, {optional, undefined}},
+	{opt_list_rec, {list, rec}, {optional, []}}
+]}.

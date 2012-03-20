@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/strikead_csv/strikead_csv.iml" filepath="$PROJECT_DIR$/strikead_csv/strikead_csv.iml" />
       <module fileurl="file://$PROJECT_DIR$/strikead_eunit/strikead_eunit.iml" filepath="$PROJECT_DIR$/strikead_eunit/strikead_eunit.iml" />
       <module fileurl="file://$PROJECT_DIR$/strikead_io/strikead_io.iml" filepath="$PROJECT_DIR$/strikead_io/strikead_io.iml" />
+      <module fileurl="file://$PROJECT_DIR$/strikead_json/strikead_json.iml" filepath="$PROJECT_DIR$/strikead_json/strikead_json.iml" />
       <module fileurl="file://$PROJECT_DIR$/strikead_leveldb/strikead_leveldb.iml" filepath="$PROJECT_DIR$/strikead_leveldb/strikead_leveldb.iml" />
       <module fileurl="file://$PROJECT_DIR$/strikead_stdlib/strikead_stdlib.iml" filepath="$PROJECT_DIR$/strikead_stdlib/strikead_stdlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/strikead_yaws/strikead_yaws.iml" filepath="$PROJECT_DIR$/strikead_yaws/strikead_yaws.iml" />

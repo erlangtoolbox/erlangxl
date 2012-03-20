@@ -6,6 +6,7 @@ strikead_eunit/ebin
 strikead_io/ebin
 strikead_leveldb/ebin
 strikead_yaws/ebin
+strikead_json/ebin
 .idea/workspace.xml
 .eunit
 data.index

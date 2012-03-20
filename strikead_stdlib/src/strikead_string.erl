@@ -1,5 +1,5 @@
 -module(strikead_string).
--export([split/2, empty/1, not_empty/1, strip/1, replace/2]).
+-export([split/2, empty/1, not_empty/1, strip/1, replace/2, join/2]).
 
 split(S, Delimiter) -> lists:reverse(split(S, Delimiter, [])).
 
@@ -29,3 +29,7 @@ replace(R, _, []) -> lists:reverse(R);
 replace(R, C, [C|S]) -> replace(R, C, S);
 replace(R, C, [X|S]) -> replace([X|R], C, S).
 
+join(Items, Sep) -> lists:flatten(lists:reverse(join(Items, Sep, []))).
+join([], _Sep, Acc) -> Acc;
+join([H | []], _Sep, Acc) -> [H | Acc];
+join([H | T], Sep, Acc) -> join(T, Sep, [Sep, H | Acc]).
