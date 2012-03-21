@@ -30,7 +30,7 @@ generate_field({Name, _Type, required}) -> atom_to_list(Name);
 generate_field({Name, string, optional}) -> atom_to_list(Name);
 generate_field({Name, integer, optional}) -> atom_to_list(Name);
 generate_field({Name, float, optional}) -> atom_to_list(Name);
-generate_field({Name, T, optional}) -> lists:flatten(io_lib:format("~p=#~p{}", [Name, T]));
+generate_field({Name, _T, optional}) -> atom_to_list(Name);
 generate_field({Name, _T, {optional, Default}}) -> lists:flatten(io_lib:format("~p=~p", [Name, Default])).
 
 generate_file(Path, Generate) ->
