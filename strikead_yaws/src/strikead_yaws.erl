@@ -1,6 +1,8 @@
 -module(strikead_yaws).
 
--export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1]).
+-include_lib("yaws/include/yaws_api.hrl").
+
+-export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1, parse_params/1]).
 
 get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
 
@@ -60,3 +62,11 @@ params(Fs, Args) ->
     {lists:map(fun({_, N, V}) -> {N,V} end, Params), lists:map(fun({_, E}) -> E end, Errors)}.
 
 errors(Errors) -> [{status, 400}, {ehtml, {html, [], lists:flatten(lists:map(fun(X) -> [X, {br}] end, Errors))}}].
+
+parse_params(Args) ->
+    Atomize = fun({K,V}) -> {list_to_atom(K),V} end,
+    case (Args#arg.req)#http_request.method of
+        'POST' -> lists:map(Atomize, yaws_api:parse_query(Args) ++ yaws_api:parse_post(Args));
+        'GET' -> lists:map(Atomize, yaws_api:parse_query(Args));
+        _ -> undefined
+    end.

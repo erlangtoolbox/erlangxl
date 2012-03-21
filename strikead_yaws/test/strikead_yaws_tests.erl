@@ -24,8 +24,13 @@ as_test() ->
     ?assertEqual({[{z, "b"}],[]}, strikead_yaws:params([strikead_yaws:as(z, strikead_yaws:any([strikead_yaws:get(x), strikead_yaws:opt(a)], "Not Found"))], Args)).
 
 
-mkargs() ->
+parse_params_test() ->
+    ?assertEqual([{a,"b"},{c,"d"}], strikead_yaws:parse_params(mkargs())).
+
+mkargs(Query) ->
     #arg{
         req = #http_request{method='GET', path="/test", version="HTTP/1.1"},
-        querydata="a=b&c=d"
+        querydata = strikead_string:join(lists:map(fun({K,V}) -> atom_to_list(K) ++ "=" ++ V end, Query), "&")
     }.
+
+mkargs() -> mkargs([{a,"b"},{c,"d"}]).
