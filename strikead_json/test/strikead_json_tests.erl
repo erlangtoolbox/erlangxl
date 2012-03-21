@@ -4,10 +4,18 @@
 
 -include("rec.hrl").
 
-hrl_generation_test() ->
+generic_test() ->
     R = #rec{req_int=2},
-    erlang:display(R),
-    erlang:display(rec:rec_to_json(R)),
+    ?assertEqual(R, rec:from_json(rec:to_json(R), rec)),
+
     R2 = #rec2{opt_rec_def = R, opt_rec = R, opt_list_rec=[R,R]},
-    erlang:display(R2),
-    erlang:display(rec:rec2_to_json(R2)).
+    erlang:display(rec:to_json(R2)),
+    ?assertEqual(R2, rec:from_json(rec:to_json(R2), rec2)).
+
+undefined_null_test() ->
+    ?assertEqual("{\"a\": null}", rec:to_json(#simple{})),
+    ?assertEqual("{\"a\": null}", rec:to_json(#nullobj{})),
+    ?assertEqual(#simple{}, rec:from_json(rec:to_json(#simple{}),simple)),
+    ?assertEqual(#nullobj{}, rec:from_json(rec:to_json(#nullobj{}),nullobj)).
+
+

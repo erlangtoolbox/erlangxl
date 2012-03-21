@@ -10,3 +10,6 @@
 	{opt_rec, rec, {optional, undefined}},
 	{opt_list_rec, {list, rec}, {optional, []}}
 ]}.
+
+{simple, [{a, integer, required}]}.
+{nullobj, [{a, simple, required}]}.
