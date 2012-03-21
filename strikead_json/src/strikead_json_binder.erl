@@ -16,6 +16,7 @@ compile(Path, Dest) ->
         generate_file(ModulePath, fun(F) -> generate_module(Records, Module, F) end)
 	]).
 
+
 generate_records([], _Out) -> ok;
 generate_records([{Name, Fields} | T], Out) ->
 	do([error_m||
@@ -26,9 +27,11 @@ generate_records([{Name, Fields} | T], Out) ->
 	]).
 
 generate_field({Name, _Type, required}) -> atom_to_list(Name);
-generate_field({Name, T, optional}) -> io_lib:format("~p=#~p{}", [Name, T]);
-generate_field({Name, string, {optional, Default}}) -> io_lib:format("~p=\"~s\"", [Name, Default]);
-generate_field({Name, _T, {optional, Default}}) -> io_lib:format("~p=~p", [Name, Default]).
+generate_field({Name, string, optional}) -> atom_to_list(Name);
+generate_field({Name, integer, optional}) -> atom_to_list(Name);
+generate_field({Name, float, optional}) -> atom_to_list(Name);
+generate_field({Name, T, optional}) -> lists:flatten(io_lib:format("~p=#~p{}", [Name, T]));
+generate_field({Name, _T, {optional, Default}}) -> lists:flatten(io_lib:format("~p=~p", [Name, Default])).
 
 generate_file(Path, Generate) ->
     erlang:display("...generating " ++ Path),
