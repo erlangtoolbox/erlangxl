@@ -1,11 +1,11 @@
--module(strikead_json_tests).
+-module(strikead_json_binder_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 
 -include("rec.hrl").
 
 generic_test() ->
-    R = #rec{req_int=2},
+    R = #rec{},
     ?assertEqual(R, rec:from_json(rec:to_json(R), rec)),
 
     R2 = #rec2{opt_rec_def = R, opt_rec = R, opt_list_rec=[R,R]},
@@ -17,5 +17,11 @@ undefined_null_test() ->
     ?assertEqual("{\"a\": null}", rec:to_json(#nullobj{})),
     ?assertEqual(#simple{}, rec:from_json(rec:to_json(#simple{}),simple)),
     ?assertEqual(#nullobj{}, rec:from_json(rec:to_json(#nullobj{}),nullobj)).
+
+
+tuple_test() ->
+    ?assertEqual("{\"a\": {\"x\": 1, \"y\": 2}}", rec:to_json(#tupleobj{a={{x,1}, {y,2}}})),
+    ?assertEqual("{\"a\": {\"x\": \"\", \"y\": 2}}", rec:to_json(#tupleobj{a={{x,""}, {y,2}}})),
+    ?assertEqual("{\"a\": {\"x\": {\"z\": [\"a\",\"b\"]}, \"y\": 2}}", rec:to_json(#tupleobj{a={{x,{{z,["a", "b"]}}}, {y,2}}})).
 
 
