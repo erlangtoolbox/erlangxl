@@ -6,9 +6,9 @@ function cleanup() {
     for m in $MODULES
     do
         for b in `ls $m/*/*.bind`
-        do
-        rm -f $m/include/`basename $b .bind`.hrl
-            rm -f $m/src/`basename $b .bind`.erl
+    	do
+    	    rm -f $m/include/`basename $b .bind`.hrl
+    	    rm -f $m/src/`basename $b .bind`.erl
         done
     done
 }
@@ -43,4 +43,10 @@ do
     [ -d $m/include ] && cp -v -r $m/include $MODOUT
 done
 
-tar -czf dist/strikead-erlang-commons.tar.gz -C build .
+for m in `ls build`
+do
+    echo $m
+    tar -czf dist/`basename $m`.tar.gz -C build `basename $m`
+done
+
+#tar -czf dist/strikead-erlang-commons.tar.gz -C build .
