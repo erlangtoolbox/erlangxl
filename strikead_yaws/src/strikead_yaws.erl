@@ -2,7 +2,7 @@
 
 -include_lib("yaws/include/yaws_api.hrl").
 
--export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1, parse_params/1]).
+-export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1, parse_params/1, event_log_wrapper/3]).
 
 get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
 
@@ -70,3 +70,17 @@ parse_params(Args) ->
         'GET' -> lists:map(Atomize, yaws_api:parse_query(Args));
         _ -> undefined
     end.
+
+event_log_wrapper(Flog, Args, List) ->
+    strikead_flog:log(Flog, [client_ip(Args), user_agent(Args)] ++ List).
+						%private methods
+client_ip(Args) ->
+    {ClientIp, _} = Args#arg.client_ip_port,
+    inet_parse:ntoa(ClientIp).
+
+user_agent(Args) ->
+    Args#arg.headers#headers.user_agent.
+
+
+
+
