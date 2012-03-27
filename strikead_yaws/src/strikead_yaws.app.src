@@ -5,6 +5,7 @@
     kernel,
     stdlib,
     strikead_stdlib,
+    strikead_io,
     yaws
   ]}
  ]}.

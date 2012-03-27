@@ -7,3 +7,6 @@ strip_test() ->
 
 strip_empty_test() ->
     ?assertEqual("", strikead_string:strip("")).
+
+stripthru_test() ->
+    ?assertEqual("abc\"\\n\"", strikead_string:stripthru("a\tb\nc\"\\n\"")).

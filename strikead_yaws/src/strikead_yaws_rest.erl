@@ -11,6 +11,7 @@ dispatch(Module, Args) ->
             [Action | Path] -> apply(Module, list_to_atom(Action), [Path, Args])
         end
     catch
+		%now this traps any undef that could happen inside apply(). Should be checked via module_info()/exports.
         error:undef -> strikead_yaws_errors:out404(Args)
     end.
 
