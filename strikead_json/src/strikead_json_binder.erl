@@ -53,7 +53,7 @@ generate_module(Records, Name, Out) ->
         file:write(Out, "-export([to_json/1, from_json/2]).\n\n"),
         file:write(Out, "to_json(undefined) -> \"null\";\n\n"),
         generate_to_json(Records, Out),
-        file:write(Out, "from_json(Json, Record) when is_list(Json) -> {J, _, _} = ktuo_json:decode(Json), from_json_(J, Record).\n\n"),
+        file:write(Out, "from_json(Json, Record) when is_list(Json); is_binary(Json) -> {J, _, _} = ktuo_json:decode(Json), from_json_(J, Record).\n\n"),
         file:write(Out, "from_json_(undefined, _Record)  -> undefined;\n\n"),
         generate_from_json(Records, Out)
     ]).
