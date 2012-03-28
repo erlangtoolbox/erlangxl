@@ -1,5 +1,5 @@
+%%deprecated
 -module(strikead_list).
-
 -export([find/2, first/1, emap/2]).
 
 find(_Pred, []) -> not_found;
@@ -20,5 +20,3 @@ emap(F, Acc, [H|T]) ->
         {ok, R} -> emap(F, [R|Acc], T);
         X -> X
     end.
-
-

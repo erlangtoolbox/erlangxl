@@ -15,8 +15,8 @@
 '>>='(X, F) -> F(X).
 
 
-return(X) -> {just, X}.
-fail(_) -> nothing.
+return(X) -> {ok, X}.
+fail(_) -> false.
 
-just({just, X}) -> X;
+just({ok, X}) -> X;
 just(nothing) -> nothing.
