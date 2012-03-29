@@ -8,12 +8,12 @@
     Callback :: fun().
 
 using(Module, Params, F) ->
-    case Module:open(Params) of
+    case Module:auto_open(Params) of
 		{ok, Descriptor} ->
 			try
                 {ok, F(Descriptor)}
 			after
-				Module:close(Descriptor)
+				Module:auto_close(Descriptor)
 			end;
 		X -> X
 	end.

@@ -5,9 +5,9 @@
 -compile({parse_transform, do}).
 
 -behaviour(strikead_autoresource).
--export([open/1, close/1, using/3]).
+-export([auto_open/1, auto_close/1, using/3]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2]).
--export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1, list_dir/1, copy/2]).
+-export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1, list_dir/1, copy/2, open/2, close/1]).
 
 
 list_dir(Dir, Filter) when is_function(Filter) ->
@@ -94,6 +94,8 @@ write_file(Path, Data) ->
         ok -> strikead_io:apply_io(file, write_file, [Path, Data]);
         E -> E
     end.
+open(File, Mode) -> strikead_io:apply_io(file, open, [File, Mode]).
+close(Fd) -> strikead_io:apply_io(file, close, [Fd]).
 delete(Path) -> strikead_io:apply_io(file, delete, [Path]).
 make_symlink(Target, Link) -> strikead_io:apply_io(file, make_symlink, [Target, Link]).
 read_file_info(Path) -> strikead_io:apply_io(file, read_file_info, [Path]).
@@ -101,6 +103,6 @@ read_file_info(Path) -> strikead_io:apply_io(file, read_file_info, [Path]).
 %%
 % autoresource
 %%
-open([File, Mode]) -> file:open(File, Mode).
-close(D) -> file:close(D).
+auto_open([File, Mode]) ->  open(File, Mode).
+auto_close(D) -> close(D).
 using(File, Mode, F) -> strikead_auto:using(?MODULE, [File, Mode], F).
