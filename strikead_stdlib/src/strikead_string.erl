@@ -1,5 +1,5 @@
 -module(strikead_string).
--export([split/2, empty/1, not_empty/1, strip/1, replace/2, join/2, quote/1, stripthru/1]).
+-export([split/2, empty/1, not_empty/1, strip/1, replace/2, join/2, quote/1, stripthru/1, format/2]).
 
 split(S, Delimiter) -> lists:reverse(split(S, Delimiter, [])).
 
@@ -37,3 +37,5 @@ join([H | T], Sep, Acc) -> join(T, Sep, [Sep, H | Acc]).
 quote(Str) -> lists:flatten(io_lib:format("~5000p", [Str])).
 
 stripthru(S) -> [X || X <- S, X /= $\n andalso X /= $\t].
+
+format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
