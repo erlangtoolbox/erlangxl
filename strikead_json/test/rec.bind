@@ -17,3 +17,4 @@
 
 {tupleobj, [{a, tuple, required}]}.
 
+{strnull, [{a, string, required}]}.
