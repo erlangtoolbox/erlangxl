@@ -1,7 +1,7 @@
 -module(strikead_maybe_m).
 
 -behaviour(monad).
--export(['>>='/2, return/1, fail/1]).
+-export(['>>='/2, return/1, fail/1, just/1]).
 -export_type([monad/1]).
 
 -type monad(A) :: {ok, A} | nothing.
@@ -25,3 +25,6 @@ return(X) -> {ok, X}.
 -spec fail/1 :: (any()) -> monad(_A).
 fail(_) -> nothing.
 
+-spec just/1 :: (monad(A)) -> A | nothing.
+just({ok, X}) -> X;
+just(nothing) -> nothing.
