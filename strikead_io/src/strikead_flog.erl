@@ -51,7 +51,7 @@ handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info(_Msg, State) -> {noreply, State}.
 code_change(_Old, State, _Extra) -> {ok, State}.
-terminate(_Reason, _State) -> ok.
+terminate(_Reason, #state{fd=Fd}) -> close(Fd), ok.
 
 
 tsv_format_string([H|T]) -> lists:foldl( fun(X, S)  -> S  ++ "\t" ++ tsv_symbol(X) end, tsv_symbol(H), T) ++ "~n".
