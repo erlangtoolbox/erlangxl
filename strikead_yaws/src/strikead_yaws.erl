@@ -74,5 +74,5 @@ parse_params(Args) ->
 
 -spec log(atom(), #arg{}, [term()]) -> ok.
 log(Flog, Args, List) ->
-	Ip = strikead_string:join([integer_to_list(X) || X <- tuple_to_list(element(1, Args#arg.client_ip_port))], "."),
+	Ip = string:join([integer_to_list(X) || X <- tuple_to_list(element(1, Args#arg.client_ip_port))], "."),
 	strikead_flog:log(Flog, [Ip, Args#arg.headers#headers.user_agent] ++ List).

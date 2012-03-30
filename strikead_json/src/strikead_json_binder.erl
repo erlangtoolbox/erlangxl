@@ -21,7 +21,7 @@ generate_records([], _Out) -> ok;
 generate_records([{Name, Fields} | T], Out) ->
 	do([error_m||
 		file:write(Out, "\n-record(" ++ atom_to_list(Name) ++ ", {\n\t" ++
-            strikead_string:join([ generate_field(Field) || Field <- Fields], ",\n\t") ++
+            string:join([ generate_field(Field) || Field <- Fields], ",\n\t") ++
 		"\n})."),
 		generate_records(T, Out)
 	]).
@@ -90,7 +90,7 @@ generate_to_json_field(RecordName, {Name, {list, boolean}, _ }, Out) -> io:forma
 generate_to_json_field(RecordName, {Name, {list, _Rec}, _ }, Out) ->
     do([error_m ||
         io:format(Out, "\"\\\"~p\\\": [\" ++ ", [Name]),
-        io:format(Out, "strikead_string:join([to_json(X)||X <- R#~p.~p], \",\") ++ ", [RecordName, Name]),
+        io:format(Out, "string:join([to_json(X)||X <- R#~p.~p], \",\") ++ ", [RecordName, Name]),
         file:write(Out, "\"]\"")
     ]);
 generate_to_json_field(RecordName, {Name, _Rec, _ }, Out) -> io:format(Out, "\"\\\"~p\\\": \" ++ to_json(R#~p.~p)", [Name, RecordName, Name]);
