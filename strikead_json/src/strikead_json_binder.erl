@@ -21,7 +21,7 @@ generate_records([], _Out) -> ok;
 generate_records([{Name, Fields} | T], Out) ->
 	do([error_m||
 		file:write(Out, "\n-record(" ++ atom_to_list(Name) ++ ", {\n\t" ++
-            strikead_string:join([ generate_field(Field) || Field <- Fields], ",\n\t") ++
+            string:join([ generate_field(Field) || Field <- Fields], ",\n\t") ++
 		"\n})."),
 		generate_records(T, Out)
 	]).
@@ -53,7 +53,7 @@ generate_module(Records, Name, Out) ->
         file:write(Out, "-export([to_json/1, from_json/2]).\n\n"),
         file:write(Out, "to_json(undefined) -> \"null\";\n\n"),
         generate_to_json(Records, Out),
-        file:write(Out, "from_json(Json, Record) when is_list(Json) -> {J, _, _} = ktuo_json:decode(Json), from_json_(J, Record).\n\n"),
+        file:write(Out, "from_json(Json, Record) when is_list(Json); is_binary(Json) -> {J, _, _} = ktuo_json:decode(Json), from_json_(J, Record).\n\n"),
         file:write(Out, "from_json_(undefined, _Record)  -> undefined;\n\n"),
         generate_from_json(Records, Out)
     ]).
@@ -78,7 +78,7 @@ generate_to_json_fields(RecordName, [Field | Fields], Out) ->
         generate_to_json_fields(RecordName, Fields, Out)
     ]).
 
-generate_to_json_field(RecordName, {Name, string, _ }, Out) ->          io:format(Out, "lists:flatten(io_lib:format(\"\\\"~p\\\": \\\"~~s\\\"\", [strikead_json_rt:subst(R#~p.~p, undefined, null)]))", [Name, RecordName, Name]);
+generate_to_json_field(RecordName, {Name, string, _ }, Out) ->          io:format(Out, "case R#~p.~p of [] -> \"\\\"~p\\\": \\\"\\\"\"; X -> lists:flatten(io_lib:format(\"\\\"~p\\\": ~~p\", [strikead_json_rt:subst(X, undefined, null)])) end", [RecordName, Name, Name, Name]);
 generate_to_json_field(RecordName, {Name, integer, _ }, Out) ->         io:format(Out, "lists:flatten(io_lib:format(\"\\\"~p\\\": ~~p\", [strikead_json_rt:subst(R#~p.~p, undefined, null)]))", [Name, RecordName, Name]);
 generate_to_json_field(RecordName, {Name, float, _ }, Out) ->           io:format(Out, "lists:flatten(io_lib:format(\"\\\"~p\\\": ~~p\", [strikead_json_rt:subst(R#~p.~p, undefined, null)]))", [Name, RecordName, Name]);
 generate_to_json_field(RecordName, {Name, boolean, _ }, Out) ->         io:format(Out, "lists:flatten(io_lib:format(\"\\\"~p\\\": ~~p\", [strikead_json_rt:subst(R#~p.~p, undefined, null)]))", [Name, RecordName, Name]);
@@ -90,7 +90,7 @@ generate_to_json_field(RecordName, {Name, {list, boolean}, _ }, Out) -> io:forma
 generate_to_json_field(RecordName, {Name, {list, _Rec}, _ }, Out) ->
     do([error_m ||
         io:format(Out, "\"\\\"~p\\\": [\" ++ ", [Name]),
-        io:format(Out, "strikead_string:join([to_json(X)||X <- R#~p.~p], \",\") ++ ", [RecordName, Name]),
+        io:format(Out, "string:join([to_json(X)||X <- R#~p.~p], \",\") ++ ", [RecordName, Name]),
         file:write(Out, "\"]\"")
     ]);
 generate_to_json_field(RecordName, {Name, _Rec, _ }, Out) -> io:format(Out, "\"\\\"~p\\\": \" ++ to_json(R#~p.~p)", [Name, RecordName, Name]);

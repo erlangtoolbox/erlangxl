@@ -10,6 +10,8 @@ start_link(Location) ->
 
 put(Key, Value) -> gen_server:call(?MODULE, {put, Key, Value}).
 get(Key) -> gen_server:call(?MODULE, {get, Key}, infinity).
+
+%% this is an idiocy from ancient times. should be fixed when there is no rush.
 get_async(Key) ->
     gen_server:cast(?MODULE, {get, self(), Key}),
     receive
@@ -31,6 +33,7 @@ handle_call({put, Key, Value}, _From, Db) ->
     {reply, ok, Db};
 handle_call({get, Key}, _From, Db) -> {reply, ldbget(Db, Key), Db}.
 
+%% this is an idiocy from ancient times. should be fixed when there is no rush.
 handle_cast({get, From, Key}, Db) ->
     spawn_link(fun() ->
         From ! ldbget(Db, Key)

@@ -2,7 +2,7 @@
 
 -include_lib("yaws/include/yaws_api.hrl").
 
--export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1, parse_params/1, event_log_wrapper/3]).
+-export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1, parse_params/1, log/3]).
 
 get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
 
@@ -63,6 +63,7 @@ params(Fs, Args) ->
 
 errors(Errors) -> [{status, 400}, {ehtml, {html, [], lists:flatten(lists:map(fun(X) -> [X, {br}] end, Errors))}}].
 
+-spec parse_params(#arg{}) -> [{atom(), list()}] | undefined.
 parse_params(Args) ->
     Atomize = fun({K,V}) -> {list_to_atom(K),V} end,
     case (Args#arg.req)#http_request.method of
@@ -71,16 +72,7 @@ parse_params(Args) ->
         _ -> undefined
     end.
 
-event_log_wrapper(Flog, Args, List) ->
-    strikead_flog:log(Flog, [client_ip(Args), user_agent(Args)] ++ List).
-						%private methods
-client_ip(Args) ->
-    {ClientIp, _} = Args#arg.client_ip_port,
-    inet_parse:ntoa(ClientIp).
-
-user_agent(Args) ->
-    Args#arg.headers#headers.user_agent.
-
-
-
-
+-spec log(atom(), #arg{}, [term()]) -> ok.
+log(Flog, Args, List) ->
+	Ip = string:join([integer_to_list(X) || X <- tuple_to_list(element(1, Args#arg.client_ip_port))], "."),
+	strikead_flog:log(Flog, [Ip, Args#arg.headers#headers.user_agent] ++ List).

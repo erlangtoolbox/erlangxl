@@ -30,7 +30,7 @@ parse_params_test() ->
 mkargs(Query) ->
     #arg{
         req = #http_request{method='GET', path="/test", version="HTTP/1.1"},
-        querydata = strikead_string:join(lists:map(fun({K,V}) -> atom_to_list(K) ++ "=" ++ V end, Query), "&")
+        querydata = string:join(lists:map(fun({K,V}) -> atom_to_list(K) ++ "=" ++ V end, Query), "&")
     }.
 
 mkargs() -> mkargs([{a,"b"},{c,"d"}]).

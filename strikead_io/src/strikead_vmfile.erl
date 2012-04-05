@@ -2,13 +2,14 @@
 
 -include_lib("kernel/include/file.hrl").
 
--export([open/1, open/2, close/1, pread/3, parse_lines/1]).
+-export([auto_open/1, open/2, auto_close/1, close/1, pread/3, parse_lines/1]).
 
 -record(handle, {segment_size, segments, data_size}).
 
 -behaviour(strikead_autoresource).
 
-open([Path, Options]) -> open(Path, Options).
+auto_open([Path, Mode]) -> open(Path, Mode).
+auto_close(Fd) -> close(Fd).
 
 open(Path, [{segment, SegmentSize}]) ->
     strikead_file:using(Path, [read, raw, binary], fun(File) ->
@@ -25,6 +26,7 @@ read_segments(Segments, File, SegmentSize, DataSize) ->
 
 close(#file_descriptor{module=?MODULE}) -> ok;
 close(_) -> {error, badarg}.
+
 
 %% todo handle possible posision specifications
 

@@ -1,5 +1,5 @@
 -module(strikead_string).
--export([split/2, empty/1, not_empty/1, strip/1, replace/2, join/2]).
+-export([split/2, empty/1, not_empty/1, strip/1, replace/2, quote/1, stripthru/1, format/2, to_float/1]).
 
 split(S, Delimiter) -> lists:reverse(split(S, Delimiter, [])).
 
@@ -29,7 +29,15 @@ replace(R, _, []) -> lists:reverse(R);
 replace(R, C, [C|S]) -> replace(R, C, S);
 replace(R, C, [X|S]) -> replace([X|R], C, S).
 
-join(Items, Sep) -> lists:flatten(lists:reverse(join(Items, Sep, []))).
-join([], _Sep, Acc) -> Acc;
-join([H | []], _Sep, Acc) -> [H | Acc];
-join([H | T], Sep, Acc) -> join(T, Sep, [Sep, H | Acc]).
+quote(Str) -> lists:flatten(io_lib:format("~5000p", [Str])).
+
+stripthru(S) -> [X || X <- S, X /= $\n andalso X /= $\t].
+
+format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
+
+to_float(X) ->
+	try
+		list_to_float(X)
+	catch
+		_:_ -> float(list_to_integer(X))
+	end.

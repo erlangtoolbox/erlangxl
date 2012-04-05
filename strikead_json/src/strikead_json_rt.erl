@@ -5,12 +5,14 @@
 subst(X, X, Y) -> Y;
 subst(X, _, _) -> X.
 
-from_dict(Field, Dict) ->
+from_dict(_Field, undefined) -> undefined;
+from_dict(Field, Dict) when is_tuple(Dict), element(1, Dict) == dict ->
     case dict:find(atom_to_list(Field), Dict) of
         error -> undefined;
         {ok, null} -> undefined;
         {ok, X} -> X
-    end.
+    end;
+from_dict(_Field, Dict) -> throw({badarg, Dict}).
 
 tuple2json(undefined) -> null;
 tuple2json(T) when is_tuple(T) -> "{" ++ list2json(tuple_to_list(T)) ++ "}".

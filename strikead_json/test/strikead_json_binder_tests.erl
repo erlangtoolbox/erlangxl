@@ -15,6 +15,9 @@ generic_test() ->
 undefined_null_test() ->
     ?assertEqual("{\"a\": null}", rec:to_json(#simple{})),
     ?assertEqual("{\"a\": null}", rec:to_json(#nullobj{})),
+    ?assertEqual("{\"a\": null}", rec:to_json(#strnull{})),
+    ?assertEqual("{\"a\": \"a\\nb\"}", rec:to_json(#strnull{a="a\nb"})),
+    ?assertEqual("{\"a\": \"\"}", rec:to_json(#strnull{a=""})),
     ?assertEqual(#simple{}, rec:from_json(rec:to_json(#simple{}),simple)),
     ?assertEqual(#nullobj{}, rec:from_json(rec:to_json(#nullobj{}),nullobj)).
 
