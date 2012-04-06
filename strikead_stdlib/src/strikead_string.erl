@@ -1,19 +1,13 @@
 -module(strikead_string).
--export([split/2, empty/1, not_empty/1, strip/1, replace/2, quote/1, stripthru/1, format/2, to_float/1]).
+-export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2, to_float/1, substitute/2]).
 
-split(S, Delimiter) -> lists:reverse(split(S, Delimiter, [])).
-
-split("", _, R) -> R;
-split(S, Delimiter, R) -> 
-	case lists:splitwith(fun(A) -> A /= Delimiter end, S) of
-		{H, ""} -> [H|R];
-		{H, Rest} -> split(string:substr(Rest, 2), Delimiter, [H|R])
-	end.
-
+-spec empty/1 :: (string()) -> boolean().
 empty(S) -> S == "".
 
+-spec not_empty/1 :: (string()) -> boolean().
 not_empty(S) -> S /= "".
 
+-spec strip/1 :: (string()) -> string().
 strip(S) -> strip(S, forward).
 strip("", _) -> "";
 strip([$ | T], Dir) -> strip(T, Dir);
@@ -23,21 +17,38 @@ strip([$\n | T], Dir) -> strip(T, Dir);
 strip(T, forward) -> lists:reverse(strip(lists:reverse(T), backward));
 strip(T, backward) -> T.
 
-
-replace(C, S) -> replace("", C, S).
-replace(R, _, []) -> lists:reverse(R);
-replace(R, C, [C|S]) -> replace(R, C, S);
-replace(R, C, [X|S]) -> replace([X|R], C, S).
-
-quote(Str) -> lists:flatten(io_lib:format("~5000p", [Str])).
-
+-spec stripthru/1 :: (string()) -> string().
 stripthru(S) -> [X || X <- S, X /= $\n andalso X /= $\t].
 
+-spec quote/1 :: (string()) -> string().
+quote(Str) -> format("~5000p", [Str]).
+
+-spec format/2 :: (io:format(), [term()]) -> string().
 format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
 
+-spec to_float/1 :: (string()) -> float().
 to_float(X) ->
 	try
 		list_to_float(X)
 	catch
 		_:_ -> float(list_to_integer(X))
 	end.
+
+-type subst_map() :: [{atom(), atom()|binary()|string()|integer()|float()|boolean()}].
+-spec substitute/2 :: (string(), subst_map()) -> string().
+substitute(Str, Map) ->
+	Parts = re:split(Str, "(\{[a-zA-Z]+\})", [{return, list}, trim]),
+	lists:flatten([replace_macro(X, Map) || X <- Parts]).
+
+-spec replace_macro/2 :: (string(), subst_map()) -> string().
+replace_macro([${|T], Map) ->
+	Key = list_to_atom(string:strip(T, right, $})),
+	case lists:keyfind(Key, 1, Map) of
+		{_, V} when is_binary(V) -> binary_to_list(V);
+		{_, V} when is_float(V); is_integer(V); is_boolean(V) -> format("~p", [V]);
+		{_, V} when is_atom(V) -> atom_to_list(V);
+		{_, V} -> V;
+		_ -> ""
+	end;
+replace_macro(X, _Map) -> X.
+
