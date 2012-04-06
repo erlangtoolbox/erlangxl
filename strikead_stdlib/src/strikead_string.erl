@@ -1,5 +1,6 @@
 -module(strikead_string).
--export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2, to_float/1, substitute/2, to_string/1]).
+-export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2,
+	to_float/1, substitute/2, to_string/1]).
 
 -spec empty/1 :: (string()) -> boolean().
 empty(S) -> S == "".
@@ -34,7 +35,8 @@ to_float(X) ->
 		_:_ -> float(list_to_integer(X))
 	end.
 
--type subst_map() :: [{atom(), atom()|binary()|string()|integer()|float()|boolean()}].
+-type subst_map() :: [{atom(), atom() | binary() | string() |
+	integer() | float() | boolean()}].
 -spec substitute/2 :: (string(), subst_map()) -> string().
 substitute(Str, Map) ->
 	Parts = re:split(Str, "(\{[a-zA-Z\-_]+\})", [{return, list}, trim]),
@@ -49,7 +51,8 @@ replace_macro([${|T], Map) ->
 	end;
 replace_macro(X, _Map) -> X.
 
--spec to_string/1 :: (atom() | binary() | string() | float() | integer()) -> string().
+-spec to_string/1 :: (atom() | binary() | string() | float() | integer())
+	-> string().
 to_string(V) when is_binary(V) -> binary_to_list(V);
 to_string(V) when is_atom(V) -> atom_to_list(V);
 to_string(V) when is_list(V) -> V;
