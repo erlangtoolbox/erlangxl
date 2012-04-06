@@ -37,7 +37,7 @@ to_float(X) ->
 -type subst_map() :: [{atom(), atom()|binary()|string()|integer()|float()|boolean()}].
 -spec substitute/2 :: (string(), subst_map()) -> string().
 substitute(Str, Map) ->
-	Parts = re:split(Str, "(\{[a-zA-Z]+\})", [{return, list}, trim]),
+	Parts = re:split(Str, "(\{[a-zA-Z\-_]+\})", [{return, list}, trim]),
 	lists:flatten([replace_macro(X, Map) || X <- Parts]).
 
 -spec replace_macro/2 :: (string(), subst_map()) -> string().
