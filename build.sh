@@ -1,6 +1,6 @@
 #!/bin/sh
 rm -rf build dist
-MODULES="strikead_stdlib strikead_leveldb strikead_yaws strikead_csv strikead_eunit strikead_io strikead_json"
+MODULES="strikead_stdlib strikead_leveldb strikead_yaws strikead_csv strikead_eunit strikead_io strikead_json strikead_net"
 
 function cleanup() {
     for m in $MODULES

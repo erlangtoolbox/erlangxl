@@ -1,5 +1,5 @@
 -module(strikead_string).
--export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2, to_float/1, substitute/2]).
+-export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2, to_float/1, substitute/2, to_string/1]).
 
 -spec empty/1 :: (string()) -> boolean().
 empty(S) -> S == "".
@@ -44,11 +44,15 @@ substitute(Str, Map) ->
 replace_macro([${|T], Map) ->
 	Key = list_to_atom(string:strip(T, right, $})),
 	case lists:keyfind(Key, 1, Map) of
-		{_, V} when is_binary(V) -> binary_to_list(V);
-		{_, V} when is_float(V); is_integer(V); is_boolean(V) -> format("~p", [V]);
-		{_, V} when is_atom(V) -> atom_to_list(V);
-		{_, V} -> V;
+		{_, V} -> to_string(V);
 		_ -> ""
 	end;
 replace_macro(X, _Map) -> X.
+
+-spec to_string/1 :: (atom() | binary() | string() | float() | integer()) -> string().
+to_string(V) when is_binary(V) -> binary_to_list(V);
+to_string(V) when is_atom(V) -> atom_to_list(V);
+to_string(V) when is_list(V) -> V;
+to_string(V) when is_float(V); is_integer(V) -> format("~p", [V]);
+to_string(V) -> format("~p", [V]).
 
