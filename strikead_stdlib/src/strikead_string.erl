@@ -18,7 +18,7 @@ strip(T, forward) -> lists:reverse(strip(lists:reverse(T), backward));
 strip(T, backward) -> T.
 
 -spec stripthru/1 :: (string()) -> string().
-stripthru(S) -> [X || X <- S, X /= $\n andalso X /= $\t].
+stripthru(S) -> [X || X <- S, X /= $\n andalso X /= $\r andalso X /= $\t].
 
 -spec quote/1 :: (string()) -> string().
 quote(Str) -> format("~5000p", [Str]).
