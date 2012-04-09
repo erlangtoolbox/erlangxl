@@ -52,12 +52,16 @@ ensure_dir(Path) -> strikead_io:apply_io(filelib, ensure_dir, [Path]).
 mkdirs(Path) -> ensure_dir(filename:join(Path, "X")).
 
 write_terms(File, L) when is_list(L) ->
-	do([error_m ||
+	R = do([error_m ||
 		ensure_dir(File),
-    	using(File, [write], fun(F) ->
-        	lists:foreach(fun(X) -> io:format(F, "~p.~n",[X]) end, L)
-    	end)
-	]);
+		using(File, [write], fun(F) ->
+			lists:foreach(fun(X) -> io:format(F, "~p.~n",[X]) end, L)
+		end)
+	]),
+	case R of
+		{ok, ok} -> ok;
+		X -> X
+	end;
 
 write_terms(File, L) -> write_terms(File, [L]).
 

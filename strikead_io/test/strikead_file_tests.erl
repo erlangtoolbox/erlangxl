@@ -23,3 +23,8 @@ copy_recursive_test() ->
     ?assertFilesEqual("/tmp/test/a/b/c", "/tmp/test/y/a/b/d"),
     ?assert(filelib:is_dir("/tmp/test/y/a/b/e")),
     os:cmd("rm -rf /tmp/test").
+
+write_terms_test() ->
+	os:cmd("rm -rf /tmp/test"),
+	?assertEqual(ok, strikead_file:write_terms("/tmp/test/x", a)),
+	os:cmd("rm -rf /tmp/test").
