@@ -18,6 +18,7 @@
 	{noreply, NewState :: term()} |
 	{noreply, NewState :: term(), timeout() | hibernate} |
 	{stop, Reason :: term(), NewState :: term()}.
+
 -spec terminate/2 :: (Reason :: (normal | shutdown | {shutdown, term()} | term()), State :: term()) ->
 	term().
 
