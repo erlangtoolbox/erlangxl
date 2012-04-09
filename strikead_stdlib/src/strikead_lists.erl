@@ -1,6 +1,6 @@
 -module(strikead_lists).
 
--export([find/2, first/1, emap/2, mapfilter/2, index/2, keypsort/3]).
+-export([find/2, first/1, emap/2, mapfilter/2, index/2, keypsort/3, sublistmatch/2]).
 
 -spec find/2 :: (fun((term()) -> boolean()), [term()])
 	-> strikead_maybe_m:monad(term()).
@@ -60,3 +60,14 @@ index(X, L) -> index(X, 1, L).
 index(_X, _I, []) -> nothing;
 index(X, I, [X | _]) -> {ok, I};
 index(X, I, [_ | T]) -> index(X, I + 1, T).
+
+-spec sublistmatch/2 :: ([{atom(), term()}], [{atom(), term()}]) -> boolean().
+sublistmatch(Pattern, List) ->
+	lists:all(fun({Pk, Pv}) ->
+		case lists:keyfind(Pk, 1, List) of
+			{Pk, Pv} -> true;
+			{Pk, V} when is_list(V) ->
+				re:run(V, Pv, [anchored, {capture, none}]) == match;
+			_ -> false
+		end
+	end, Pattern).

@@ -24,3 +24,13 @@ mapfilter_test() ->
 keypsort_test() ->
 	?assertEqual([{z, 1},{x, 2},{y, 3}],
 		strikead_lists:keypsort([z,x,y], 1, [{x, 2},{z, 1},{y, 3}])).
+
+sublistmatch_test() ->
+	Pattern = [{a, 1}, {b, "x.*"}],
+	List = [{a, 1}, {x, y}, {b, "xx"}],
+	?assert(strikead_lists:sublistmatch(Pattern, List)),
+	List2 = [{x, y}, {b, "xx"}],
+	?assertNot(strikead_lists:sublistmatch(Pattern, List2)),
+	List3 = [{a, 1}, {x, y}, {b, "yy"}],
+	?assertNot(strikead_lists:sublistmatch(Pattern, List3)).
+
