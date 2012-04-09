@@ -34,3 +34,9 @@ sublistmatch_test() ->
 	List3 = [{a, 1}, {x, y}, {b, "yy"}],
 	?assertNot(strikead_lists:sublistmatch(Pattern, List3)).
 
+substitute_test() ->
+	Pattern = [a, 1, "c{b}c", "c"],
+	List = [{a, "1"}, {b, "x"}, {"c", 2}],
+	?assertEqual(["1", 1, "cxc", 2],
+		strikead_lists:substitute(Pattern, List,
+		fun strikead_string:substitute/2)).

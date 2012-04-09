@@ -35,14 +35,12 @@ to_float(X) ->
 		_:_ -> float(list_to_integer(X))
 	end.
 
--type subst_map() :: [{atom(), atom() | binary() | string() |
-	integer() | float() | boolean()}].
--spec substitute/2 :: (string(), subst_map()) -> string().
+-spec substitute/2 :: (string(), strikead_lists:listmap_at()) -> string().
 substitute(Str, Map) ->
 	Parts = re:split(Str, "(\{[a-zA-Z\-_]+\})", [{return, list}, trim]),
 	lists:flatten([replace_macro(X, Map) || X <- Parts]).
 
--spec replace_macro/2 :: (string(), subst_map()) -> string().
+-spec replace_macro/2 :: (string(), strikead_lists:listmap_at()) -> string().
 replace_macro([${|T], Map) ->
 	Key = list_to_atom(string:strip(T, right, $})),
 	case lists:keyfind(Key, 1, Map) of

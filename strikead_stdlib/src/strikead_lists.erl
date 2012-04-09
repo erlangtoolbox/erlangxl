@@ -1,6 +1,12 @@
 -module(strikead_lists).
 
--export([find/2, first/1, emap/2, mapfilter/2, index/2, keypsort/3, sublistmatch/2]).
+-export([find/2, first/1, emap/2, mapfilter/2, index/2, keypsort/3,
+	sublistmatch/2, substitute/3]).
+
+-type listmap(A,B) :: [{A, B}].
+-type listmap_at() :: listmap(atom(),
+		atom() | binary() | string() | integer() | float()).
+-export_types([listmap/2, listmap_at/0]).
 
 -spec find/2 :: (fun((term()) -> boolean()), [term()])
 	-> strikead_maybe_m:monad(term()).
@@ -40,7 +46,7 @@ mapfilter(Acc, F, [H | T]) ->
 		{ok, X} -> mapfilter([X | Acc], F, T)
 	end.
 
--spec keypsort/3 :: ([term()], integer(), [{term(), term()}])
+-spec keypsort/3 :: ([term()], integer(), listmap(term(), term()))
 	-> [{term(), term()}].
 keypsort(Keys, N, L) ->
 	C = fun(A, B) ->
@@ -61,13 +67,24 @@ index(_X, _I, []) -> nothing;
 index(X, I, [X | _]) -> {ok, I};
 index(X, I, [_ | T]) -> index(X, I + 1, T).
 
--spec sublistmatch/2 :: ([{atom(), term()}], [{atom(), term()}]) -> boolean().
-sublistmatch(Pattern, List) ->
+-spec sublistmatch/2 :: (listmap_at(), listmap_at()) -> boolean().
+sublistmatch(Pattern, Map) ->
 	lists:all(fun({Pk, Pv}) ->
-		case lists:keyfind(Pk, 1, List) of
+		case lists:keyfind(Pk, 1, Map) of
 			{Pk, Pv} -> true;
 			{Pk, V} when is_list(V) ->
 				re:run(V, Pv, [anchored, {capture, none}]) == match;
 			_ -> false
+		end
+	end, Pattern).
+
+-spec substitute/3 :: ([term()], listmap_at(),
+	StringHandler :: fun((string(), listmap_at()) -> string())) -> [term()].
+substitute(Pattern, Map, StringHandler) ->
+	lists:map(fun(X) ->
+		case lists:keyfind(X, 1, Map) of
+			{X, V} -> V;
+			_ when is_list(X) -> StringHandler(X, Map);
+			_ -> X
 		end
 	end, Pattern).
