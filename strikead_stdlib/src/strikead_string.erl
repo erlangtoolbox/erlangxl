@@ -37,7 +37,7 @@ to_float(X) ->
 
 -spec substitute/2 :: (string(), strikead_lists:listmap_at()) -> string().
 substitute(Str, Map) ->
-	Parts = re:split(Str, "(\{[a-zA-Z\-_]+\})", [{return, list}, trim]),
+	Parts = re:split(Str, "(\\\{[a-zA-Z\\\-_\\\.]+\\\})", [{return, list}, trim]),
 	lists:flatten([replace_macro(X, Map) || X <- Parts]).
 
 -spec replace_macro/2 :: (string(), strikead_lists:listmap_at()) -> string().

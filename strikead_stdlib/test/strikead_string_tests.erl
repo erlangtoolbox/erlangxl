@@ -22,10 +22,12 @@ substitute_test() ->
 		strikead_string:substitute("x{a}z{b}", [{a, "y"}, {b, 1}])),
 	?assertEqual("xyzy",
 		strikead_string:substitute("x{a}z{a}", [{a, "y"}])),
-	?assertEqual("xyz{b.}",
-		strikead_string:substitute("x{a}z{b.}", [{a, "y"}])),
+	?assertEqual("xyz{b+}",
+		strikead_string:substitute("x{a}z{b+}", [{a, "y"}])),
 	?assertEqual("xyz",
 		strikead_string:substitute("x{a}z{b}", [{a, "y"}])),
+	?assertEqual("xy",
+		strikead_string:substitute("x{a.b}", [{'a.b', "y"}])),
 	?assertEqual("xyz{}",
 		strikead_string:substitute("x{a}z{}", [{a, "y"}])).
 
