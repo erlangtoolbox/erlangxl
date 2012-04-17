@@ -8,7 +8,7 @@
 %% -----------------------------------------------------------------------------
 %% API Function Exports
 %% -----------------------------------------------------------------------------
--export([start_link/2, stop/0, call/1]).
+-export([start_link/2, stop/1, call/2]).
 
 %% -----------------------------------------------------------------------------
 %% gen_server Function Exports
@@ -21,13 +21,13 @@
 %% -----------------------------------------------------------------------------
 -spec start_link/2 :: (atom(), atom()) -> {ok, pid()} | ignore | {error, term()}.
 start_link(App, Profile) ->
-	gen_server:start_link({local, ?MODULE}, ?MODULE, {App, Profile}, []).
+	gen_server:start_link({local, Profile}, ?MODULE, {App, Profile}, []).
 
--spec stop/0 :: () -> ok.
-stop() -> gen_server:cast(?MODULE, stop).
+-spec stop/1 :: (atom()) -> ok.
+stop(Profile) -> gen_server:cast(Profile, stop).
 
--spec call/1 :: (string()) -> error_m:monad(tuple()).
-call(Url) -> gen_server:call(?MODULE, {simple_request, Url}).
+-spec call/2 :: (atom(), string()) -> error_m:monad(tuple()).
+call(Profile, Url) -> gen_server:call(Profile, {simple_request, Url}).
 
 %% -----------------------------------------------------------------------------
 %% gen_server Function Definitions

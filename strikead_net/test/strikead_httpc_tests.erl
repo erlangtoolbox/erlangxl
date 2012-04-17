@@ -9,9 +9,9 @@ simple_request_test() ->
 	?assertOk(strikead_httpc:start_link(strikead_net_test, test)),
 	try
 		?assertEqual({ok, {200, "OK"}},
-			strikead_httpc:call("http://strikead.com"))
+			strikead_httpc:call(test, "http://strikead.com"))
 	after
-		strikead_httpc:stop(),
+		strikead_httpc:stop(test),
 		inets:stop()
 	end.
 
