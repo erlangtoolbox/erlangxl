@@ -1,7 +1,7 @@
 -module(strikead_lists).
 
 -export([find/2, first/1, emap/2, mapfilter/2, index/2, keypsort/3,
-	sublistmatch/2, substitute/3]).
+	sublistmatch/2, substitute/3, keyfind/3, keyfind/4]).
 
 -type listmap(A,B) :: [{A, B}].
 -type listmap_at() :: listmap(atom(),
@@ -88,3 +88,18 @@ substitute(Pattern, Map, StringHandler) ->
 			_ -> X
 		end
 	end, Pattern).
+
+-spec keyfind/4 :: (term(), integer(), [tuple()], tuple()) -> tuple().
+keyfind(Key, N , List, Default) ->
+	case keyfind(Key, N, List) of
+		{ok, X} -> X;
+		nothing -> Default
+	end.
+
+-spec keyfind/3 :: (term(), integer(), [tuple()]) ->
+	strikead_maybe_m:monad(tuple()).
+keyfind(Key, N , List) ->
+	case lists:keyfind(Key, N, List) of
+		false -> nothing;
+		X -> {ok, X}
+	end.

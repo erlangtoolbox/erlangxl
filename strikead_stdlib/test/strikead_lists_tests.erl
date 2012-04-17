@@ -40,3 +40,6 @@ substitute_test() ->
 	?assertEqual(["1", 1, "cxc", 2],
 		strikead_lists:substitute(Pattern, List,
 		fun strikead_string:substitute/2)).
+
+keyfind_test() ->
+	?assertEqual({x,y}, strikead_lists:keyfind(z, 1, [], {x,y})).
