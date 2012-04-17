@@ -27,7 +27,7 @@ start_link(App, Profile) ->
 stop(Profile) -> gen_server:cast(Profile, stop).
 
 -spec call/2 :: (atom(), string()) -> error_m:monad(tuple()).
-call(Profile, Url) -> gen_server:call(Profile, {simple_request, Url}).
+call(Profile, Url) -> gen_server:call(Profile, {call, Url}).
 
 %% -----------------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -49,7 +49,7 @@ init({App, Profile}) ->
 		})
 	]).
 
-handle_call({simple_request, Url}, _From,
+handle_call({call, Url}, _From,
 	State=#state{profile=Profile, request_opts=Opts}) ->
 	Result = case httpc:request(get, {Url, []}, Opts, [], Profile) of
 		{ok, {{_, Code, Reason},_, _}} -> {ok, {Code, Reason}};
