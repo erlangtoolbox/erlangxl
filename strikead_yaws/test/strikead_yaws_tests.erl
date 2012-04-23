@@ -15,6 +15,11 @@ opt_test() ->
     ?assertEqual({[{b, undefined}],[]}, strikead_yaws:params([strikead_yaws:opt(b, Xf)], Args)),
     ?assertEqual({[{a, "b-x"}],[]}, strikead_yaws:params([strikead_yaws:opt(a, Xf)], Args)).
 
+convert_test() ->
+    Args = mkargs(),
+    Xf = fun(X) -> X ++ "-x" end,
+    ?assertEqual({[{a, "b-x"}],[]}, strikead_yaws:params([strikead_yaws:convert(strikead_yaws:opt(a), Xf)], Args)).
+
 any_test() ->
     Args = mkargs(),
     ?assertEqual({[{a, "b"}],[]}, strikead_yaws:params([strikead_yaws:any([strikead_yaws:get(x), strikead_yaws:opt(a)], "Not found")], Args)).

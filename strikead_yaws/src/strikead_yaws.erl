@@ -3,7 +3,7 @@
 -include_lib("yaws/include/yaws_api.hrl").
 
 -export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2,
-	errors/1, parse_params/1, log/3, clear_parse_caches/0]).
+	errors/1, parse_params/1, log/3, clear_parse_caches/0, convert/2]).
 
 get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
 
@@ -58,6 +58,14 @@ as(Name, F) ->
             X -> X
         end
     end.
+
+convert(F, ConvF) ->
+	fun(Args) ->
+		case F(Args) of
+			{ok, Name, X} -> {ok, Name, ConvF(X)};
+			X -> X
+		end
+	end.
 
 getparams(_Args, []) -> [];
 getparams(Args, [F | T]) -> [F(Args) | getparams(Args, T)].
