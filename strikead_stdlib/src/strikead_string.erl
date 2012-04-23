@@ -1,6 +1,6 @@
 -module(strikead_string).
 -export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2,
-	to_float/1, substitute/2, to_string/1]).
+	to_float/1, substitute/2, to_string/1, to_atom/1]).
 
 -spec empty/1 :: (string()) -> boolean().
 empty(S) -> S == "".
@@ -57,3 +57,7 @@ to_string(V) when is_list(V) -> V;
 to_string(V) when is_float(V); is_integer(V) -> format("~p", [V]);
 to_string(V) -> format("~p", [V]).
 
+-spec to_atom/1 :: ([atom() | binary() | string() | float() | integer()]) ->
+	atom().
+to_atom(L) when is_list(L) ->
+	list_to_atom(string:join([to_string(X) || X <- L], "")).

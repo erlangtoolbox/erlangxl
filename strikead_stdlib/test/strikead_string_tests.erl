@@ -37,3 +37,6 @@ to_string_test() ->
 	?assertEqual("true", strikead_string:to_string(true)),
 	?assertEqual("x", strikead_string:to_string("x")),
 	?assertEqual("Y", strikead_string:to_string(<<"Y">>)).
+
+to_atom_test() ->
+	?assertEqual(atomAB1, strikead_string:to_atom([atom, "AB", 1])).
