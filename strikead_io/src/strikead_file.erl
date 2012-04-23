@@ -6,8 +6,10 @@
 
 -behaviour(strikead_autoresource).
 -export([auto_open/1, auto_close/1, using/3]).
--export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2]).
--export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1, list_dir/1, copy/2, open/2, close/1]).
+-export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
+	read_terms/1]).
+-export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
+	list_dir/1, copy/2, open/2, close/1]).
 
 
 list_dir(Dir, Filter) when is_function(Filter) ->
@@ -50,6 +52,9 @@ exists(Path) ->
 ensure_dir(Path) -> strikead_io:apply_io(filelib, ensure_dir, [Path]).
 
 mkdirs(Path) -> ensure_dir(filename:join(Path, "X")).
+
+-spec read_terms/1 :: (file:name()) ->   {ok, [term()]} | strikead_io:posix_error().
+read_terms(Filename) -> strikead_io:apply_io(file, consult, [Filename]).
 
 write_terms(File, L) when is_list(L) ->
 	R = do([error_m ||

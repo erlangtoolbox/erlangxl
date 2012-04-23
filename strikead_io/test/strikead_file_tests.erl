@@ -27,4 +27,5 @@ copy_recursive_test() ->
 write_terms_test() ->
 	os:cmd("rm -rf /tmp/test"),
 	?assertEqual(ok, strikead_file:write_terms("/tmp/test/x", a)),
+	?assertEqual({ok, [a]}, strikead_file:read_terms("/tmp/test/x")),
 	os:cmd("rm -rf /tmp/test").
