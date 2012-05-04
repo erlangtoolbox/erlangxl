@@ -2,8 +2,9 @@
 
 -include_lib("yaws/include/yaws_api.hrl").
 
--export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2,
-	errors/1, parse_params/1, log/3, clear_parse_caches/0, convert/2]).
+-export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1,
+	parse_params/1, log/3, clear_parse_caches/0, convert/2,
+	find_cookie/2, find_cookie/3]).
 
 get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
 
@@ -102,3 +103,18 @@ clear_parse_caches() ->
 	erase(query_parse),
 	erase(post_parse),
 	ok.
+
+-spec find_cookie/3 :: (string(), #arg{}, fun(() -> any()) | term()) -> any().
+find_cookie(Name, Args, Default) ->
+	case find_cookie(Name, Args) of
+		nothing when is_function(Default) -> Default();
+		nothing -> Default;
+		{ok, X} -> X
+	end.
+
+-spec find_cookie/2 :: (string(), #arg{}) -> string().
+find_cookie(Name, Args) ->
+	case yaws_api:find_cookie_val(Name, Args#arg.headers#headers.cookie) of
+		"" -> nothing;
+		Value -> {ok, Value}
+	end.
