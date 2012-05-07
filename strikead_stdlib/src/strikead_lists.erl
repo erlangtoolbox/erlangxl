@@ -1,7 +1,7 @@
 -module(strikead_lists).
 
 -export([find/2, first/1, emap/2, mapfilter/2, index/2, keypsort/3,
-	sublistmatch/2, substitute/3, keyfind/3, keyfind/4]).
+	sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3]).
 
 -type listmap(A,B) :: [{A, B}].
 -type listmap_at() :: listmap(atom(),
@@ -102,3 +102,9 @@ keyfind(Key, N , List) ->
 		false -> undefined;
 		X -> {ok, X}
 	end.
+
+-spec keyreplace/3 :: (pos_integer(), [tuple()], [tuple()]) -> [tuple()].
+keyreplace(_N, List, [])  -> List;
+keyreplace(N, List, [R | ReplList]) ->
+	keyreplace(N, lists:keyreplace(element(N, R), N, List, R), ReplList).
+
