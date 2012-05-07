@@ -9,16 +9,16 @@
 -export_types([listmap/2, listmap_at/0]).
 
 -spec find/2 :: (fun((term()) -> boolean()), [term()])
-	-> strikead_maybe_m:monad(term()).
-find(_Pred, []) -> nothing;
+	-> maybe_m:monad(term()).
+find(_Pred, []) -> undefined;
 find(Pred, [H|T]) ->
 	case Pred(H) of
 		true -> {ok, H};
 		_ -> find(Pred, T)
 	end.
 
--spec first/1 :: ([term()]) -> strikead_maybe_m:monad(term()).
-first([]) -> nothing;
+-spec first/1 :: ([term()]) -> maybe_m:monad(term()).
+first([]) -> undefined;
 first([H|_]) -> {ok, H}.
 
 -spec emap/2 :: (fun((term()) -> error_m:monad(term())), [term()])
@@ -38,11 +38,11 @@ emap(F, Acc, [H|T]) ->
 mapfilter(F, L) -> mapfilter([], F, L).
 
 -spec mapfilter/3 :: ([term()],
-	fun((term()) -> strikead_maybe_m:monad(term())), [term()]) -> [term()].
+	fun((term()) -> maybe_m:monad(term())), [term()]) -> [term()].
 mapfilter(Acc, _F, []) -> lists:reverse(Acc);
 mapfilter(Acc, F, [H | T]) ->
 	case F(H) of
-		nothing -> mapfilter(Acc, F, T);
+		undefined -> mapfilter(Acc, F, T);
 		{ok, X} -> mapfilter([X | Acc], F, T)
 	end.
 
@@ -51,19 +51,19 @@ mapfilter(Acc, F, [H | T]) ->
 keypsort(Keys, N, L) ->
 	C = fun(A, B) ->
 		case {index(element(N, A), Keys), index(element(N, B), Keys)} of
-			{nothing, _} -> true;
-			{_, nothing} -> false;
+			{undefined, _} -> true;
+			{_, undefined} -> false;
 			{{ok, I1}, {ok, I2}} -> I1 =< I2
 		end
 	end,
 	lists:sort(C, L).
 
--spec index/2 :: (term(), [term()]) -> strikead_maybe_m:monad(integer()).
+-spec index/2 :: (term(), [term()]) -> maybe_m:monad(integer()).
 index(X, L) -> index(X, 1, L).
 
 -spec index/3 :: (term(), integer(), [term()])
-	-> strikead_maybe_m:monad(integer()).
-index(_X, _I, []) -> nothing;
+	-> maybe_m:monad(integer()).
+index(_X, _I, []) -> undefined;
 index(X, I, [X | _]) -> {ok, I};
 index(X, I, [_ | T]) -> index(X, I + 1, T).
 
@@ -93,13 +93,12 @@ substitute(Pattern, Map, StringHandler) ->
 keyfind(Key, N , List, Default) ->
 	case keyfind(Key, N, List) of
 		{ok, X} -> X;
-		nothing -> Default
+		undefined -> Default
 	end.
 
--spec keyfind/3 :: (term(), integer(), [tuple()]) ->
-	strikead_maybe_m:monad(tuple()).
+-spec keyfind/3 :: (term(), integer(), [tuple()]) -> maybe_m:monad(tuple()).
 keyfind(Key, N , List) ->
 	case lists:keyfind(Key, N, List) of
-		false -> nothing;
+		false -> undefined;
 		X -> {ok, X}
 	end.

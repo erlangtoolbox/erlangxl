@@ -107,14 +107,14 @@ clear_parse_caches() ->
 -spec find_cookie/3 :: (string(), #arg{}, fun(() -> any()) | term()) -> any().
 find_cookie(Name, Args, Default) ->
 	case find_cookie(Name, Args) of
-		nothing when is_function(Default) -> Default();
-		nothing -> Default;
+		undefined when is_function(Default) -> Default();
+		undefined -> Default;
 		{ok, X} -> X
 	end.
 
--spec find_cookie/2 :: (string(), #arg{}) -> string().
+-spec find_cookie/2 :: (string(), #arg{}) -> maybe_m:monad(string()).
 find_cookie(Name, Args) ->
 	case yaws_api:find_cookie_val(Name, Args#arg.headers#headers.cookie) of
-		"" -> nothing;
+		"" -> undefined;
 		Value -> {ok, Value}
 	end.
