@@ -15,3 +15,6 @@ substitute_test() ->
 	?assertEqual("http://strikead.com?a=a%2bb",
 	strikead_url:substitute("http://strikead.com?a={a}",[{a, "a+b"}])).
 
+domain_test() ->
+	?assertEqual("strikead.com", strikead_url:domain(2, "www.strikead.com")),
+	?assertEqual("localhost", strikead_url:domain(2, "localhost")).

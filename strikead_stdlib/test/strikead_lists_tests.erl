@@ -47,3 +47,10 @@ keyfind_test() ->
 keyreplace_test() ->
 	?assertEqual([{x, 1}, {y, 2}, {z, 3}],
 		strikead_lists:keyreplace(1, [{x, a}, {y, b}, {z, 3}], [{x, 1}, {y, 2}])).
+
+split_test() ->
+	?assertEqual({[1,2], [3,4]}, strikead_lists:split(2, [1,2,3,4])),
+	?assertEqual({[1,2], []}, strikead_lists:split(2, [1,2])),
+	?assertEqual({[1], []}, strikead_lists:split(2, [1])).
+
+

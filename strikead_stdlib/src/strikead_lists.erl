@@ -1,6 +1,6 @@
 -module(strikead_lists).
 
--export([find/2, first/1, emap/2, mapfilter/2, index/2, keypsort/3,
+-export([find/2, first/1, emap/2, mapfilter/2, index/2, split/2, keypsort/3,
 	sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3]).
 
 -type listmap(A,B) :: [{A, B}].
@@ -108,3 +108,6 @@ keyreplace(_N, List, [])  -> List;
 keyreplace(N, List, [R | ReplList]) ->
 	keyreplace(N, lists:keyreplace(element(N, R), N, List, R), ReplList).
 
+-spec split/2 :: (pos_integer(), [term()]) -> {[term()], [term()]}.
+split(Pos, List) when length(List) > Pos -> lists:split(Pos, List);
+split(_, List) -> {List, []}.

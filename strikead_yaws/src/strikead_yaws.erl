@@ -4,7 +4,7 @@
 
 -export([get/1, get/2, any/2, as/2, opt/1, opt/2, opt/3, params/2, errors/1,
 	parse_params/1, log/3, clear_parse_caches/0, convert/2,
-	find_cookie/2, find_cookie/3]).
+	find_cookie/2, find_cookie/3, host/1]).
 
 get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
 
@@ -118,3 +118,7 @@ find_cookie(Name, Args) ->
 		"" -> undefined;
 		Value -> {ok, Value}
 	end.
+
+-spec host/1 :: (#arg{}) -> string().
+host(Args) -> (yaws_api:redirect_self(Args))#redir_self.host.
+
