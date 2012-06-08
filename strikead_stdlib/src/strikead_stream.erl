@@ -1,7 +1,10 @@
 -module(strikead_stream).
 
--export([stream/2, map/2, foreach/2, seq/2, foldl/3, filter/2, to_list/1, to_stream/1, to_pair/1, mapfind/2, empty/0]).
+-export([stream/2, map/2, foreach/2, seq/2, foldl/3, filter/2, to_list/1,
+	to_stream/1, to_pair/1, mapfind/2, empty/0]).
 -export([ifoldl/3]).
+
+-opaque stream() :: fun().
 
 stream(Context, Next) -> 
 	fun() -> 
@@ -72,13 +75,14 @@ to_stream(L) when is_list(L) -> stream(L,
         ([H|T]) -> {H, T}
     end).
 
+-spec mapfind/2 :: (fun((any()) -> maybe_m:monad(any())), stream()) -> maybe_m:monad(any()).
 mapfind(F, S) ->
     case S() of
-        [] -> not_found;
+        [] -> undefined;
         [H | T] ->
             case F(H) of
-                false -> mapfind(F, T);
-                R -> R
+                undefined -> mapfind(F, T);
+				R -> R
             end
     end.
 
