@@ -26,7 +26,6 @@ get(Name, Message) ->
 -spec list/1 :: (atom()) -> extractor().
 list(Name) ->
 	fun(Args) ->
-		erlang:display(Args#arg.querydata),
 		case yaws_api:getvar(Args, Name) of
 			undefined -> {ok, {Name, []}};
 			{ok, X} -> {ok, {Name, [X]}};
