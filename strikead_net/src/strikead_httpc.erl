@@ -8,7 +8,7 @@
 %% -----------------------------------------------------------------------------
 %% API Function Exports
 %% -----------------------------------------------------------------------------
--export([start_link/2, stop/1, call/2]).
+-export([start_link/2, stop/1, call/2, post/4]).
 
 %% -----------------------------------------------------------------------------
 %% gen_server Function Exports
@@ -25,6 +25,10 @@ start_link(App, Profile) ->
 
 -spec stop/1 :: (atom()) -> ok.
 stop(Profile) -> gen_server:cast(Profile, stop).
+
+-spec post/4 :: (atom(), string(), string(), string() | binary()) ->
+	error_m:monad({integer(), string(), string()}).
+post(Profile, Url, ContentType, Body) -> gen_server:call(Profile, {post, Url, ContentType, Body}).
 
 -spec call/2 :: (atom(), string()) -> error_m:monad(tuple()).
 call(Profile, Url) -> gen_server:call(Profile, {call, Url}).
@@ -53,6 +57,13 @@ handle_call({call, Url}, _From,
 	State=#state{profile=Profile, request_opts=Opts}) ->
 	Result = case httpc:request(get, {Url, []}, Opts, [], Profile) of
 		{ok, {{_, Code, Reason},_, _}} -> {ok, {Code, Reason}};
+		E = {error, _} -> E
+	end,
+	{reply, Result, State};
+handle_call({post, Url, ContentType, RequestBody}, _From,
+	State=#state{profile=Profile, request_opts=Opts}) ->
+	Result = case httpc:request(post, {Url, [], ContentType, RequestBody}, Opts, [], Profile) of
+		{ok, {{_, Code, Reason}, _, Body}} -> {ok, {Code, Reason, Body}};
 		E = {error, _} -> E
 	end,
 	{reply, Result, State};
