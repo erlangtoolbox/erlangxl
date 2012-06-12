@@ -1,0 +1,1 @@
+-record(http_response, {code, reason, content_type, content}).

@@ -1,12 +1,12 @@
 -module(strikead_lists).
 
 -export([find/2, first/1, emap/2, mapfilter/2, index/2, split/2, keypsort/3,
-	sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3]).
+	sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
+	kvfind/3]).
 
--type listmap(A,B) :: [{A, B}].
--type listmap_at() :: listmap(atom(),
-		atom() | binary() | string() | integer() | float()).
--export_types([listmap/2, listmap_at/0]).
+-type kvlist(A,B) :: [{A, B}].
+-type kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float()).
+-export_types([kvlist/2, kvlist_at/0]).
 
 -spec find/2 :: (fun((term()) -> boolean()), [term()])
 	-> maybe_m:monad(term()).
@@ -46,7 +46,7 @@ mapfilter(Acc, F, [H | T]) ->
 		{ok, X} -> mapfilter([X | Acc], F, T)
 	end.
 
--spec keypsort/3 :: ([term()], integer(), listmap(term(), term()))
+-spec keypsort/3 :: ([term()], integer(), kvlist(term(), term()))
 	-> [{term(), term()}].
 keypsort(Keys, N, L) ->
 	C = fun(A, B) ->
@@ -67,7 +67,7 @@ index(_X, _I, []) -> undefined;
 index(X, I, [X | _]) -> {ok, I};
 index(X, I, [_ | T]) -> index(X, I + 1, T).
 
--spec sublistmatch/2 :: (listmap_at(), listmap_at()) -> boolean().
+-spec sublistmatch/2 :: (kvlist_at(), kvlist_at()) -> boolean().
 sublistmatch(Pattern, Map) ->
 	lists:all(fun({Pk, Pv}) ->
 		case lists:keyfind(Pk, 1, Map) of
@@ -78,8 +78,8 @@ sublistmatch(Pattern, Map) ->
 		end
 	end, Pattern).
 
--spec substitute/3 :: ([term()], listmap_at(),
-	StringHandler :: fun((string(), listmap_at()) -> string())) -> [term()].
+-spec substitute/3 :: ([term()], kvlist_at(),
+	StringHandler :: fun((string(), kvlist_at()) -> string())) -> [term()].
 substitute(Pattern, Map, StringHandler) ->
 	lists:map(fun(X) ->
 		case lists:keyfind(X, 1, Map) of
@@ -89,18 +89,32 @@ substitute(Pattern, Map, StringHandler) ->
 		end
 	end, Pattern).
 
--spec keyfind/4 :: (term(), integer(), [tuple()], tuple()) -> tuple().
+-spec keyfind/4 :: (term(), pos_integer(), [tuple()], tuple()) -> tuple().
 keyfind(Key, N , List, Default) ->
 	case keyfind(Key, N, List) of
 		{ok, X} -> X;
 		undefined -> Default
 	end.
 
--spec keyfind/3 :: (term(), integer(), [tuple()]) -> maybe_m:monad(tuple()).
+-spec keyfind/3 :: (term(), pos_integer(), [tuple()]) -> maybe_m:monad(tuple()).
 keyfind(Key, N , List) ->
 	case lists:keyfind(Key, N, List) of
 		false -> undefined;
 		X -> {ok, X}
+	end.
+
+-spec kvfind/3 :: (term(), kvlist(any(), any()), any()) -> any().
+kvfind(Key, List, Default) ->
+	case kvfind(Key, List) of
+		{ok, Value} -> Value;
+		undefined -> Default
+	end.
+
+-spec kvfind/2 :: (term(), kvlist(any(), any())) -> maybe_m:monad(any()).
+kvfind(Key, List) ->
+	case keyfind(Key, 1, List) of
+		{ok, {_, Value}} -> {ok, Value};
+		X -> X
 	end.
 
 -spec keyreplace/3 :: (pos_integer(), [tuple()], [tuple()]) -> [tuple()].

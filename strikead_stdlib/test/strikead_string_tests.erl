@@ -40,3 +40,9 @@ to_string_test() ->
 
 to_atom_test() ->
 	?assertEqual(atomAB1, strikead_string:to_atom([atom, "AB", 1])).
+
+equal_ignore_case_test() ->
+	?assert(strikead_string:equal_ignore_case(<<"A">>, <<"a">>)),
+	?assert(strikead_string:equal_ignore_case("A", "a")),
+	?assert(strikead_string:equal_ignore_case(<<"A">>, "a")),
+	?assert(strikead_string:equal_ignore_case("A", <<"a">>)).

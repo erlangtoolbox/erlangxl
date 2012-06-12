@@ -1,6 +1,7 @@
 -module(strikead_httpc).
 
 -include_lib("strikead_stdlib/include/gen_server_specs.hrl").
+-include("strikead_httpc.hrl").
 
 -behaviour(gen_server).
 -compile({parse_transform, do}).
@@ -28,7 +29,8 @@ stop(Profile) -> gen_server:cast(Profile, stop).
 
 -spec post/4 :: (atom(), string(), string(), string() | binary()) ->
 	error_m:monad({integer(), string(), string()}).
-post(Profile, Url, ContentType, Body) -> gen_server:call(Profile, {post, Url, ContentType, Body}).
+post(Profile, Url, ContentType, Body) ->
+	gen_server:call(Profile, {post, Url, ContentType, Body}).
 
 -spec call/2 :: (atom(), string()) -> error_m:monad(tuple()).
 call(Profile, Url) -> gen_server:call(Profile, {call, Url}).
@@ -56,14 +58,21 @@ init({App, Profile}) ->
 handle_call({call, Url}, _From,
 	State=#state{profile=Profile, request_opts=Opts}) ->
 	Result = case httpc:request(get, {Url, []}, Opts, [], Profile) of
-		{ok, {{_, Code, Reason},_, _}} -> {ok, {Code, Reason}};
+		{ok, {{_, Code, Reason}, _, _}} ->
+			{ok, #http_response{code=Code, reason=Reason}};
 		E = {error, _} -> E
 	end,
 	{reply, Result, State};
 handle_call({post, Url, ContentType, RequestBody}, _From,
 	State=#state{profile=Profile, request_opts=Opts}) ->
 	Result = case httpc:request(post, {Url, [], ContentType, RequestBody}, Opts, [], Profile) of
-		{ok, {{_, Code, Reason}, _, Body}} -> {ok, {Code, Reason, Body}};
+		{ok, {{_, Code, Reason}, Headers, Body}} ->
+			{ok, #http_response{
+				code = Code,
+				reason = Reason,
+				content_type = strikead_lists:kvfind("content-type", Headers, undefined),
+				content = Body
+			}};
 		E = {error, _} -> E
 	end,
 	{reply, Result, State};

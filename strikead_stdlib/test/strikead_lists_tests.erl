@@ -44,6 +44,11 @@ substitute_test() ->
 keyfind_test() ->
 	?assertEqual({x,y}, strikead_lists:keyfind(z, 1, [], {x,y})).
 
+kvfind_test() ->
+	?assertEqual({ok, v}, strikead_lists:kvfind(k, [{k, v}])),
+	?assertEqual(undefined, strikead_lists:kvfind(z, [{k, v}])),
+	?assertEqual(y, strikead_lists:kvfind(z, [], y)).
+
 keyreplace_test() ->
 	?assertEqual([{x, 1}, {y, 2}, {z, 3}],
 		strikead_lists:keyreplace(1, [{x, a}, {y, b}, {z, 3}], [{x, 1}, {y, 2}])).

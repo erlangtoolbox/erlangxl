@@ -8,15 +8,15 @@ to_query(List) ->
 		[atom_to_list(Key) ++ "=" ++ escape(Value) || {Key, Value} <- List],
 	"&").
 
--spec escape_params/1 :: (strikead_lists:listmap_at())
-	-> strikead_lists:listmap_at().
+-spec escape_params/1 :: (strikead_lists:kvlist_at())
+	-> strikead_lists:kvlist_at().
 escape_params(List) ->
 	lists:map(fun({K, V}) -> {K, escape(V)} end, List).
 
 -spec escape/1 :: (term()) -> string().
 escape(V) -> edoc_lib:escape_uri(strikead_string:to_string(V)).
 
--spec substitute/2 :: (string(), strikead_lists:listmap_at()) -> string().
+-spec substitute/2 :: (string(), strikead_lists:kvlist_at()) -> string().
 substitute(Url, Map) ->
 	strikead_string:substitute(Url, escape_params(Map)).
 
