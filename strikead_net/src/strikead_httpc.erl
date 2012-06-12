@@ -59,7 +59,7 @@ handle_call({call, Url}, _From,
 	State=#state{profile=Profile, request_opts=Opts}) ->
 	Result = case httpc:request(get, {Url, []}, Opts, [], Profile) of
 		{ok, {{_, Code, Reason}, _, _}} ->
-			{ok, #http_response{code=Code, reason=Reason}};
+			{ok, #http_resp{code=Code, reason=Reason}};
 		E = {error, _} -> E
 	end,
 	{reply, Result, State};
@@ -67,7 +67,7 @@ handle_call({post, Url, ContentType, RequestBody}, _From,
 	State=#state{profile=Profile, request_opts=Opts}) ->
 	Result = case httpc:request(post, {Url, [], ContentType, RequestBody}, Opts, [], Profile) of
 		{ok, {{_, Code, Reason}, Headers, Body}} ->
-			{ok, #http_response{
+			{ok, #http_resp{
 				code = Code,
 				reason = Reason,
 				content_type = strikead_lists:kvfind("content-type", Headers, undefined),

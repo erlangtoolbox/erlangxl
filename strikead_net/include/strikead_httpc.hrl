@@ -1,1 +1,1 @@
--record(http_response, {code, reason, content_type, content}).
+-record(http_resp, {code, reason, content_type, content}).

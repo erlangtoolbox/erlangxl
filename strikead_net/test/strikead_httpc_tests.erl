@@ -9,7 +9,7 @@ call_test() ->
 	application:set_env(strikead_net_test, test, [{client, []}, {request, []}]),
 	?assertOk(strikead_httpc:start_link(strikead_net_test, test)),
 	try
-		?assertEqual({ok, #http_response{code=200, reason="OK"}},
+		?assertEqual({ok, #http_resp{code=200, reason="OK"}},
 			strikead_httpc:call(test, "http://strikead.com"))
 	after
 		strikead_httpc:stop(test),
