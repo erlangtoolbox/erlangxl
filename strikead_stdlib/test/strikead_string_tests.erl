@@ -38,8 +38,8 @@ to_string_test() ->
 	?assertEqual("x", strikead_string:to_string("x")),
 	?assertEqual("Y", strikead_string:to_string(<<"Y">>)).
 
-to_atom_test() ->
-	?assertEqual(atomAB1, strikead_string:to_atom([atom, "AB", 1])).
+mk_atom_test() ->
+	?assertEqual(atomAB1, strikead_string:mk_atom([atom, "AB", 1])).
 
 equal_ignore_case_test() ->
 	?assert(strikead_string:equal_ignore_case(<<"A">>, <<"a">>)),

@@ -1,8 +1,8 @@
 -module(strikead_string).
 
 -export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2,
-	to_float/1, substitute/2, to_string/1, to_atom/1, to_upper/1, to_lower/1,
-	equal_ignore_case/2, join/2, if_binary_to_list/1]).
+	to_float/1, substitute/2, to_string/1, mk_atom/1, to_upper/1, to_lower/1,
+	equal_ignore_case/2, join/2, to_list/1, to_atom/1]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
@@ -62,9 +62,9 @@ to_string(V) when is_list(V) -> V;
 to_string(V) when is_float(V); is_integer(V) -> format("~p", [V]);
 to_string(V) -> format("~p", [V]).
 
--spec to_atom/1 :: ([atom() | binary() | string() | float() | integer()]) ->
+-spec mk_atom/1 :: ([atom() | binary() | string() | float() | integer()]) ->
 	atom().
-to_atom(L) when is_list(L) ->
+mk_atom(L) when is_list(L) ->
 	list_to_atom(string:join([to_string(X) || X <- L], "")).
 
 -spec equal_ignore_case/2 :: (iostring(), iostring()) -> boolean().
@@ -89,9 +89,13 @@ to_upper(S) when is_list(S) -> string:to_upper(S).
 join(List, Delim) when is_binary(Delim) ->
 	list_to_binary(join(List, binary_to_list(Delim)));
 join(List, Delim) ->
-	string:join([if_binary_to_list(X) || X <- List], Delim).
+	string:join([to_list(X) || X <- List], Delim).
 
--spec if_binary_to_list/1 :: (iostring()) -> string().
-if_binary_to_list(S) when is_binary(S) -> binary_to_list(S);
-if_binary_to_list(S) -> S.
+-spec to_list/1 :: (iostring()) -> string().
+to_list(X) when is_binary(X) -> binary_to_list(X);
+to_list(X) when is_list(X) -> X.
 
+-spec to_atom/1 :: (iostring() | atom()) -> atom().
+to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
+to_atom(X) when is_list(X) -> list_to_atom(X);
+to_atom(X) when is_atom(X) -> X.

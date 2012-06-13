@@ -27,7 +27,7 @@ from_json(Value) ->
 
 -spec ktuo_transform/1 :: (any()) -> any().
 ktuo_transform({obj, X}) ->
-	[{list_to_atom(K), ktuo_transform(V)} || {K, V} <- X];
+	[{strikead_string:to_atom(K), ktuo_transform(V)} || {K, V} <- X];
 ktuo_transform(X) when is_list(X) ->
 	[ktuo_transform(V) || V <- X];
 ktuo_transform(null) -> undefined;
