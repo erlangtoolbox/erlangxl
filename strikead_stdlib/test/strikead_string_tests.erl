@@ -46,3 +46,9 @@ equal_ignore_case_test() ->
 	?assert(strikead_string:equal_ignore_case("A", "a")),
 	?assert(strikead_string:equal_ignore_case(<<"A">>, "a")),
 	?assert(strikead_string:equal_ignore_case("A", <<"a">>)).
+
+join_test() ->
+	?assertEqual(<<"aaa;bbb;ccc">>,
+		strikead_string:join([<<"aaa">>, "bbb", <<"ccc">>], <<";">>)),
+	?assertEqual("aaa;bbb;ccc",
+		strikead_string:join([<<"aaa">>, "bbb", <<"ccc">>], ";")).

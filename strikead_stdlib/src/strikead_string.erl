@@ -2,7 +2,7 @@
 
 -export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2,
 	to_float/1, substitute/2, to_string/1, to_atom/1, to_upper/1, to_lower/1,
-	equal_ignore_case/2]).
+	equal_ignore_case/2, join/2, if_binary_to_list/1]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
@@ -83,3 +83,15 @@ to_lower(S) when is_list(S) -> string:to_lower(S).
 -spec to_upper/1 :: (iostring()) -> iostring().
 to_upper(S) when is_binary(S) -> list_to_binary(to_upper(binary_to_list(S)));
 to_upper(S) when is_list(S) -> string:to_upper(S).
+
+%todo test performance of concatenating lists and binaries
+-spec join/2 :: ([iostring()], iostring()) -> iostring().
+join(List, Delim) when is_binary(Delim) ->
+	list_to_binary(join(List, binary_to_list(Delim)));
+join(List, Delim) ->
+	string:join([if_binary_to_list(X) || X <- List], Delim).
+
+-spec if_binary_to_list/1 :: (iostring()) -> string().
+if_binary_to_list(S) when is_binary(S) -> binary_to_list(S);
+if_binary_to_list(S) -> S.
+
