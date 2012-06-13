@@ -5,7 +5,9 @@
 
 get_test() ->
     ?assertEqual({[{a, "b"}],[]},
-		strikead_yaws:params([strikead_yaws:get(a)], mkargs())).
+		strikead_yaws:params([strikead_yaws:get(a)], mkargs())),
+    ?assertEqual({[],["Parameter 'x' must be present"]},
+		strikead_yaws:params([strikead_yaws:get(x)], mkargs())).
 
 opt_test() ->
     Args = mkargs(),
@@ -42,7 +44,13 @@ list_test() ->
 		strikead_yaws:params([strikead_yaws:list(x)], mkargs())).
 
 parse_params_test() ->
-    ?assertEqual([{a,"b"},{c,"d"}], strikead_yaws:parse_params(mkargs())).
+    ?assertEqual([{a ,"b"}, {c, "d"}], strikead_yaws:parse_params(mkargs())).
+
+params_test() ->
+    ?assertEqual({[{a, "b"},{c, "d"}], []}, strikead_yaws:params([
+		strikead_yaws:get(a),
+		strikead_yaws:get(c)
+	],mkargs())).
 
 mkargs(Query) ->
 	strikead_yaws:clear_parse_caches(),

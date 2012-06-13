@@ -10,7 +10,7 @@
 -type extractor() :: fun((#arg{}) -> error_m:monad(parameter())).
 
 -spec get/1 :: (atom()) -> extractor().
-get(Name) -> get(Name, io_lib:format("Parameter '~p' must be present", [Name])).
+get(Name) -> get(Name, strikead_string:format("Parameter '~p' must be present", [Name])).
 
 -spec get/2 :: (atom(), string()) -> extractor().
 get(Name, Message) ->
@@ -92,8 +92,10 @@ convert(F, ConvF) ->
 -spec params/2 :: ([extractor()], #arg{}) -> {[parameter()], [string()]}.
 params(Fs, Args) ->
     {Params, Errors} = lists:partition(
-		fun({X, _}) -> X == ok end,
-		lists:foldl(fun(F, Acc) -> [F(Args) | Acc] end, [], Fs)),
+		fun({X, _}) -> X == ok end, lists:reverse(
+			lists:foldl(fun(F, Acc) -> [F(Args) | Acc] end, [], Fs)
+		)
+	),
     {
 		lists:map(fun({_, P}) -> P end, Params),
 		lists:map(fun({_, E}) -> E end, Errors)
@@ -101,6 +103,7 @@ params(Fs, Args) ->
 
 -spec errors([string()]) -> [any()].
 errors(Errors) ->
+	error_logger:error_msg(strikead_string:join(Errors, "\n")),
 	[
 		{status, 400},
 		{ehtml, {html, [],
