@@ -6,11 +6,11 @@
 
 generic_test() ->
     R = #rec{},
-    ?assertEqual(R, rec:from_json(rec:to_json(R), rec)),
+    ?assertEqual({ok, R}, rec:from_json(rec:to_json(R), rec)),
 
     R2 = #rec2{opt_rec_def = R, opt_rec = R, opt_list_rec = [R, R]},
     erlang:display(rec:to_json(R2)),
-    ?assertEqual(R2, rec:from_json(rec:to_json(R2), rec2)).
+    ?assertEqual({ok, R2}, rec:from_json(rec:to_json(R2), rec2)).
 
 undefined_null_test() ->
     ?assertEqual("{\"a\":null}", rec:to_json(#simple{})),
@@ -18,8 +18,8 @@ undefined_null_test() ->
     ?assertEqual("{\"a\":null}", rec:to_json(#strnull{})),
     ?assertEqual("{\"a\":\"a\\nb\"}", rec:to_json(#strnull{a = <<"a\nb">>})),
     ?assertEqual("{\"a\":\"\"}", rec:to_json(#strnull{a = <<>>})),
-    ?assertEqual(#simple{}, rec:from_json(rec:to_json(#simple{}), simple)),
-    ?assertEqual(#nullobj{}, rec:from_json(rec:to_json(#nullobj{}), nullobj)).
+    ?assertEqual({ok, #simple{}}, rec:from_json(rec:to_json(#simple{}), simple)),
+    ?assertEqual({ok, #nullobj{}}, rec:from_json(rec:to_json(#nullobj{}), nullobj)).
 
 
 tuple_test() ->

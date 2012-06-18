@@ -53,7 +53,11 @@ generate_module(Records, Name, Out) ->
         file:write(Out, "-export([to_json/1, from_json/2]).\n\n"),
         file:write(Out, "to_json(undefined) -> \"null\";\n\n"),
         generate_to_json(Records, Out),
-        file:write(Out, "from_json(Json, Record) when is_list(Json); is_binary(Json) -> {J, _, _} = ktj_parse:parse(Json), from_json_(J, Record).\n\n"),
+        file:write(Out, "from_json(Json, Record) when is_list(Json); is_binary(Json) ->\n"
+			"case ktj_parse:parse(Json) of\n"
+				"{J, _, _} -> {ok, from_json_(J, Record)};\n"
+				"X -> X\n"
+			"end.\n\n"),
         file:write(Out, "from_json_(undefined, _Record)  -> undefined;\n\n"),
         generate_from_json(Records, Out)
     ]).
@@ -62,9 +66,9 @@ generate_to_json([], Out) -> file:write(Out, "to_json(X) -> error({badarg, X}).\
 generate_to_json([{Name, Fields} | T], Out) ->
     do([error_m ||
         io:format(Out, "to_json(R=#~p{}) -> \n", [Name]),
-        file:write(Out, "\"{\"++"),
+        file:write(Out, "string:join([\"{\","),
         generate_to_json_fields(Name, Fields, Out),
-        file:write(Out, "++\"}\";\n\n"),
+        file:write(Out, "\"}\"],\"\");\n\n"),
         generate_to_json(T, Out)
     ]).
 
@@ -72,9 +76,9 @@ generate_to_json([{Name, Fields} | T], Out) ->
 generate_to_json_fields(_RecordName, [], _Out) -> ok;
 generate_to_json_fields(RecordName, [Field={Name, _, _} | Fields], Out) ->
     do([error_m ||
-		io:format(Out, "\"\\\"~p\\\":\" ++ ", [Name]),
+		io:format(Out, "\"\\\"~p\\\":\", ", [Name]),
         generate_to_json_field(RecordName, Field, Out),
-        file:write(Out, sep(Fields, "++ \",\" ++\n", "\n")),
+        file:write(Out, sep(Fields, ", \",\",\n", ",\n")),
         generate_to_json_fields(RecordName, Fields, Out)
     ]).
 
