@@ -96,7 +96,7 @@ to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
 to_atom(X) when is_list(X) -> list_to_atom(X);
 to_atom(X) when is_atom(X) -> X.
 
--spec to_binary/1 :: (iostring() | atom) -> binary().
+-spec to_binary/1 :: (iostring() | atom()) -> binary().
 to_binary(X) when is_atom(X) -> atom_to_binary(X, utf8);
 to_binary(X) when is_list(X) -> list_to_binary(X);
 to_binary(X) when is_binary(X) -> X.
