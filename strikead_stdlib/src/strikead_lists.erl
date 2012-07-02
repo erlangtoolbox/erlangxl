@@ -1,6 +1,6 @@
 -module(strikead_lists).
 
--export([find/2, first/1, emap/2, mapfilter/2, index/2, split/2, keypsort/3,
+-export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
 	sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
 	kvfind/3]).
 
@@ -31,6 +31,15 @@ emap(_F, Acc, []) -> {ok, lists:reverse(Acc)};
 emap(F, Acc, [H|T]) ->
 	case F(H) of
 		{ok, R} -> emap(F, [R|Acc], T);
+		X -> X
+	end.
+
+-spec eforeach(fun((any()) -> error_m:monad(any())), []) -> error_m:monad(ok).
+eforeach(_F, []) -> ok;
+eforeach(F, [H|T]) ->
+	case F(H) of
+		ok -> eforeach(F, T);
+		{ok, _} -> eforeach(F, T);
 		X -> X
 	end.
 

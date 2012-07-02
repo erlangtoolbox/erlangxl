@@ -15,6 +15,14 @@ emap_test() ->
     ?assertEqual({error, nope},
 		strikead_lists:emap(fun(X) -> X end, L2)).
 
+eforeach_test() ->
+	L1 = [{ok, 1}, {ok, 2}, {ok, 3}],
+    ?assertEqual(ok,
+		strikead_lists:eforeach(fun(X) -> X end, L1)),
+	L2 = [{ok, 1}, {error, nope}, {ok, 3}],
+    ?assertEqual({error, nope},
+		strikead_lists:eforeach(fun(X) -> X end, L2)).
+
 mapfilter_test() ->
 	L = [1, 2, 3, 4, 5],
 	?assertEqual([4, 16],
