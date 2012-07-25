@@ -2,7 +2,7 @@
 
 -export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
 	sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
-	kvfind/3]).
+	kvfind/3, keyreplace_or_add/3]).
 
 -type kvlist(A,B) :: [{A, B}].
 -type kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float()).
@@ -130,6 +130,13 @@ kvfind(Key, List) ->
 keyreplace(_N, List, [])  -> List;
 keyreplace(N, List, [R | ReplList]) ->
 	keyreplace(N, lists:keyreplace(element(N, R), N, List, R), ReplList).
+
+-spec keyreplace_or_add/3 :: (pos_integer(), [tuple()], tuple()) -> [tuple()].
+keyreplace_or_add(N, List, Tuple) when is_tuple(Tuple) ->
+	case lists:keymember(element(N, Tuple), N, List) of
+		true -> lists:keyreplace(element(N, Tuple), N, List, Tuple);
+		false -> [Tuple| List]
+	end.
 
 -spec split/2 :: (pos_integer(), [term()]) -> {[term()], [term()]}.
 split(Pos, List) when length(List) > Pos -> lists:split(Pos, List);
