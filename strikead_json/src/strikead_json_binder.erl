@@ -59,8 +59,9 @@ generate_module(Records, Name, Out) ->
 				"X -> X\n"
 			"end.\n\n"),
         file:write(Out, "from_json_(undefined, _Record)  -> undefined;\n\n"),
-        generate_from_json(Records, Out)
-    ]).
+        generate_from_json(Records, Out),
+		file:write(Out, "from_json_(X, Y) -> error(badarg, [X,Y]).\n\n")
+	]).
 
 generate_to_json([], Out) -> file:write(Out, "to_json(X) -> error({badarg, X}).\n\n");
 generate_to_json([{Name, Fields} | T], Out) ->
@@ -118,7 +119,8 @@ generate_from_json([{Name, Fields} | T], Out) ->
         io:format(Out,"from_json_(J, ~p) -> \n", [Name]),
         io:format(Out, "#~p{", [Name]),
         generate_from_json_fields(Fields, Out),
-        file:write(Out, sep(T, "};\n\n", "}.\n\n")),
+%        file:write(Out, sep(T, "};\n\n", "}.\n\n")),
+        file:write(Out,  "};\n\n"),
         generate_from_json(T, Out)
     ]).
 
@@ -131,24 +133,20 @@ generate_from_json_fields([Field | Fields], Out) ->
     ]).
 
 
-generate_from_json_field({Name, string, _}, Out) ->
+generate_from_json_field({Name, Type, {optional, Default}}, Out)
+	when Type == string; Type == integer; Type == float; Type == boolean;
+		Type == {list, string}; Type == {list, integer}; Type == {list, float};
+		Type == {list, boolean} ->
+	io:format(Out, "~p = strikead_json:ktuo_find(~p, J, ~p)",[Name, Name, Default]);
+generate_from_json_field({Name, Type, required }, Out)
+	when Type == string; Type == integer; Type == float; Type == boolean;
+		Type == {list, string}; Type == {list, integer}; Type == {list, float};
+		Type == {list, boolean} ->
 	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
-generate_from_json_field({Name, integer, _}, Out) ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
-generate_from_json_field({Name, float, _}, Out) ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
-generate_from_json_field({Name, boolean, _}, Out) ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
-generate_from_json_field({Name, {list, string}, _}, Out) ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
-generate_from_json_field({Name, {list, integer}, _}, Out) ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
-generate_from_json_field({Name, {list, float}, _}, Out) ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
-generate_from_json_field({Name, {list, boolean}, _}, Out) ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
-generate_from_json_field({Name, {list, Rec}, _}, Out) ->
+generate_from_json_field({Name, {list, Rec}, {optional, Default}}, Out) ->
+	io:format(Out, "~p = [from_json_(O, ~p) || O <- strikead_json:ktuo_find(~p, J, ~p)]",[Name, Rec, Name, Default]);
+generate_from_json_field({Name, {list, Rec}, required}, Out) ->
 	io:format(Out, "~p = [from_json_(O, ~p) || O <- strikead_json:ktuo_find(~p, J)]",[Name, Rec, Name]);
-generate_from_json_field({Name, Rec, _ }, Out) ->
+generate_from_json_field({Name, Rec, _}, Out) ->
 	io:format(Out, "~p = from_json_(strikead_json:ktuo_find(~p, J), ~p)",[Name, Name, Rec]);
 generate_from_json_field(Field, _Out) -> {error, {dont_understand, Field}}.

@@ -18,3 +18,20 @@
 {tupleobj, [{a, custom, required}]}.
 
 {strnull, [{a, string, required}]}.
+
+{insertion_order, [
+	{id, string, required},
+	{name, string, required},
+	{total_budget, float, required},
+	{creatives, {list, creative}, {optional, []}}
+]}.
+
+{creative, [
+	{id, string, required},
+	{type, string, required},
+	{width, integer, required},
+	{height, integer, required},
+	{image_url, string, required},
+	{click_url, string, required},
+	{landing_url, string, {optional, undefined}}
+]}.

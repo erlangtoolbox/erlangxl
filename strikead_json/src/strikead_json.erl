@@ -2,7 +2,7 @@
 
 -export([to_json/1, from_json/1]).
 %%binder rt
--export([ktuo_find/2]).
+-export([ktuo_find/2, ktuo_find/3]).
 
 -spec to_json/1 :: (Param) -> string()
 	when Param :: (binary() | atom() | number() | [Param] | [{Param, Param}]).
@@ -34,11 +34,13 @@ ktuo_transform(null) -> undefined;
 ktuo_transform(X) -> X.
 
 -spec ktuo_find/2 :: (atom(), {obj, [{binary(), term()}]}) -> term().
-ktuo_find(_Field, undefined) -> undefined;
-ktuo_find(Field, {obj, Fields}) when is_list(Fields) ->
+ktuo_find(Field, Obj) -> ktuo_find(Field, Obj, undefined).
+
+-spec ktuo_find/3 :: (atom(), {obj, [{binary(), term()}]}, term()) -> term().
+ktuo_find(_Field, undefined, Default) -> Default;
+ktuo_find(Field, {obj, Fields}, Default) when is_list(Fields) ->
 	case strikead_lists:kvfind(atom_to_binary(Field, utf8), Fields) of
 		{ok, null} -> undefined;
 		{ok, V} -> V;
-		_ -> undefined
+		_ -> Default
 	end.
-
