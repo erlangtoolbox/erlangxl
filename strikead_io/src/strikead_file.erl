@@ -7,9 +7,9 @@
 -behaviour(strikead_autoresource).
 -export([auto_open/1, auto_close/1, using/3]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
-	read_terms/1]).
+	read_terms/1, read_files/1]).
 -export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
-	list_dir/1, copy/2, open/2, close/1]).
+	list_dir/1, copy/2, open/2, close/1, change_mode/2]).
 
 
 list_dir(Dir, Filter) when is_function(Filter) ->
@@ -111,6 +111,16 @@ close(Fd) -> strikead_io:apply_io(file, close, [Fd]).
 delete(Path) -> strikead_io:apply_io(file, delete, [Path]).
 make_symlink(Target, Link) -> strikead_io:apply_io(file, make_symlink, [Target, Link]).
 read_file_info(Path) -> strikead_io:apply_io(file, read_file_info, [Path]).
+change_mode(Path, Mode) -> strikead_io:apply_io(file, change_mode, [Path, Mode]).
+
+-spec read_files/1 :: ([string()]) -> error_m:monad([{string(), binary()}]).
+read_files(Wildcards) ->
+	strikead_lists:emap(fun(Name) ->
+		case read_file(Name) of
+			{ok, Bin} -> {lists:last(filename:split(Name)), Bin};
+			E -> E
+		end
+	end, [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)]).
 
 %%
 % autoresource

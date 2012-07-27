@@ -29,3 +29,4 @@ write_terms_test() ->
 	?assertEqual(ok, strikead_file:write_terms("/tmp/test/x", a)),
 	?assertEqual({ok, [a]}, strikead_file:read_terms("/tmp/test/x")),
 	os:cmd("rm -rf /tmp/test").
+
