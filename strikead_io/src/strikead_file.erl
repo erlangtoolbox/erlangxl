@@ -117,7 +117,7 @@ change_mode(Path, Mode) -> strikead_io:apply_io(file, change_mode, [Path, Mode])
 read_files(Wildcards) ->
 	strikead_lists:emap(fun(Name) ->
 		case read_file(Name) of
-			{ok, Bin} -> {lists:last(filename:split(Name)), Bin};
+			{ok, Bin} -> {ok, {lists:last(filename:split(Name)), Bin}};
 			E -> E
 		end
 	end, [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)]).
