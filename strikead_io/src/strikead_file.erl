@@ -9,7 +9,7 @@
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
     read_terms/1, read_files/1]).
 -export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
-    list_dir/1, copy/2, open/2, close/1, change_mode/2]).
+    list_dir/1, copy/2, open/2, close/1, change_mode/2, read_file_info/1]).
 
 
 list_dir(Dir, Filter) when is_function(Filter) ->
