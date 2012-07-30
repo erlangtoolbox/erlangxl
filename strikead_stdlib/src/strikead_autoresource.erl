@@ -7,3 +7,7 @@ behaviour_info(callbacks) ->
      {auto_close,1}];
 
 behaviour_info(_) -> undefined.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

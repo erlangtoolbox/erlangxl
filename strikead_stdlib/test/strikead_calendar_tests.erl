@@ -8,3 +8,7 @@ add_test() ->
 format_test() ->
     ?assertEqual("Sun, 01-Feb-1970 00:00:01 GMT", strikead_calendar:format("EEE, dd-MMM-yyyy HH:mm:ss GMT", {{1970,2,1},{0,0,1}})),
     ?assertEqual("1970-02-01 00:00:01", strikead_calendar:format("yyyy-MM-dd HH:mm:ss", {{1970,2,1},{0,0,1}})).
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

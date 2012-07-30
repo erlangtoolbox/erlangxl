@@ -2,8 +2,13 @@
  [{description, "net libraries"},
   {vsn,"0.1.0"},
   {applications, [
-  	kernel,
-  	stdlib,
-  	strikead_stdlib
-  	]}
+      kernel,
+      stdlib,
+      strikead_stdlib
+      ]}
  ]}.
+
+% Local Variables:
+% Mode: erlang
+% indent-tabs-mode: nil
+% End:

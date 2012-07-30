@@ -17,3 +17,7 @@ parse_item(Acc, [C | T]) -> parse_item([C | Acc], T).
 
 
 lines(S) -> strikead_stream:map(fun(L) -> parse_line(L) end, S).
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

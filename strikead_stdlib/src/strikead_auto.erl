@@ -9,11 +9,15 @@
 
 using(Module, Params, F) ->
     case Module:auto_open(Params) of
-		{ok, Descriptor} ->
-			try
+        {ok, Descriptor} ->
+            try
                 {ok, F(Descriptor)}
-			after
-				Module:auto_close(Descriptor)
-			end;
-		X -> X
-	end.
+            after
+                Module:auto_close(Descriptor)
+            end;
+        X -> X
+    end.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

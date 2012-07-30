@@ -50,3 +50,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

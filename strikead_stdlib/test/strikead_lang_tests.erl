@@ -13,3 +13,7 @@ to_left_test() ->
     ?assertEqual({left, left}, strikead_lang:to_left(badarg, left)),
     ?assertEqual({right, ok}, strikead_lang:to_left({right,ok}, left)),
     ?assertEqual({left, left}, strikead_lang:to_left({left, notok}, left)).
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

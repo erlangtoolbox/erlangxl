@@ -5,7 +5,7 @@
 %  password: ftpus3r
 %  home: /home/ftpuser
 %  files: test/test1.csv == <<"test1, data1, values1\n">>
-%         test/test2.csv == <<"test2, data2, values2\n">> 
+%         test/test2.csv == <<"test2, data2, values2\n">>
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("strikead_eunit/include/strikead_eunit.hrl").
@@ -22,35 +22,35 @@ apply_test(Function) ->
 test_nlist_filter() ->
     apply_test(fun(Pid) ->
         ?assertEqual({ok, ["ftp-test/test1.csv","ftp-test/test2.csv"]},
-		     strikead_ftp:nlist_filter(Pid, "ftp-test",  "*.csv"))
+             strikead_ftp:nlist_filter(Pid, "ftp-test",  "*.csv"))
     end).
 
 test_nlist_find() ->
     apply_test(fun(Pid) ->
-	ok = strikead_ftp:cd(Pid, "ftp-test"),
+    ok = strikead_ftp:cd(Pid, "ftp-test"),
         ?assertEqual({ok, "test2.csv"}, strikead_ftp:find(Pid,  "*2.csv"))
     end).
 
 test_download() ->
     apply_test(fun(Pid) ->
-	ok = strikead_ftp:cd(Pid, "ftp-test"),
-	strikead_file:delete("/tmp/test/test1.csv"),
-	strikead_file:delete("/tmp/test/test2.csv"),
- 	?assertEqual(ok, strikead_ftp:download(Pid, "/tmp/test", ["test1.csv", "test2.csv"])),
-	?assert(strikead_file:exists("/tmp/test/test1.csv")),
-	?assert(strikead_file:exists("/tmp/test/test2.csv"))
+    ok = strikead_ftp:cd(Pid, "ftp-test"),
+    strikead_file:delete("/tmp/test/test1.csv"),
+    strikead_file:delete("/tmp/test/test2.csv"),
+     ?assertEqual(ok, strikead_ftp:download(Pid, "/tmp/test", ["test1.csv", "test2.csv"])),
+    ?assert(strikead_file:exists("/tmp/test/test1.csv")),
+    ?assert(strikead_file:exists("/tmp/test/test2.csv"))
     end).
 
 test_recv() ->
     apply_test(fun(Pid) ->
-	strikead_file:delete("/tmp/test/test1.csv"),
-	?assertEqual(ok, strikead_ftp:recv(Pid, "ftp-test/test1.csv", "/tmp/test/test1.csv")),
-	?assert(strikead_file:exists("/tmp/test/test1.csv"))
+    strikead_file:delete("/tmp/test/test1.csv"),
+    ?assertEqual(ok, strikead_ftp:recv(Pid, "ftp-test/test1.csv", "/tmp/test/test1.csv")),
+    ?assert(strikead_file:exists("/tmp/test/test1.csv"))
     end).
 
 test_recv_bin() ->
     apply_test(fun(Pid) ->
-	?assertEqual({ok, <<"test1, data1, values1\n">>}, strikead_ftp:recv_bin(Pid, "ftp-test/test1.csv"))
+    ?assertEqual({ok, <<"test1, data1, values1\n">>}, strikead_ftp:recv_bin(Pid, "ftp-test/test1.csv"))
     end).
 
 ftp_test_() ->
@@ -63,3 +63,7 @@ ftp_test_() ->
       fun test_recv_bin/0
      ]
     }.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

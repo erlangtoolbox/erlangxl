@@ -24,7 +24,7 @@ nlist_filter(Pid, Mask) when is_list(Mask) ->
 
 nlist_filter(Pid, Filter) when is_function(Filter) ->
     case nlist(Pid) of
-		{ok, List} -> {ok, lists:filter(Filter, List)};
+        {ok, List} -> {ok, lists:filter(Filter, List)};
         E -> E
     end.
 
@@ -34,7 +34,7 @@ nlist_filter(Pid, Path, Mask) when is_list(Mask) ->
 nlist_filter(Pid, Path, Filter) when is_function(Filter) ->
     case nlist(Pid, Path) of
         {ok, List} -> {ok, lists:filter(Filter, List)};
-       	E -> E
+           E -> E
     end.
 
 find(Pid, Mask) when is_list(Mask) ->
@@ -69,17 +69,17 @@ download(Pid, Dest, [{F,DF}|T]) ->
 download(Pid, Dest, [F|T]) -> download(Pid, Dest, [{F,lists:last(string:tokens(F, "/"))} | T]).
 
 ftp_error(E = {error, Code}, Target) ->
-	case strikead_io:is_posix_error(E) of
-		true -> strikead_io:posix_error(E, Target);
-		_ -> {error, {Code, ftp:formaterror(E), Target}}
-	end.
+    case strikead_io:is_posix_error(E) of
+        true -> strikead_io:posix_error(E, Target);
+        _ -> {error, {Code, ftp:formaterror(E), Target}}
+    end.
 
 user(Pid, Login, Password) -> apply_ftp(user,[Pid, Login, Password]).
 
 recv(Pid, Source, Dest) ->
     do([error_m ||
         ok <- apply_ftp(type, [Pid, binary]),
-	apply_ftp(recv, [Pid, Source, Dest])
+    apply_ftp(recv, [Pid, Source, Dest])
     ]).
 
 cd(Pid, Path) -> apply_ftp(cd, [Pid, Path]).
@@ -87,10 +87,10 @@ cd(Pid, Path) -> apply_ftp(cd, [Pid, Path]).
 recv_bin(Pid, Path) -> apply_ftp(recv_bin, [Pid, Path]).
 
 apply_ftp(Command, Args) ->
-	case apply(ftp, Command, Args) of
-		E = {error, _} -> ftp_error(E, Args);
-		X -> X
-	end.
+    case apply(ftp, Command, Args) of
+        E = {error, _} -> ftp_error(E, Args);
+        X -> X
+    end.
 
 %%
 % autoresource
@@ -105,3 +105,7 @@ auto_open([Host, Username, Password]) ->
 auto_close(Pid) -> ftp:close(Pid).
 
 using(Host, Username, Password, F) -> strikead_auto:using(?MODULE, [Host, Username, Password], F).
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

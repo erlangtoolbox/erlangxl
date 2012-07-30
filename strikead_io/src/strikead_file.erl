@@ -7,9 +7,9 @@
 -behaviour(strikead_autoresource).
 -export([auto_open/1, auto_close/1, using/3]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
-	read_terms/1, read_files/1]).
+    read_terms/1, read_files/1]).
 -export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
-	list_dir/1, copy/2, open/2, close/1, change_mode/2]).
+    list_dir/1, copy/2, open/2, close/1, change_mode/2]).
 
 
 list_dir(Dir, Filter) when is_function(Filter) ->
@@ -37,17 +37,17 @@ compile_mask(Mask) ->
         end
     end.
 compile_mask([], Acc) -> Acc;
-compile_mask([$. | T], Acc) -> compile_mask(T, Acc ++ "\.");     
-compile_mask([$* | T], Acc) -> compile_mask(T, Acc ++ ".*");     
-compile_mask([$? | T], Acc) -> compile_mask(T, Acc ++ ".");     
-compile_mask([H | T], Acc) -> compile_mask(T, Acc ++ [H]).     
+compile_mask([$. | T], Acc) -> compile_mask(T, Acc ++ "\.");
+compile_mask([$* | T], Acc) -> compile_mask(T, Acc ++ ".*");
+compile_mask([$? | T], Acc) -> compile_mask(T, Acc ++ ".");
+compile_mask([H | T], Acc) -> compile_mask(T, Acc ++ [H]).
 
 exists(Path) ->
-	case strikead_io:apply_io(file, read_file_info, [Path]) of
-		{ok, _} -> true;
-		{error, {enoent, _, _}} -> false;
-		E -> E
-	end.
+    case strikead_io:apply_io(file, read_file_info, [Path]) of
+        {ok, _} -> true;
+        {error, {enoent, _, _}} -> false;
+        E -> E
+    end.
 
 ensure_dir(Path) -> strikead_io:apply_io(filelib, ensure_dir, [Path]).
 
@@ -57,16 +57,16 @@ mkdirs(Path) -> ensure_dir(filename:join(Path, "X")).
 read_terms(Filename) -> strikead_io:apply_io(file, consult, [Filename]).
 
 write_terms(File, L) when is_list(L) ->
-	R = do([error_m ||
-		ensure_dir(File),
-		using(File, [write], fun(F) ->
-			lists:foreach(fun(X) -> io:format(F, "~p.~n",[X]) end, L)
-		end)
-	]),
-	case R of
-		{ok, ok} -> ok;
-		X -> X
-	end;
+    R = do([error_m ||
+        ensure_dir(File),
+        using(File, [write], fun(F) ->
+            lists:foreach(fun(X) -> io:format(F, "~p.~n",[X]) end, L)
+        end)
+    ]),
+    case R of
+        {ok, ok} -> ok;
+        X -> X
+    end;
 
 write_terms(File, L) -> write_terms(File, [L]).
 

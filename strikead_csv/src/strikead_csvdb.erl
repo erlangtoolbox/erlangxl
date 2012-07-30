@@ -49,7 +49,7 @@ load_cache(ForPath) ->
     end.
 
 start_index(Path, ExtractF) ->
-	error_logger:info_report("start indexing..."),
+    error_logger:info_report("start indexing..."),
     {ok, {Header, Tree}} = case load_cache(Path) of
         R = {ok, _} -> R;
         _ -> index(ExtractF, Path, cache_path(Path))
@@ -57,7 +57,7 @@ start_index(Path, ExtractF) ->
     error_logger:info_report("indexing finished. Loading data into memory...."),
     {ok, F} = strikead_vmfile:open(Path, [{segment, 100000000}]),
     error_logger:info_report("...loaded"),
-	{Header, Tree, F}.
+    {Header, Tree, F}.
 
 
 index(ExtractF, Path, IndexPath) ->
@@ -82,14 +82,14 @@ progress(_) -> none.
 
 
 find(Key, Db) ->
-	{_, T} = Db#db.tree,
-	H = Db#db.handler,
-	case H:find(Key, T) of
-		{_, #entry{offset=Offset, length=Length}}->
+    {_, T} = Db#db.tree,
+    H = Db#db.handler,
+    case H:find(Key, T) of
+        {_, #entry{offset=Offset, length=Length}}->
             {ok, Line} = file:pread(Db#db.file, Offset, Length),
-			H:format(Db#db.header, strikead_csv:parse_line(binary_to_list(Line)));
-		not_found -> not_found
-	end.
+            H:format(Db#db.header, strikead_csv:parse_line(binary_to_list(Line)));
+        not_found -> not_found
+    end.
 
 stop() ->
     gen_server:cast(?MODULE, stop).
@@ -134,16 +134,20 @@ handle_call({ready, Db}, _From, _State) -> {reply, ok, Db}.
 handle_info(_Msg, Db) -> {noreply, Db}.
 code_change(_Old, Db, _Extra) -> {ok, Db}.
 terminate(normal, not_available) ->
-	error_logger:info_report(normal_exit), ok;
+    error_logger:info_report(normal_exit), ok;
 terminate(normal, Db) ->
-	file:close(Db#db.file),
-	error_logger:info_report(normal_exit), ok;
+    file:close(Db#db.file),
+    error_logger:info_report(normal_exit), ok;
 terminate(Reason, not_available) ->
     error_logger:error_report({terminated, Reason}), ok;
 terminate(Reason, Db) ->
-	file:close(Db#db.file),
-	error_logger:error_report({terminated, Reason}), ok.
+    file:close(Db#db.file),
+    error_logger:error_report({terminated, Reason}), ok.
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

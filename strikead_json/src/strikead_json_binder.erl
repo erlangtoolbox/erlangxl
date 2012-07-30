@@ -7,24 +7,24 @@
 compile([Path, Dest]) -> compile(Path, Dest).
 compile(Path, Dest) ->
     Module = filename:basename(Path, filename:extension(Path)),
-	HrlPath = filename:join([Dest, "include", Module ++ ".hrl"]),
-	ModulePath = filename:join([Dest, "src", Module ++ ".erl"]),
-	erlang:display("compile " ++ Path ++ " to " ++ Dest),
-	ok = do([error_m ||
-		Records <- file:consult(Path),
+    HrlPath = filename:join([Dest, "include", Module ++ ".hrl"]),
+    ModulePath = filename:join([Dest, "src", Module ++ ".erl"]),
+    erlang:display("compile " ++ Path ++ " to " ++ Dest),
+    ok = do([error_m ||
+        Records <- file:consult(Path),
         generate_file(HrlPath, fun(F) -> generate_records(Records, F) end),
         generate_file(ModulePath, fun(F) -> generate_module(Records, Module, F) end)
-	]).
+    ]).
 
 
 generate_records([], _Out) -> ok;
 generate_records([{Name, Fields} | T], Out) ->
-	do([error_m||
-		file:write(Out, "\n-record(" ++ atom_to_list(Name) ++ ", {\n\t" ++
+    do([error_m||
+        file:write(Out, "\n-record(" ++ atom_to_list(Name) ++ ", {\n\t" ++
             string:join([ generate_field(Field) || Field <- Fields], ",\n\t") ++
-		"\n})."),
-		generate_records(T, Out)
-	]).
+        "\n})."),
+        generate_records(T, Out)
+    ]).
 
 generate_field({Name, _Type, required}) -> atom_to_list(Name);
 %string, integer, boolean, float, record
@@ -54,14 +54,14 @@ generate_module(Records, Name, Out) ->
         file:write(Out, "to_json(undefined) -> \"null\";\n\n"),
         generate_to_json(Records, Out),
         file:write(Out, "from_json(Json, Record) when is_list(Json); is_binary(Json) ->\n"
-			"case ktj_parse:parse(Json) of\n"
-				"{J, _, _} -> {ok, from_json_(J, Record)};\n"
-				"X -> X\n"
-			"end.\n\n"),
+            "case ktj_parse:parse(Json) of\n"
+                "{J, _, _} -> {ok, from_json_(J, Record)};\n"
+                "X -> X\n"
+            "end.\n\n"),
         file:write(Out, "from_json_(undefined, _Record)  -> undefined;\n\n"),
         generate_from_json(Records, Out),
-		file:write(Out, "from_json_(X, Y) -> error(badarg, [X,Y]).\n\n")
-	]).
+        file:write(Out, "from_json_(X, Y) -> error(badarg, [X,Y]).\n\n")
+    ]).
 
 generate_to_json([], Out) -> file:write(Out, "to_json(X) -> error({badarg, X}).\n\n");
 generate_to_json([{Name, Fields} | T], Out) ->
@@ -77,36 +77,36 @@ generate_to_json([{Name, Fields} | T], Out) ->
 generate_to_json_fields(_RecordName, [], _Out) -> ok;
 generate_to_json_fields(RecordName, [Field={Name, _, _} | Fields], Out) ->
     do([error_m ||
-		io:format(Out, "\"\\\"~p\\\":\", ", [Name]),
+        io:format(Out, "\"\\\"~p\\\":\", ", [Name]),
         generate_to_json_field(RecordName, Field, Out),
         file:write(Out, sep(Fields, ", \",\",\n", ",\n")),
         generate_to_json_fields(RecordName, Fields, Out)
     ]).
 
 generate_to_json_field(RecordName, {Name, string, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, integer, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, float, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, boolean, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, custom, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, {list, string}, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, {list, integer}, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, {list, float}, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, {list, boolean}, _ }, Out) ->
-	io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
+    io:format(Out, "strikead_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, {list, _Rec}, _ }, Out) ->
     do([error_m ||
-		file:write(Out, "\"[\" ++ "),
+        file:write(Out, "\"[\" ++ "),
         io:format(Out, "string:join([to_json(X)||X <- R#~p.~p], \",\") ++ ", [RecordName, Name]),
         file:write(Out, "\"]\"")
-	    ]);
+        ]);
 generate_to_json_field(RecordName, {Name, _Rec, _ }, Out) -> io:format(Out, "to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, Field, _Out) -> {error, {dont_understand, {RecordName, Field}}}.
 
@@ -134,19 +134,23 @@ generate_from_json_fields([Field | Fields], Out) ->
 
 
 generate_from_json_field({Name, Type, {optional, Default}}, Out)
-	when Type == string; Type == integer; Type == float; Type == boolean;
-		Type == {list, string}; Type == {list, integer}; Type == {list, float};
-		Type == {list, boolean} ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J, ~p)",[Name, Name, Default]);
+    when Type == string; Type == integer; Type == float; Type == boolean;
+        Type == {list, string}; Type == {list, integer}; Type == {list, float};
+        Type == {list, boolean} ->
+    io:format(Out, "~p = strikead_json:ktuo_find(~p, J, ~p)",[Name, Name, Default]);
 generate_from_json_field({Name, Type, required }, Out)
-	when Type == string; Type == integer; Type == float; Type == boolean;
-		Type == {list, string}; Type == {list, integer}; Type == {list, float};
-		Type == {list, boolean} ->
-	io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
+    when Type == string; Type == integer; Type == float; Type == boolean;
+        Type == {list, string}; Type == {list, integer}; Type == {list, float};
+        Type == {list, boolean} ->
+    io:format(Out, "~p = strikead_json:ktuo_find(~p, J)",[Name, Name]);
 generate_from_json_field({Name, {list, Rec}, {optional, Default}}, Out) ->
-	io:format(Out, "~p = [from_json_(O, ~p) || O <- strikead_json:ktuo_find(~p, J, ~p)]",[Name, Rec, Name, Default]);
+    io:format(Out, "~p = [from_json_(O, ~p) || O <- strikead_json:ktuo_find(~p, J, ~p)]",[Name, Rec, Name, Default]);
 generate_from_json_field({Name, {list, Rec}, required}, Out) ->
-	io:format(Out, "~p = [from_json_(O, ~p) || O <- strikead_json:ktuo_find(~p, J)]",[Name, Rec, Name]);
+    io:format(Out, "~p = [from_json_(O, ~p) || O <- strikead_json:ktuo_find(~p, J)]",[Name, Rec, Name]);
 generate_from_json_field({Name, Rec, _}, Out) ->
-	io:format(Out, "~p = from_json_(strikead_json:ktuo_find(~p, J), ~p)",[Name, Name, Rec]);
+    io:format(Out, "~p = from_json_(strikead_json:ktuo_find(~p, J), ~p)",[Name, Name, Rec]);
 generate_from_json_field(Field, _Out) -> {error, {dont_understand, Field}}.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:
