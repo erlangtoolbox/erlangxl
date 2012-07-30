@@ -3,3 +3,8 @@
   {vsn,"0.1.0"},
   {applications, [kernel,stdlib]}
  ]}.
+
+% Local Variables:
+% Mode: erlang
+% indent-tabs-mode: nil
+% End:

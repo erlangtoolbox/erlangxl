@@ -18,7 +18,7 @@ forms([]) -> [].
 %% First the various attributes.
 form({attribute,Line,module,Mod}) ->
     {attribute,Line,module,Mod};
-form({attribute,Line,file,{File,Line}}) ->	%This is valid anywhere.
+form({attribute,Line,file,{File,Line}}) ->    %This is valid anywhere.
     {attribute,Line,file,{File,Line}};
 form({attribute,Line,export,Es0}) ->
     Es1 = farity_list(Es0),
@@ -33,7 +33,7 @@ form({attribute,Line,record,{Name,Defs0}}) ->
     {attribute,Line,record,{Name,Defs1}};
 form({attribute,Line,asm,{function,N,A,Code}}) ->
     {attribute,Line,asm,{function,N,A,Code}};
-form({attribute,Line,Attr,Val}) ->		%The general attribute.
+form({attribute,Line,Attr,Val}) ->        %The general attribute.
     {attribute,Line,Attr,Val};
 form({function,Line,Name0,Arity0,Clauses0}) ->
     {Name,Arity,Clauses} = function(Name0, Arity0, Clauses0),
@@ -146,17 +146,17 @@ pattern({op,Line,Op,L,R}) ->
 
 pattern_grp([{bin_element,L1,E1,S1,T1} | Fs]) ->
     S2 = case S1 of
-	     default ->
-		 default;
-	     _ ->
-		 expr(S1)
-	 end,
+         default ->
+         default;
+         _ ->
+         expr(S1)
+     end,
     T2 = case T1 of
-	     default ->
-		 default;
-	     _ ->
-		 bit_types(T1)
-	 end,
+         default ->
+         default;
+         _ ->
+         bit_types(T1)
+     end,
     [{bin_element,L1,expr(E1),S2,T2} | pattern_grp(Fs)];
 pattern_grp([]) ->
     [].
@@ -205,11 +205,11 @@ guard0([]) -> [].
 
 guard_test(Expr={call,Line,{atom,La,F},As0}) ->
     case erl_internal:type_test(F, length(As0)) of
-	true -> 
-	    As1 = gexpr_list(As0),
-	    {call,Line,{atom,La,F},As1};
-	_ ->
-	    gexpr(Expr)
+    true ->
+        As1 = gexpr_list(As0),
+        {call,Line,{atom,La,F},As1};
+    _ ->
+        gexpr(Expr)
     end;
 guard_test(Any) ->
     gexpr(Any).
@@ -228,7 +228,7 @@ gexpr({string,Line,S}) -> {string,Line,S};
 gexpr({nil,Line}) -> {nil,Line};
 gexpr({cons,Line,H0,T0}) ->
     H1 = gexpr(H0),
-    T1 = gexpr(T0),				%They see the same variables
+    T1 = gexpr(T0),                %They see the same variables
     {cons,Line,H1,T1};
 gexpr({tuple,Line,Es0}) ->
     Es1 = gexpr_list(Es0),
@@ -245,49 +245,49 @@ gexpr({record,Line,Name,Inits0}) ->
     {record,Line,Name,Inits1};
 gexpr({call,Line,{atom,La,F},As0}) ->
     case erl_internal:guard_bif(F, length(As0)) of
-	true -> As1 = gexpr_list(As0),
-		{call,Line,{atom,La,F},As1}
+    true -> As1 = gexpr_list(As0),
+        {call,Line,{atom,La,F},As1}
     end;
 % Guard bif's can be remote, but only in the module erlang...
 gexpr({call,Line,{remote,La,{atom,Lb,erlang},{atom,Lc,F}},As0}) ->
     case erl_internal:guard_bif(F, length(As0)) or
-	 erl_internal:arith_op(F, length(As0)) or 
-	 erl_internal:comp_op(F, length(As0)) or
-	 erl_internal:bool_op(F, length(As0)) of
-	true -> As1 = gexpr_list(As0),
-		{call,Line,{remote,La,{atom,Lb,erlang},{atom,Lc,F}},As1}
+     erl_internal:arith_op(F, length(As0)) or
+     erl_internal:comp_op(F, length(As0)) or
+     erl_internal:bool_op(F, length(As0)) of
+    true -> As1 = gexpr_list(As0),
+        {call,Line,{remote,La,{atom,Lb,erlang},{atom,Lc,F}},As1}
     end;
 % Unfortunately, writing calls as {M,F}(...) is also allowed.
 gexpr({call,Line,{tuple,La,[{atom,Lb,erlang},{atom,Lc,F}]},As0}) ->
     case erl_internal:guard_bif(F, length(As0)) or
-	 erl_internal:arith_op(F, length(As0)) or 
-	 erl_internal:comp_op(F, length(As0)) or
-	 erl_internal:bool_op(F, length(As0)) of
-	true -> As1 = gexpr_list(As0),
-		{call,Line,{tuple,La,[{atom,Lb,erlang},{atom,Lc,F}]},As1}
+     erl_internal:arith_op(F, length(As0)) or
+     erl_internal:comp_op(F, length(As0)) or
+     erl_internal:bool_op(F, length(As0)) of
+    true -> As1 = gexpr_list(As0),
+        {call,Line,{tuple,La,[{atom,Lb,erlang},{atom,Lc,F}]},As1}
     end;
 gexpr({bin,Line,Fs}) ->
     Fs2 = pattern_grp(Fs),
     {bin,Line,Fs2};
 gexpr({op,Line,Op,A0}) ->
-    case erl_internal:arith_op(Op, 1) or 
-	 erl_internal:bool_op(Op, 1) of
-	true -> A1 = gexpr(A0),
-		{op,Line,Op,A1}
+    case erl_internal:arith_op(Op, 1) or
+     erl_internal:bool_op(Op, 1) of
+    true -> A1 = gexpr(A0),
+        {op,Line,Op,A1}
     end;
 gexpr({op,Line,Op,L0,R0}) when Op =:= 'andalso'; Op =:= 'orelse' ->
     %% R11B: andalso/orelse are now allowed in guards.
     L1 = gexpr(L0),
-    R1 = gexpr(R0),			%They see the same variables
+    R1 = gexpr(R0),            %They see the same variables
     {op,Line,Op,L1,R1};
 gexpr({op,Line,Op,L0,R0}) ->
     case erl_internal:arith_op(Op, 2) or
-	  erl_internal:bool_op(Op, 2) or 
-	  erl_internal:comp_op(Op, 2) of
-	true ->
-	    L1 = gexpr(L0),
-	    R1 = gexpr(R0),			%They see the same variables
-	    {op,Line,Op,L1,R1}
+      erl_internal:bool_op(Op, 2) or
+      erl_internal:comp_op(Op, 2) of
+    true ->
+        L1 = gexpr(L0),
+        R1 = gexpr(R0),            %They see the same variables
+        {op,Line,Op,L1,R1}
     end.
 
 %% -type gexpr_list([GuardExpr]) -> [GuardExpr].
@@ -352,7 +352,7 @@ expr({char,Line,C}) -> {char,Line,C};
 expr({nil,Line}) -> {nil,Line};
 expr({cons,Line,H0,T0}) ->
     H1 = expr(H0),
-    T1 = expr(T0),				%They see the same variables
+    T1 = expr(T0),                %They see the same variables
     {cons,Line,H1,T1};
 expr({lc,Line,E0,Qs0}) ->
     Qs1 = lc_bc_quals(Qs0),
@@ -413,13 +413,13 @@ expr({'try',Line,Es0,Scs0,Ccs0,As0}) ->
     {'try',Line,Es1,Scs1,Ccs1,As1};
 expr({'fun',Line,Body}) ->
     case Body of
-	{clauses,Cs0} ->
-	    Cs1 = fun_clauses(Cs0),
-	    {'fun',Line,{clauses,Cs1}};
-	{function,F,A} ->
-	    {'fun',Line,{function,F,A}};
-	{function,M,F,A} ->			%R10B-6: fun M:F/A.
-	    {'fun',Line,{function,M,F,A}}
+    {clauses,Cs0} ->
+        Cs1 = fun_clauses(Cs0),
+        {'fun',Line,{clauses,Cs1}};
+    {function,F,A} ->
+        {'fun',Line,{function,F,A}};
+    {function,M,F,A} ->            %R10B-6: fun M:F/A.
+        {'fun',Line,{function,M,F,A}}
     end;
 
 expr({call,Line,F0,As0}) ->
@@ -449,7 +449,7 @@ expr({op,Line,Op,A0}) ->
     {op,Line,Op,A1};
 expr({op,Line,Op,L0,R0}) ->
     L1 = expr(L0),
-    R1 = expr(R0),				%They see the same variables
+    R1 = expr(R0),                %They see the same variables
     {op,Line,Op,L1,R1};
 %% The following are not allowed to occur anywhere!
 expr({remote,Line,M0,F0}) ->
@@ -516,3 +516,7 @@ fun_clauses([C0|Cs]) ->
     C1 = clause(C0),
     [C1|fun_clauses(Cs)];
 fun_clauses([]) -> [].
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

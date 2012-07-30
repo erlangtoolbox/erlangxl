@@ -1,8 +1,8 @@
 -module(strikead_string).
 
 -export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2,
-	to_float/1, substitute/2, to_string/1, mk_atom/1, to_upper/1, to_lower/1,
-	equal_ignore_case/2, join/2, to_atom/1, to_binary/1]).
+    to_float/1, substitute/2, to_string/1, mk_atom/1, to_upper/1, to_lower/1,
+    equal_ignore_case/2, join/2, to_atom/1, to_binary/1]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
@@ -34,28 +34,28 @@ format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
 
 -spec to_float/1 :: (string()) -> float().
 to_float(X) ->
-	try
-		list_to_float(X)
-	catch
-		_:_ -> float(list_to_integer(X))
-	end.
+    try
+        list_to_float(X)
+    catch
+        _:_ -> float(list_to_integer(X))
+    end.
 
 -spec substitute/2 :: (string(), strikead_lists:kvlist_at()) -> string().
 substitute(Str, Map) ->
-	Parts = re:split(Str, "(\\\{[a-zA-Z\\\-_\\\.]+\\\})", [{return, list}, trim]),
-	lists:flatten([replace_macro(X, Map) || X <- Parts]).
+    Parts = re:split(Str, "(\\\{[a-zA-Z\\\-_\\\.]+\\\})", [{return, list}, trim]),
+    lists:flatten([replace_macro(X, Map) || X <- Parts]).
 
 -spec replace_macro/2 :: (string(), strikead_lists:kvlist_at()) -> string().
 replace_macro([${|T], Map) ->
-	Key = list_to_atom(string:strip(T, right, $})),
-	case lists:keyfind(Key, 1, Map) of
-		{_, V} -> to_string(V);
-		_ -> ""
-	end;
+    Key = list_to_atom(string:strip(T, right, $})),
+    case lists:keyfind(Key, 1, Map) of
+        {_, V} -> to_string(V);
+        _ -> ""
+    end;
 replace_macro(X, _Map) -> X.
 
 -spec to_string/1 :: (atom() | binary() | string() | float() | integer())
-	-> string().
+    -> string().
 to_string(V) when is_binary(V) -> binary_to_list(V);
 to_string(V) when is_atom(V) -> atom_to_list(V);
 to_string(V) when is_list(V) -> V;
@@ -63,18 +63,18 @@ to_string(V) when is_float(V); is_integer(V) -> format("~p", [V]);
 to_string(V) -> format("~p", [V]).
 
 -spec mk_atom/1 :: ([atom() | binary() | string() | float() | integer()]) ->
-	atom().
+    atom().
 mk_atom(L) when is_list(L) ->
-	list_to_atom(string:join([to_string(X) || X <- L], "")).
+    list_to_atom(string:join([to_string(X) || X <- L], "")).
 
 -spec equal_ignore_case/2 :: (iostring(), iostring()) -> boolean().
 equal_ignore_case(A, B) when is_list(A), is_list(B);
-	is_binary(A), is_binary(B) ->
-	string:equal(to_lower(A), to_lower(B));
+    is_binary(A), is_binary(B) ->
+    string:equal(to_lower(A), to_lower(B));
 equal_ignore_case(A, B) when is_list(A) ->
-	string:equal(to_lower(list_to_binary(A)), to_lower(B));
+    string:equal(to_lower(list_to_binary(A)), to_lower(B));
 equal_ignore_case(A, B) when is_list(B) ->
-	string:equal(to_lower(A), to_lower(list_to_binary(B))).
+    string:equal(to_lower(A), to_lower(list_to_binary(B))).
 
 -spec to_lower/1 :: (iostring()) -> iostring().
 to_lower(S) when is_binary(S) -> list_to_binary(to_lower(binary_to_list(S)));
@@ -87,9 +87,9 @@ to_upper(S) when is_list(S) -> string:to_upper(S).
 %todo test performance of concatenating lists and binaries
 -spec join/2 :: ([iostring()], iostring()) -> iostring().
 join(List, Delim) when is_binary(Delim) ->
-	list_to_binary(join(List, binary_to_list(Delim)));
+    list_to_binary(join(List, binary_to_list(Delim)));
 join(List, Delim) ->
-	string:join([to_string(X) || X <- List], Delim).
+    string:join([to_string(X) || X <- List], Delim).
 
 -spec to_atom/1 :: (iostring() | atom()) -> atom().
 to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
@@ -100,3 +100,7 @@ to_atom(X) when is_atom(X) -> X.
 to_binary(X) when is_atom(X) -> atom_to_binary(X, utf8);
 to_binary(X) when is_list(X) -> list_to_binary(X);
 to_binary(X) when is_binary(X) -> X.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

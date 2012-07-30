@@ -43,3 +43,7 @@ handle_cast({get, From, Key}, Db) ->
 handle_info(_Msg, Db) -> {noreply, Db}.
 code_change(_Old, Db, _Extra) -> {ok, Db}.
 terminate(Reason, _Db) -> error_logger:error_report({terminated, Reason}), ok.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

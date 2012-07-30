@@ -18,3 +18,7 @@ okf(_) -> verybad.
 
 ok_test(Value) ->
     strikead_lang:do([X || X <- okf(Value)]).
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

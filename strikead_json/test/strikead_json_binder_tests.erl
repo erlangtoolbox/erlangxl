@@ -13,7 +13,7 @@ generic_test() ->
     ?assertEqual({ok, R2}, rec:from_json(rec:to_json(R2), rec2)).
 
 optinal_values_test() ->
-	?assertEqual({ok, #rec{}}, rec:from_json("{}", rec)).
+    ?assertEqual({ok, #rec{}}, rec:from_json("{}", rec)).
 
 undefined_null_test() ->
     ?assertEqual("{\"a\":null}", rec:to_json(#simple{})),
@@ -27,17 +27,21 @@ undefined_null_test() ->
 
 tuple_test() ->
     ?assertEqual("{\"a\":{\"x\":1,\"y\":2}}",
-		rec:to_json(#tupleobj{a=[{x,1}, {y,2}]})),
+        rec:to_json(#tupleobj{a=[{x,1}, {y,2}]})),
     ?assertEqual("{\"a\":{\"x\":\"\",\"y\":2}}",
-		rec:to_json(#tupleobj{a=[{x,<<>>}, {y,2}]})),
+        rec:to_json(#tupleobj{a=[{x,<<>>}, {y,2}]})),
     ?assertEqual("{\"a\":{\"x\":{\"z\":[\"a\",\"b\"]},\"y\":2}}",
-		rec:to_json(#tupleobj{a=[{x,[{z,[<<"a">>, <<"b">>]}]}, {y,2}]})).
+        rec:to_json(#tupleobj{a=[{x,[{z,[<<"a">>, <<"b">>]}]}, {y,2}]})).
 
 
 optional_obj_lists_bug_test() ->
-	?assertEqual({ok, #insertion_order{
-			id = <<"3">>,
-			name = <<"campaign3">>,
-			total_budget = <<"eppp">>,
-			creatives = []}
-		}, rec:from_json("{\"id\":\"3\",\"name\":\"campaign3\",\"total_budget\": \"eppp\"}", insertion_order)).
+    ?assertEqual({ok, #insertion_order{
+            id = <<"3">>,
+            name = <<"campaign3">>,
+            total_budget = <<"eppp">>,
+            creatives = []}
+        }, rec:from_json("{\"id\":\"3\",\"name\":\"campaign3\",\"total_budget\": \"eppp\"}", insertion_order)).
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

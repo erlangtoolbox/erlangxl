@@ -17,3 +17,7 @@ within(Module, Fun) ->
         non_existing -> {error, {non_existing, Module}};
         X -> Fun(filename:dirname(X) ++ "/../test")
     end.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

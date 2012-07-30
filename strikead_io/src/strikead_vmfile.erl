@@ -75,3 +75,7 @@ get_line(Fd, Position, Acc) ->
         {ok, Eol = <<"\n">>} -> {Acc ++ binary_to_list(Eol), Position + 1};
         {ok, X} -> get_line(Fd, Position + 1, Acc ++ binary_to_list(X))
     end.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

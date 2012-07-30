@@ -23,3 +23,7 @@ lines_test() ->
     Vm = strikead_auto:using(strikead_vmfile, [F, [{segment, 50}]], fun(File) -> strikead_stream:to_list(strikead_vmfile:parse_lines(File)) end),
     Io = Vm.
 
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

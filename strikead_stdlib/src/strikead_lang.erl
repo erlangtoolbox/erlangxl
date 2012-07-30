@@ -15,4 +15,6 @@ parse_transform(Forms, Options) ->
 %    error_logger:info_report({Result}),
     Result.
 
-
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

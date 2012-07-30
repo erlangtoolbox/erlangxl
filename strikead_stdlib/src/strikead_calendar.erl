@@ -100,3 +100,7 @@ format([H | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ [H]).
 now_millis() ->
     {Mega,Secs,Millis} = erlang:now(),
     (Mega * 1000000 + Secs) * 1000 + Millis div 1000.
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:

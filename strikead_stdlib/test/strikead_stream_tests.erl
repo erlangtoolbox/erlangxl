@@ -19,3 +19,7 @@ mapfind_not_found_test() ->
 foldl_test() ->
     Sum = fun(X, Acc) -> X + Acc end,
     ?assertEqual(lists:foldl(Sum, 0, lists:seq(1,5)), strikead_stream:foldl(Sum, 0, strikead_stream:seq(1,5))).
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:
