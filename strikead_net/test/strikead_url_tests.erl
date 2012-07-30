@@ -19,6 +19,3 @@ domain_test() ->
     ?assertEqual("strikead.com", strikead_url:domain(2, "www.strikead.com")),
     ?assertEqual("localhost", strikead_url:domain(2, "localhost")).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

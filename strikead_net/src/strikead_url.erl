@@ -25,6 +25,3 @@ domain(Level, Domain) ->
     string:join(lists:reverse(element(1, strikead_lists:split(Level,
         lists:reverse(string:tokens(Domain, "."))))), ".").
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

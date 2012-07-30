@@ -18,6 +18,3 @@ using(Module, Params, F) ->
         X -> X
     end.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

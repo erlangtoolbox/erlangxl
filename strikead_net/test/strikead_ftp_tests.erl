@@ -64,6 +64,3 @@ ftp_test_() ->
      ]
     }.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

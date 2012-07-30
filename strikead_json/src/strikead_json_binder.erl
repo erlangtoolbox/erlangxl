@@ -151,6 +151,3 @@ generate_from_json_field({Name, Rec, _}, Out) ->
     io:format(Out, "~p = from_json_(strikead_json:ktuo_find(~p, J), ~p)",[Name, Name, Rec]);
 generate_from_json_field(Field, _Out) -> {error, {dont_understand, Field}}.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

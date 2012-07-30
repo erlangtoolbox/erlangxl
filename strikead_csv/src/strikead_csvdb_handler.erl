@@ -10,6 +10,3 @@ behaviour_info(callbacks) ->
 behaviour_info(_Other) ->
     undefined.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

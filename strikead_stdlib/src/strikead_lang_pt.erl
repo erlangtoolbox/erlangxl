@@ -517,6 +517,3 @@ fun_clauses([C0|Cs]) ->
     [C1|fun_clauses(Cs)];
 fun_clauses([]) -> [].
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

@@ -5,6 +5,3 @@
     [ChildSpec :: supervisor:child_spec()]}}
     | ignore.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

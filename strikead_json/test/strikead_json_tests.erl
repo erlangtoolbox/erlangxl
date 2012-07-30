@@ -30,6 +30,3 @@ from_json_test() ->
     ?assertEqual({ok, [{data,[]}, {keys, [<<"user1">>]}]},
         strikead_json:from_json(<<"{\"keys\":[\"user1\"],\"data\":[]}">>)).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

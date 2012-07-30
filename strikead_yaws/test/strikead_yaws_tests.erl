@@ -61,6 +61,3 @@ mkargs(Query) ->
 
 mkargs() -> mkargs([{a,"b"}, {c,"d"}]).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

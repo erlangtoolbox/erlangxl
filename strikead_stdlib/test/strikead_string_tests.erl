@@ -51,8 +51,7 @@ join_test() ->
     ?assertEqual(<<"aaa;bbb;ccc">>,
         strikead_string:join([<<"aaa">>, "bbb", <<"ccc">>], <<";">>)),
     ?assertEqual("aaa;bbb;ccc",
-        strikead_string:join([<<"aaa">>, "bbb", <<"ccc">>], ";")).
+        strikead_string:join([<<"aaa">>, "bbb", <<"ccc">>], ";")),
+    ?assertEqual("aaabbbccc",
+        strikead_string:join([<<"aaa">>, "bbb", <<"ccc">>])).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

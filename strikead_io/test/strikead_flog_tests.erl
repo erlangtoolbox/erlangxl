@@ -44,6 +44,3 @@ find_file() ->
     {ok, [F]} = strikead_file:list_dir("/tmp/test/" ++ D),
     "/tmp/test/" ++ D ++ "/" ++ F.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

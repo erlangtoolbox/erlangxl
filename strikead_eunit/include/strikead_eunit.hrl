@@ -7,6 +7,3 @@
 
 -define(assertOk(X), ?assertEqual(ok, element(1, X))).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

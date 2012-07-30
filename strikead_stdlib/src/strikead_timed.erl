@@ -51,6 +51,3 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

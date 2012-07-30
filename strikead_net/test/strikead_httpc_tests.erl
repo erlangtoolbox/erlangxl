@@ -28,6 +28,3 @@ post_test() ->
         inets:stop()
     end.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

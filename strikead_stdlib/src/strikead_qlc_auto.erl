@@ -12,6 +12,3 @@ auto_close(X) -> {error, {badarg, X}}.
 
 using(What, Args, F) -> strikead_auto:using(?MODULE, {What, Args}, F).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

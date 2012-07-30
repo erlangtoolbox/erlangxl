@@ -45,6 +45,3 @@ ktuo_find(Field, {obj, Fields}, Default) when is_list(Fields) ->
         _ -> Default
     end.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

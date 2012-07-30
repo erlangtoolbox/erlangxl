@@ -32,6 +32,3 @@ apply_io(Module, Func, Args) ->
         X -> X
     end.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

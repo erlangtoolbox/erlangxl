@@ -148,6 +148,3 @@ terminate(Reason, Db) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

@@ -18,6 +18,3 @@ within(Module, Fun) ->
         X -> Fun(filename:dirname(X) ++ "/../test")
     end.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

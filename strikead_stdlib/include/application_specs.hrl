@@ -3,6 +3,3 @@
 
 -spec stop/1 :: (State :: term()) -> term().
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

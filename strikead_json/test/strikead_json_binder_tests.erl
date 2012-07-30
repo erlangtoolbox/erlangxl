@@ -42,6 +42,3 @@ optional_obj_lists_bug_test() ->
             creatives = []}
         }, rec:from_json("{\"id\":\"3\",\"name\":\"campaign3\",\"total_budget\": \"eppp\"}", insertion_order)).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

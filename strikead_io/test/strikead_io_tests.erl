@@ -12,6 +12,3 @@ parse_lines_test() ->
             strikead_stream:to_list(strikead_io:parse_lines(F))
         end).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

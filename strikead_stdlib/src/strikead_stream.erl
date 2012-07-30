@@ -88,6 +88,3 @@ mapfind(F, S) ->
 
 empty() -> fun() -> [] end.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

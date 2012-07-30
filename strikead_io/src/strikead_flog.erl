@@ -88,6 +88,3 @@ close(Fd) ->
         X -> error_msg("cannot close file: ~p", X), X
     end.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

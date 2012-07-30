@@ -73,6 +73,3 @@ split_test() ->
     ?assertEqual({[1], []}, strikead_lists:split(2, [1])).
 
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

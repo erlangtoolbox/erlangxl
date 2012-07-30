@@ -142,6 +142,3 @@ keyreplace_or_add(N, List, Tuple) when is_tuple(Tuple) ->
 split(Pos, List) when length(List) > Pos -> lists:split(Pos, List);
 split(_, List) -> {List, []}.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

@@ -25,6 +25,3 @@
 -spec code_change/3 :: (OldVsn :: (term() | {down, term()}), State :: term(), Extra :: term()) ->
     {ok, NewState :: term()} | {error, Reason :: term()}.
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

@@ -106,6 +106,3 @@ auto_close(Pid) -> ftp:close(Pid).
 
 using(Host, Username, Password, F) -> strikead_auto:using(?MODULE, [Host, Username, Password], F).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:

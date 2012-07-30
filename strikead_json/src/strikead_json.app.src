@@ -4,7 +4,4 @@
   {applications, [kernel,stdlib,strikead_stdlib]}
  ]}.
 
-% Local Variables:
-% Mode: erlang
-% indent-tabs-mode: nil
-% End:
+
