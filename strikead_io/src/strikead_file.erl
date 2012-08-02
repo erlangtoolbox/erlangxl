@@ -7,7 +7,7 @@
 -behaviour(strikead_autoresource).
 -export([auto_open/1, auto_close/1, using/3]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
-    read_terms/1, read_files/1]).
+    read_terms/1, read_files/1, copy_if_exists/2]).
 -export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
     list_dir/1, copy/2, open/2, close/1, change_mode/2, read_file_info/1]).
 
@@ -71,9 +71,7 @@ write_terms(File, L) when is_list(L) ->
 
 write_terms(File, L) -> write_terms(File, [L]).
 
--spec copy(Src, DestinationDir) -> error_m:monad(ok) when
-        Src :: file:filename(),
-        DestinationDir :: file:filename().
+-spec copy(file:filename(), file:filename()) -> error_m:monad(ok).
 copy(Src, Dst) ->
     case read_file_info(Src) of
         {ok, #file_info{type=regular}} ->
@@ -100,6 +98,14 @@ copy(Src, Dst, [File | Files]) ->
         copy(filename:join(Src, File), Dst),
         copy(Src, Dst, Files)
     ]).
+
+-spec copy_if_exists/2 :: (file:name(), file:name()) -> error_m:monad(ok).
+copy_if_exists(Src, Dst) ->
+    case strikead_file:exists(Src) of
+        {ok, true} -> copy(Src, Dst);
+        {ok, _} -> ok;
+        E -> E
+    end.
 
 read_file(Path) -> strikead_io:apply_io(file, read_file, [Path]).
 write_file(Path, Data) ->
