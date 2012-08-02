@@ -42,10 +42,11 @@ compile_mask([$* | T], Acc) -> compile_mask(T, Acc ++ ".*");
 compile_mask([$? | T], Acc) -> compile_mask(T, Acc ++ ".");
 compile_mask([H | T], Acc) -> compile_mask(T, Acc ++ [H]).
 
+-spec exists/1 :: (file:name()) -> error_m:monad(boolean()).
 exists(Path) ->
     case strikead_io:apply_io(file, read_file_info, [Path]) of
-        {ok, _} -> true;
-        {error, {enoent, _, _}} -> false;
+        {ok, _} -> {ok, true};
+        {error, {enoent, _, _}} -> {ok, false};
         E -> E
     end.
 
@@ -70,7 +71,7 @@ write_terms(File, L) when is_list(L) ->
 
 write_terms(File, L) -> write_terms(File, [L]).
 
--spec copy(Src, DestinationDir) -> ok when
+-spec copy(Src, DestinationDir) -> error_m:monad(ok) when
         Src :: file:filename(),
         DestinationDir :: file:filename().
 copy(Src, Dst) ->
@@ -89,7 +90,7 @@ copy(Src, Dst) ->
                     mkdirs(NewDst),
                     copy(Src, NewDst, Files)
             ]);
-        {ok, _} -> {error, {cannot_copy, cannot_copy, [Src, Dst]}};
+        {ok, #file_info{type=T}} -> {error, {cannot_copy, T, [Src, Dst]}};
         E -> E
     end.
 

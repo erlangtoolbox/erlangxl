@@ -37,15 +37,15 @@ test_download() ->
     strikead_file:delete("/tmp/test/test1.csv"),
     strikead_file:delete("/tmp/test/test2.csv"),
      ?assertEqual(ok, strikead_ftp:download(Pid, "/tmp/test", ["test1.csv", "test2.csv"])),
-    ?assert(strikead_file:exists("/tmp/test/test1.csv")),
-    ?assert(strikead_file:exists("/tmp/test/test2.csv"))
+    ?assertEqual({ok, true}, strikead_file:exists("/tmp/test/test1.csv")),
+    ?assertEqual({ok, true}, strikead_file:exists("/tmp/test/test2.csv"))
     end).
 
 test_recv() ->
     apply_test(fun(Pid) ->
     strikead_file:delete("/tmp/test/test1.csv"),
     ?assertEqual(ok, strikead_ftp:recv(Pid, "ftp-test/test1.csv", "/tmp/test/test1.csv")),
-    ?assert(strikead_file:exists("/tmp/test/test1.csv"))
+    ?assertEqual({ok, true}, strikead_file:exists("/tmp/test/test1.csv"))
     end).
 
 test_recv_bin() ->
