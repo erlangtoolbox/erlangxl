@@ -4,14 +4,14 @@
 -include_lib("strikead_eunit/include/strikead_eunit.hrl").
 
 copy_file_test() ->
-    os:cmd("rm -rf /tmp/test"),
+    ok = strikead_file:delete("/tmp/test"),
     ok = strikead_file:write_file("/tmp/test/x", "data"),
     ?assertEqual(ok, strikead_file:copy("/tmp/test/x", "/tmp/test/y")),
     ?assertFilesEqual("/tmp/test/x", "/tmp/test/y/x"),
-    os:cmd("rm -rf /tmp/test").
+    ok = strikead_file:delete("/tmp/test").
 
 copy_recursive_test() ->
-    os:cmd("rm -rf /tmp/test"),
+    ok = strikead_file:delete("/tmp/test"),
     ok = strikead_file:write_file("/tmp/test/a/a", "data"),
     ok = strikead_file:write_file("/tmp/test/a/b/c", "data"),
     ok = strikead_file:write_file("/tmp/test/a/b/d", "data"),
@@ -22,17 +22,19 @@ copy_recursive_test() ->
     ?assertFilesEqual("/tmp/test/a/b/c", "/tmp/test/y/a/b/c"),
     ?assertFilesEqual("/tmp/test/a/b/c", "/tmp/test/y/a/b/d"),
     ?assert(filelib:is_dir("/tmp/test/y/a/b/e")),
-    os:cmd("rm -rf /tmp/test").
+    ok = strikead_file:delete("/tmp/test").
 
 write_terms_test() ->
-    os:cmd("rm -rf /tmp/test"),
+    ok = strikead_file:delete("/tmp/test"),
     ?assertEqual(ok, strikead_file:write_terms("/tmp/test/x", a)),
     ?assertEqual({ok, [a]}, strikead_file:read_terms("/tmp/test/x")),
-    os:cmd("rm -rf /tmp/test").
+    ok = strikead_file:delete("/tmp/test").
 
 read_files_test() ->
 	ok = strikead_file:write_file("/tmp/test/1/a", "dataa"),
 	ok = strikead_file:write_file("/tmp/test/2/b", "datab"),
 	ok = strikead_file:write_file("/tmp/test/2/c", "datac"),
 	?assertEqual({ok, [{"a", <<"dataa">>}, {"b", <<"datab">>}, {"c", <<"datac">>}]},
-		strikead_file:read_files(["/tmp/test/1/*","/tmp/test/2/*"])).
+		strikead_file:read_files(["/tmp/test/1/*","/tmp/test/2/*"])),
+    ok = strikead_file:delete("/tmp/test").
+

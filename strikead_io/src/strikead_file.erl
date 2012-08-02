@@ -115,7 +115,6 @@ write_file(Path, Data) ->
     end.
 open(File, Mode) -> strikead_io:apply_io(file, open, [File, Mode]).
 close(Fd) -> strikead_io:apply_io(file, close, [Fd]).
-delete(Path) -> strikead_io:apply_io(file, delete, [Path]).
 make_symlink(Target, Link) -> strikead_io:apply_io(file, make_symlink, [Target, Link]).
 read_file_info(Path) -> strikead_io:apply_io(file, read_file_info, [Path]).
 change_mode(Path, Mode) -> strikead_io:apply_io(file, change_mode, [Path, Mode]).
@@ -128,6 +127,21 @@ read_files(Wildcards) ->
 			E -> E
 		end
 	end, [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)]).
+
+%todo handle symlinks
+delete(Path) ->
+    case read_file_info(Path) of
+        {ok, #file_info{type=regular}} ->
+            strikead_io:apply_io(file, delete, [Path]);
+        {ok, #file_info{type=directory}} ->
+            do([error_m ||
+                Files <- list_dir(Path),
+                strikead_lists:eforeach(fun(P) -> delete(filename:join(Path, P)) end, Files)
+            ]);
+        {ok, #file_info{type=T}} -> {error, {cannot_delete, T, [Path]}};
+        {error, {enoent, _, _}} -> ok;
+        E -> E
+    end.
 
 %%
 % autoresource
