@@ -136,7 +136,8 @@ delete(Path) ->
         {ok, #file_info{type=directory}} ->
             do([error_m ||
                 Files <- list_dir(Path),
-                strikead_lists:eforeach(fun(P) -> delete(filename:join(Path, P)) end, Files)
+                strikead_lists:eforeach(fun(P) -> delete(filename:join(Path, P)) end, Files),
+                strikead_io:apply_io(file, del_dir, [Path])
             ]);
         {ok, #file_info{type=T}} -> {error, {cannot_delete, T, [Path]}};
         {error, {enoent, _, _}} -> ok;
