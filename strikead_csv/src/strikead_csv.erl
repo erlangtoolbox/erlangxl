@@ -1,6 +1,6 @@
 -module(strikead_csv).
 
--export([parse_line/1, lines/1]).
+-export([parse_line/1, lines/1, parse_file/1]).
 
 parse_line("") -> [];
 parse_line(L) ->
@@ -18,3 +18,8 @@ parse_item(Acc, [C | T]) -> parse_item([C | Acc], T).
 
 lines(S) -> strikead_stream:map(fun(L) -> parse_line(L) end, S).
 
+-spec parse_file/1 :: (file:name()) -> error_m:monad([[string()]]).
+parse_file(Path) ->
+    strikead_file:using(Path, [read], fun(File) ->
+        strikead_stream:to_list(strikead_csv:lines(strikead_io:lines(File)))
+    end).
