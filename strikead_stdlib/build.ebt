@@ -1,0 +1,2 @@
+{version, {shell, "../version.sh"}}.
+{libraries, ["../lib"]}.

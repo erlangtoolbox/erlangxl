@@ -1,0 +1,3 @@
+{version, {shell, "../version.sh"}}.
+{libraries, ["../lib", "../out/production"]}.
+{compile, [{flags, [verbose]}]}.

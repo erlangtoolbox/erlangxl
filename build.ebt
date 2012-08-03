@@ -1,0 +1,5 @@
+{subdirs, ["strikead_stdlib", "strikead_eunit", "strikead_io"]}.
+{targets, [
+    {prepare, [clean]},
+    {perform, []}
+]}.
