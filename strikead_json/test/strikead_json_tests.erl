@@ -2,8 +2,6 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--include("rec.hrl").
-
 to_json_test() ->
     ?assertEqual("\"\"", strikead_json:to_json(<<>>)),
     ?assertEqual("\"string\"", strikead_json:to_json(<<"string">>)),
