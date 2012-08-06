@@ -1,4 +1,12 @@
-{subdirs, ["strikead_stdlib", "strikead_eunit", "strikead_io"]}.
+{subdirs, [
+    "strikead_stdlib", 
+    "strikead_eunit", 
+    "strikead_io", 
+    "strikead_csv", 
+    "strikead_leveldb",
+    "strikead_net",
+    "strikead_yaws",
+    "strikead_json"]}.
 {targets, [
     {prepare, [clean]},
     {perform, []}

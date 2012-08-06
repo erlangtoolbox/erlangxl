@@ -15,6 +15,6 @@ explode(Module, Name, Target) ->
 within(Module, Fun) ->
     case code:which(Module) of
         non_existing -> {error, {non_existing, Module}};
-        X -> Fun(filename:dirname(X) ++ "/../test")
+        X -> Fun(filename:dirname(X))
     end.
 

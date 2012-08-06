@@ -1,5 +1,5 @@
 {version, {shell, "../version.sh"}}.
 {libraries, ["../lib", "../out/production"]}.
 {compile, [
-    {resources, ["*.txt"]}
+    {resources, ["ftp-*"]}
 ]}.

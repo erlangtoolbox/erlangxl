@@ -11,3 +11,4 @@ strikead_json/ebin
 .idea/workspace.xml
 .eunit
 data.index
+out
