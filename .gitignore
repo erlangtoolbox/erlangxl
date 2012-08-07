@@ -3,4 +3,4 @@ TAGS
 .eunit
 data.index
 out
-./lib
+lib
