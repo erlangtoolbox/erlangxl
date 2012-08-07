@@ -5,8 +5,8 @@
     "strikead_csv", 
     "strikead_leveldb",
     "strikead_net",
-    "strikead_yaws",
-    "strikead_json"]}.
+    "strikead_json",
+    "strikead_yaws"]}.
 {targets, [
     {prepare, [clean]},
     {perform, []}
