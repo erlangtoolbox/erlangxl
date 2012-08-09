@@ -126,17 +126,19 @@ kvfind(Key, List) ->
         X -> X
     end.
 
+-spec keyreplace_or_add/3 :: (pos_integer(), [tuple()], tuple() | [tuple()]) -> [tuple()].
+keyreplace_or_add(N, List, List2) when is_list(List2) ->
+    lists:foldl(fun(T, Acc) -> keyreplace_or_add(N, Acc, T) end, List, List2);
+keyreplace_or_add(N, List, Tuple) when is_tuple(Tuple) ->
+    case lists:keymember(element(N, Tuple), N, List) of
+        true -> lists:keyreplace(element(N, Tuple), N, List, Tuple);
+        false -> [Tuple | List]
+    end.
+
 -spec keyreplace/3 :: (pos_integer(), [tuple()], [tuple()]) -> [tuple()].
 keyreplace(_N, List, [])  -> List;
 keyreplace(N, List, [R | ReplList]) ->
     keyreplace(N, lists:keyreplace(element(N, R), N, List, R), ReplList).
-
--spec keyreplace_or_add/3 :: (pos_integer(), [tuple()], tuple()) -> [tuple()].
-keyreplace_or_add(N, List, Tuple) when is_tuple(Tuple) ->
-    case lists:keymember(element(N, Tuple), N, List) of
-        true -> lists:keyreplace(element(N, Tuple), N, List, Tuple);
-        false -> [Tuple| List]
-    end.
 
 -spec split/2 :: (pos_integer(), [term()]) -> {[term()], [term()]}.
 split(Pos, List) when length(List) > Pos -> lists:split(Pos, List);

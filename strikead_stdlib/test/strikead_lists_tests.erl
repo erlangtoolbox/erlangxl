@@ -65,7 +65,9 @@ keyreplace_or_add_test() ->
     ?assertEqual([{x, 1}, {z, 3}],
         strikead_lists:keyreplace_or_add(1, [{x, a}, {z, 3}], {x, 1})),
     ?assertEqual([{x, 1}, {z, 3}],
-        strikead_lists:keyreplace_or_add(1, [{z, 3}], {x, 1})).
+        strikead_lists:keyreplace_or_add(1, [{z, 3}], {x, 1})),
+    ?assertEqual([{y, 2}, {x, 1}, {z, 3}],
+        strikead_lists:keyreplace_or_add(1, [{z, 3}], [{x, 1}, {y, 2}])).
 
 split_test() ->
     ?assertEqual({[1,2], [3,4]}, strikead_lists:split(2, [1,2,3,4])),
