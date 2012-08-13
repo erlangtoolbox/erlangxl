@@ -39,13 +39,18 @@ read_files_test() ->
     ok = strikead_file:delete("/tmp/test").
 
 read_files_base_test() ->
-	ok = strikead_file:write_file("/tmp/test/2/b", "datab"),
-	ok = strikead_file:write_file("/tmp/test/2/c", "datac"),
-	?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
-		strikead_file:read_files(["/tmp/test/2/*"], {base, "/tmp/test"})),
-	?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
-		strikead_file:read_files(["/tmp/test/2/*"], {base, "/tmp/test/"})),
-	?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
-		strikead_file:read_files(["/tmp/test/2"], {base, "/tmp/test/"})),
+    ok = strikead_file:write_file("/tmp/test/2/b", "datab"),
+    ok = strikead_file:write_file("/tmp/test/2/c", "datac"),
+    ?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
+        strikead_file:read_files(["/tmp/test/2/*"], {base, "/tmp/test"})),
+    ?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
+        strikead_file:read_files(["/tmp/test/2/*"], {base, "/tmp/test/"})),
+    ?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
+        strikead_file:read_files(["/tmp/test/2"], {base, "/tmp/test/"})),
+    ?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
+        strikead_file:read_files(["/tmp/test/2"], {base, "/tmp/test/."})),
     ok = strikead_file:delete("/tmp/test").
 
+absolute_test() ->
+    ?assertEqual("/a/b/c", strikead_file:absolute("/a/b/c/d/e/./../../.")),
+    ?assertEqual("/", strikead_file:absolute("/a/b/../../../../..")).

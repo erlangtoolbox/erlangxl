@@ -7,7 +7,8 @@
 -behaviour(strikead_autoresource).
 -export([auto_open/1, auto_close/1, using/3]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
-    read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3]).
+    read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3,
+    absolute/1]).
 -export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
     list_dir/1, copy/2, open/2, close/1, change_mode/2, read_file_info/1]).
 
@@ -126,6 +127,17 @@ make_symlink(Target, Link) -> strikead_io:apply_io(file, make_symlink, [Target, 
 read_file_info(Path) -> strikead_io:apply_io(file, read_file_info, [Path]).
 change_mode(Path, Mode) -> strikead_io:apply_io(file, change_mode, [Path, Mode]).
 
+absolute(Path) ->
+    Abs = lists:reverse(lists:filter(fun(X) -> X /= "." end,
+        filename:split(filename:join([filename:absname(Path)])))),
+    filename:join(absolute(Abs, [], 0)).
+
+absolute([], Acc, _) -> Acc;
+absolute([".." | T], Acc, Skip) -> absolute(T, Acc, Skip + 1);
+absolute([H | T], Acc, 0) -> absolute(T, [H | Acc], 0);
+absolute(["/"], Acc, _) -> ["/" | Acc];
+absolute([_ | T], Acc, Skip) -> absolute(T, Acc, Skip - 1).
+
 -spec read_files/1 :: ([string()]) -> error_m:monad([{string(), binary()}]).
 read_files(Wildcards) -> read_files(Wildcards, name).
 
@@ -142,8 +154,8 @@ read_files(Wildcards, Option) ->
                             name ->
                                 lists:last(filename:split(Name));
                             {base, BaseDir} ->
-                                AbsBase = filename:absname(BaseDir),
-                                AbsName = filename:absname(Name),
+                                AbsBase = absolute(BaseDir),
+                                AbsName = absolute(Name),
                                 string:substr(AbsName, string:len(AbsBase) + 2);
                             _ -> {error, {badarg, Option}}
                             end,
@@ -170,6 +182,7 @@ delete(Path) ->
         {error, {enoent, _, _}} -> ok;
         E -> E
     end.
+
 
 %%
 % autoresource
