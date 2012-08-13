@@ -1,0 +1,66 @@
+%define realname strikead-erlang-commons
+Summary:        StrikeAd Erlang lib
+Name:           strikead-erlang-commons
+Version:        {{VERSION}}
+License:        Erlang Public License
+Release:        1
+Requires:       erlang yaws erlang-flake erlang-erleveldb
+BuildRequires:  erlang erlang-ktuo strikead-erlang-erlando
+Group:          Development/Languages/Erlang
+Source:         %{name}-%{version}.tar.gz
+BuildRoot:      %{_tmppath}/%{name}-%{version}-root
+
+%define erl_lib_root /usr/%{_lib}/erlang/lib
+
+%description
+StrikeAd Erlang common library
+
+%prep
+%setup
+
+%build
+make
+
+%install
+
+function app_version
+{
+    erl -pz $1/ebin -noshell -eval \
+	"try \
+	    ok = application:load($1), \
+	    {ok, Vsn} = application:get_key($1, vsn), \
+	    io:format(\"~s~n\", [Vsn]), erlang:halt(0) \
+	catch _:_ -> \
+	    io:format(\"not found~n\", []), erlang:halt(1) \
+	end"
+}
+
+for app in strikead_*; do
+    ## get version from app file
+    pver=`app_version $app`
+    %{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$pver/ebin;
+    for f in $app/ebin/*; do
+	%{__install} $f %{buildroot}%{erl_lib_root}/$app-$pver/ebin/`basename $f`;
+    done
+    if [ -d $app/include ]; then
+	%{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$pver/include;
+        for i in $app/include/*; do
+            %{__install} $i %{buildroot}%{erl_lib_root}/$app-$pver/include/`basename $i`;
+        done
+    fi
+done
+
+%Clean
+rm -rf %{buildroot}
+
+%files
+%defattr(-,root,root)
+%{erl_lib_root}/*/ebin/*
+%{erl_lib_root}/*/include/*
+
+%changelog
+* Mon Aug 13 2012 andrei.zavada@strikead.com
+- Separate installs of individual applications
+- Move erlando and ktuo to BuildDepends
+* Tue Aug  7 2012 andrei.zavada@strikead.com
+- Initial package for OpenSUSE

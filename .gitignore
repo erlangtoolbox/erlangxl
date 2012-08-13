@@ -1,6 +1,9 @@
 TAGS
 .idea/workspace.xml
 .eunit
+.backups/
+ebin/
+VERSION
 data.index
 out
 lib
