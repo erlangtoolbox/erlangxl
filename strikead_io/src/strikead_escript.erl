@@ -20,7 +20,7 @@ read_file(EscriptPath, File) ->
                     Handle <- zip:zip_open(Zip, [memory]),
                     try zip:zip_get(File, Handle) of
                         {ok, {_, Bin}} -> {ok, Bin};
-                        E = {error, _} -> E
+                        {error, E} -> {error, {E, [EscriptPath, File]}}
                     after
                         zip:zip_close(Handle)
                     end
