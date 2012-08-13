@@ -45,5 +45,7 @@ read_files_base_test() ->
 		strikead_file:read_files(["/tmp/test/2/*"], {base, "/tmp/test"})),
 	?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
 		strikead_file:read_files(["/tmp/test/2/*"], {base, "/tmp/test/"})),
+	?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
+		strikead_file:read_files(["/tmp/test/2"], {base, "/tmp/test/"})),
     ok = strikead_file:delete("/tmp/test").
 

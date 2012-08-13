@@ -73,15 +73,15 @@ write_terms(File, L) -> write_terms(File, [L]).
 
 -spec copy(file:filename(), file:filename()) -> error_m:monad(ok).
 copy(Src, Dst) ->
-    case read_file_info(Src) of
-        {ok, #file_info{type=regular}} ->
+    case type(Src) of
+        {ok, regular} ->
             DestinationFile = filename:join(Dst, filename:basename(Src)),
             do([error_m ||
                 ensure_dir(DestinationFile),
                 strikead_io:apply_io(file, copy, [Src, DestinationFile]),
                 ok
             ]);
-        {ok, #file_info{type=directory}} ->
+        {ok, directory} ->
             do([error_m ||
                 Files <- list_dir(Src),
                 NewDst <- return(filename:join(Dst, filename:basename(Src))),
@@ -90,7 +90,13 @@ copy(Src, Dst) ->
                     copy(filename:join(Src, F), NewDst)
                 end, Files)
             ]);
-        {ok, #file_info{type=T}} -> {error, {cannot_copy, T, [Src, Dst]}};
+        {ok, T} -> {error, {cannot_copy, T, [Src, Dst]}};
+        E -> E
+    end.
+
+type(Path) ->
+    case read_file_info(Path) of
+        {ok, #file_info{type=T}} -> {ok, T};
         E -> E
     end.
 
@@ -126,35 +132,41 @@ read_files(Wildcards) -> read_files(Wildcards, name).
 -spec read_files/2 :: ([string()], name | {base, file:name()}) ->
     error_m:monad([{string(), binary()}]).
 read_files(Wildcards, Option) ->
-	strikead_lists:emap(fun(Name) ->
-		case read_file(Name) of
-			{ok, Bin} ->
-                N = case Option of
-                    name ->
-                        lists:last(filename:split(Name));
-                    {base, BaseDir} ->
-                        AbsBase = filename:absname(BaseDir),
-                        AbsName = filename:absname(Name),
-                        string:substr(AbsName, string:len(AbsBase) + 2);
-                    _ -> {error, {badarg, Option}}
-                    end,
-                {ok, {N, Bin}};
-			E -> E
-		end
-	end, [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)]).
+	strikead_lists:eflatten(strikead_lists:emap(fun(Name) ->
+        case type(Name) of
+            {ok, directory} -> read_files([Name ++ "/*"], Option);
+            {ok, regular} ->
+                case read_file(Name) of
+                    {ok, Bin} ->
+                        N = case Option of
+                            name ->
+                                lists:last(filename:split(Name));
+                            {base, BaseDir} ->
+                                AbsBase = filename:absname(BaseDir),
+                                AbsName = filename:absname(Name),
+                                string:substr(AbsName, string:len(AbsBase) + 2);
+                            _ -> {error, {badarg, Option}}
+                            end,
+                        {ok, {N, Bin}};
+                    E -> E
+                end;
+            {ok, T} -> {error, {cannot_read, T, Name}};
+            E -> E
+        end
+	end, [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)])).
 
 %todo handle symlinks
 delete(Path) ->
-    case read_file_info(Path) of
-        {ok, #file_info{type=regular}} ->
+    case type(Path) of
+        {ok, regular} ->
             strikead_io:apply_io(file, delete, [Path]);
-        {ok, #file_info{type=directory}} ->
+        {ok, directory} ->
             do([error_m ||
                 Files <- list_dir(Path),
                 strikead_lists:eforeach(fun(P) -> delete(filename:join(Path, P)) end, Files),
                 strikead_io:apply_io(file, del_dir, [Path])
             ]);
-        {ok, #file_info{type=T}} -> {error, {cannot_delete, T, [Path]}};
+        {ok, T} -> {error, {cannot_delete, T, [Path]}};
         {error, {enoent, _, _}} -> ok;
         E -> E
     end.
