@@ -7,7 +7,7 @@
 -behaviour(strikead_autoresource).
 -export([auto_open/1, auto_close/1, using/3]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
-    read_terms/1, read_files/1, copy_if_exists/2, copy_filtered/3]).
+    read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3]).
 -export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
     list_dir/1, copy/2, open/2, close/1, change_mode/2, read_file_info/1]).
 
@@ -121,10 +121,24 @@ read_file_info(Path) -> strikead_io:apply_io(file, read_file_info, [Path]).
 change_mode(Path, Mode) -> strikead_io:apply_io(file, change_mode, [Path, Mode]).
 
 -spec read_files/1 :: ([string()]) -> error_m:monad([{string(), binary()}]).
-read_files(Wildcards) ->
+read_files(Wildcards) -> read_files(Wildcards, name).
+
+-spec read_files/2 :: ([string()], name | {base, file:name()}) ->
+    error_m:monad([{string(), binary()}]).
+read_files(Wildcards, Option) ->
 	strikead_lists:emap(fun(Name) ->
 		case read_file(Name) of
-			{ok, Bin} -> {ok, {lists:last(filename:split(Name)), Bin}};
+			{ok, Bin} ->
+                N = case Option of
+                    name ->
+                        lists:last(filename:split(Name));
+                    {base, BaseDir} ->
+                        AbsBase = filename:absname(BaseDir),
+                        AbsName = filename:absname(Name),
+                        string:substr(AbsName, string:len(AbsBase) + 2);
+                    _ -> {error, {badarg, Option}}
+                    end,
+                {ok, {N, Bin}};
 			E -> E
 		end
 	end, [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)]).
