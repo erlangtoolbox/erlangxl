@@ -8,8 +8,8 @@
 -type kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float()).
 -export_types([kvlist/2, kvlist_at/0]).
 
--spec find/2 :: (fun((term()) -> boolean()), [term()])
-    -> maybe_m:monad(term()).
+-spec find/2 :: (fun((term()) -> boolean()), [term()]) ->
+    maybe_m:monad(term()).
 find(_Pred, []) -> undefined;
 find(Pred, [H|T]) ->
     case Pred(H) of
@@ -21,12 +21,12 @@ find(Pred, [H|T]) ->
 first([]) -> undefined;
 first([H|_]) -> {ok, H}.
 
--spec emap/2 :: (fun((term()) -> error_m:monad(term())), [term()])
-    -> error_m:monad([term()]).
+-spec emap/2 :: (fun((term()) -> error_m:monad(term())), [term()]) ->
+    error_m:monad([term()]).
 emap(F, List) -> emap(F, [], List).
 
--spec emap/3 :: (fun((term()) -> error_m:monad(term())), [term()], [term()])
-    -> error_m:monad([term()]).
+-spec emap/3 :: (fun((term()) -> error_m:monad(term())), [term()], [term()]) ->
+    error_m:monad([term()]).
 emap(_F, Acc, []) -> {ok, lists:reverse(Acc)};
 emap(F, Acc, [H|T]) ->
     case F(H) of
@@ -144,5 +144,6 @@ keyreplace(N, List, [R | ReplList]) ->
 split(Pos, List) when length(List) > Pos -> lists:split(Pos, List);
 split(_, List) -> {List, []}.
 
+-spec eflatten/1 :: (error_m:monad([term()])) -> error_m:monad([term()]).
 eflatten({ok, List}) -> {ok, lists:flatten(List)};
 eflatten(E) -> E.
