@@ -2,7 +2,8 @@
 
 -export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2,
     to_float/1, substitute/2, to_string/1, mk_atom/1, to_upper/1, to_lower/1,
-    equal_ignore_case/2, join/2, join/1, to_atom/1, to_binary/1, to_integer/1]).
+    equal_ignore_case/2, join/2, join/1, to_atom/1, to_binary/1, to_integer/1,
+    generate_uuid/0]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
@@ -108,4 +109,10 @@ to_integer(X) when is_list(X) ->  list_to_integer(X);
 to_integer(X) when is_atom(X) -> list_to_integer(atom_to_list(X));
 to_integer(X) when is_binary(X) -> list_to_integer(binary_to_list(X)).
 
-		      
+-spec generate_uuid/0 :: () -> binary().
+generate_uuid() ->
+    hd(flake_harness:generate(1, 62)).
+
+% Local Variables:
+% indent-tabs-mode: nil
+% End:
