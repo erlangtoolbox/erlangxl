@@ -7,7 +7,7 @@
 -behaviour(strikead_autoresource).
 -export([auto_open/1, auto_close/1, using/3]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
-    read_terms/1, read_files/1, copy_if_exists/2]).
+    read_terms/1, read_files/1, copy_if_exists/2, copy_filtered/3]).
 -export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
     list_dir/1, copy/2, open/2, close/1, change_mode/2, read_file_info/1]).
 
@@ -85,19 +85,20 @@ copy(Src, Dst) ->
             do([error_m ||
                 Files <- list_dir(Src),
                 NewDst <- return(filename:join(Dst, filename:basename(Src))),
-                    mkdirs(NewDst),
-                    copy(Src, NewDst, Files)
+                mkdirs(NewDst),
+                strikead_lists:eforeach(fun(F) ->
+                    copy(filename:join(Src, F), NewDst)
+                end, Files)
             ]);
         {ok, #file_info{type=T}} -> {error, {cannot_copy, T, [Src, Dst]}};
         E -> E
     end.
 
-copy(_Src, _Dst, []) -> ok;
-copy(Src, Dst, [File | Files]) ->
-    do([error_m||
-        copy(filename:join(Src, File), Dst),
-        copy(Src, Dst, Files)
-    ]).
+-spec copy_filtered(file:name(), [string()], file:name()) -> error_m:monad(ok).
+copy_filtered(SrcDir, Wildcards, DstDir) ->
+    strikead_lists:eforeach(fun(F) ->
+        strikead_file:copy(F, DstDir)
+    end, [F || WC <- Wildcards, F <- filelib:wildcard(SrcDir ++ "/" ++ WC)]).
 
 -spec copy_if_exists/2 :: (file:name(), file:name()) -> error_m:monad(ok).
 copy_if_exists(Src, Dst) ->
