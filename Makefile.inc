@@ -24,10 +24,6 @@ ebin/%.beam: src/%.erl $(HRLS)
 	erlc -o ./ebin -I ./include $(ERL_FLAGS) \
 		$(EXTRA_ERLFALGS) \
 		$<
-
 clean:
 	@rm -f $(BEAMS)
-	# find . -name \*.bind \
-	# 	-exec rm -f include/`basename '{}' .bind`.hrl \; \
-	# 	-exec rm -f src/`basename '{}' .bind`.erl \;
 

@@ -16,7 +16,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-root
 StrikeAd Erlang common library
 
 %prep
-%setup
+%setup -n erlang-commons
 
 %build
 make
@@ -37,7 +37,8 @@ function app_version
 
 for app in strikead_*; do
     ## get version from app file
-    pver=`app_version $app`
+    pver=`app_version $app` || { echo -e "\n\n-------- Skipping non-app dir: $app\n\n"; continue; }
+    ## skip apps lacking .app file
     %{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$pver/ebin;
     for f in $app/ebin/*; do
 	%{__install} $f %{buildroot}%{erl_lib_root}/$app-$pver/ebin/`basename $f`;
@@ -51,7 +52,7 @@ for app in strikead_*; do
 done
 
 %Clean
-rm -rf %{buildroot}
+%{__rm} -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
