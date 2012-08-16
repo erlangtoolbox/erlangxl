@@ -17,6 +17,8 @@ SUBDIRS = \
 	strikead_io \
 	strikead_net
 
+SUBDIRS_CLEAN = $(patsubst %, %.clean, $(SUBDIRS))
+
 .PHONY: clean all $(SUBDIRS) \
 	rpm
 
@@ -25,14 +27,13 @@ all: $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) -C $@
 
-clean:
-	@for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir clean; \
-	done
+clean:	$(SUBDIRS_CLEAN)
+
+$(SUBDIRS_CLEAN):
+	$(MAKE) -C $(@:.clean=) clean
 
 rpm: clean
 	@tar czf $(SOURCES)/$(PV).tar.gz ../$(PROJECT)
 	sed "s,{{VERSION}},$(VERSION)," \
 		$(PACKAGE).spec.in > $(SPECS)/$(PV).spec
 	rpmbuild -ba $(SPECS)/$(PV).spec
-
