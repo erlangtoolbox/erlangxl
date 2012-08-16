@@ -20,10 +20,10 @@ ERL_FLAGS = \
 compile: $(BEAMS) $(EXTRA_TARGETS)
 
 ebin/%.beam: src/%.erl $(HRLS)
-	@mkdir -p ebin
+	-mkdir -p ebin
 	erlc -o ./ebin -I ./include $(ERL_FLAGS) \
 		$(EXTRA_ERLFALGS) \
 		$<
 clean:
-	@rm -f $(BEAMS)
+	-rm -f $(BEAMS)
 
