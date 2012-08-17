@@ -25,7 +25,17 @@ make
 
 common_vsn=`./version.sh`
 
-for app in strikead_*; do
+apps="strikead_stdlib \
+	strikead_json \
+	strikead_leveldb \
+	strikead_yaws \
+	strikead_csv \
+	strikead_eunit \
+	strikead_io \
+	strikead_net \
+	persist"
+
+for app in $apps; do
     %{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$common_vsn/ebin;
     for f in $app/ebin/*; do
 	%{__install} $f %{buildroot}%{erl_lib_root}/$app-$common_vsn/ebin/`basename $f`;
@@ -47,6 +57,8 @@ done
 %{erl_lib_root}/*/include/*
 
 %changelog
+* Fri Aug 17 2012 andrei.zavada@strikead.com
+- Use version.sh
 * Mon Aug 13 2012 andrei.zavada@strikead.com
 - Separate installs of individual applications
 - Move erlando and ktuo to BuildDepends
