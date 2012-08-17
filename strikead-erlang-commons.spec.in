@@ -6,7 +6,7 @@ License:        Erlang Public License
 Release:        1
 Requires:       erlang yaws erlang-flake erlang-erleveldb
 BuildRequires:  erlang erlang-ktuo strikead-erlang-erlando yaws
-Group:          Development/Languages/Erlang
+Group:          StrikeAd/Software
 Source:         %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-root
 
