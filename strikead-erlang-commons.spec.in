@@ -23,30 +23,17 @@ make
 
 %install
 
-function app_version
-{
-    erl -pz $1/ebin -noshell -eval \
-	"try \
-	    ok = application:load($1), \
-	    {ok, Vsn} = application:get_key($1, vsn), \
-	    io:format(\"~s~n\", [Vsn]), erlang:halt(0) \
-	catch _:_ -> \
-	    io:format(\"not found~n\", []), erlang:halt(1) \
-	end"
-}
+common_vsn=`./version.sh`
 
 for app in strikead_*; do
-    ## get version from app file
-    pver=`app_version $app` || { echo -e "\n\n-------- Skipping non-app dir: $app\n\n"; continue; }
-    ## skip apps lacking .app file
-    %{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$pver/ebin;
+    %{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$common_vsn/ebin;
     for f in $app/ebin/*; do
-	%{__install} $f %{buildroot}%{erl_lib_root}/$app-$pver/ebin/`basename $f`;
+	%{__install} $f %{buildroot}%{erl_lib_root}/$app-$common_vsn/ebin/`basename $f`;
     done
     if [ -d $app/include ]; then
-	%{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$pver/include;
+	%{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$common_vsn/include;
         for i in $app/include/*; do
-            %{__install} $i %{buildroot}%{erl_lib_root}/$app-$pver/include/`basename $i`;
+            %{__install} $i %{buildroot}%{erl_lib_root}/$app-$common_vsn/include/`basename $i`;
         done
     fi
 done

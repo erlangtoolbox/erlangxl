@@ -1,7 +1,9 @@
 PACKAGE = strikead-erlang-commons
 PROJECT = erlang-commons
+# VERSION = \
+# 	`\git log -1 --pretty=format:"%ci" | sed 's/[\ :-]//g' | sed 's/\+[0-9]\{4\}//'`
 VERSION = \
-	`git log -1 --pretty=format:"%ci" | sed 's/[\ :-]//g' | sed 's/\+[0-9]\{4\}//'`
+	`./version.sh`
 PV = $(PACKAGE)-$(VERSION)
 
 SPECS = $(DESTDIR)/SPECS
