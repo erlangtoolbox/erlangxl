@@ -36,7 +36,7 @@ $(SUBDIRS_CLEAN):
 	$(MAKE) -C $(@:.clean=) clean
 
 rpm: clean
-	@tar czf $(SOURCES)/$(PV).tar.gz ../$(PROJECT)
+	tar -czf $(SOURCES)/$(PV).tar.gz --exclude=.git* ../$(PROJECT)
 	sed "s,{{VERSION}},$(VERSION)," \
 		$(PACKAGE).spec.in > $(SPECS)/$(PV).spec
 	rpmbuild -ba $(SPECS)/$(PV).spec
