@@ -15,7 +15,8 @@ SUBDIRS = \
 	strikead_csv \
 	strikead_eunit \
 	strikead_io \
-	strikead_net
+	strikead_net \
+	persist
 
 SUBDIRS_CLEAN = $(patsubst %, %.clean, $(SUBDIRS))
 
