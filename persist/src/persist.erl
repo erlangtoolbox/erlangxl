@@ -2,7 +2,7 @@
 
 -compile({parse_transform, do}).
 
--export([open/4, close/1, store/2, select/1, delete/2, get/2, by_index/1]).
+-export([open/4, open/3, close/1, store/2, select/1, delete/2, get/2, by_index/1]).
 
 -record(persister, {
     name :: atom(),
@@ -13,6 +13,10 @@
 
 -opaque persister() :: #persister{}.
 -export_types([persister/0]).
+
+-spec open/3 :: (atom(), fun((term()) -> string()), atom()) ->
+    error_m:monad(persister()).
+open(Name, Identify, StoreModule) -> open(Name, Identify, StoreModule, []).
 
 -spec open/4 :: (atom(), fun((term()) -> string()), atom(), [{atom(), term()}]) ->
     error_m:monad(persister()).

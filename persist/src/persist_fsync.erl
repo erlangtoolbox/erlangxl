@@ -15,22 +15,21 @@ terminate/2, code_change/3]).
     ets :: ets:tid() | atom(),
     timer :: timer:tref(),
     last_sync = strikead_calendar:now_millis() :: integer(),
-    api :: module()
+    storage :: module()
 }).
 
-start_link(ETS, Interval, StorageAPI) ->
-    gen_server:start_link(?MODULE, [ETS, Interval, StorageAPI], []).
+start_link(ETS, Interval, Storage) ->
+    gen_server:start_link(?MODULE, {ETS, Interval, Storage}, []).
 
-stop(Pid) ->
-    gen_server:call(Pid, stop).
+stop(Pid) -> gen_server:call(Pid, stop).
 
-init([ETS, Interval, StorageAPI]) ->
+init({ETS, Interval, Storage}) ->
     do([error_m ||
         Timer <- timer:send_interval(Interval, fsync),
         return(#state{
             ets = ETS,
             timer = Timer,
-            api = StorageAPI
+            storage = Storage
         })
     ]).
 
@@ -41,9 +40,9 @@ handle_call(stop, _From, State = #state{timer = Timer}) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info(fsync, State=#state{ets = ETS, last_sync = LastSync, api = API}) ->
+handle_info(fsync, State=#state{ets = ETS, last_sync = LastSync, storage = Storage}) ->
     {noreply, State#state{
-        last_sync = fsync(ETS, LastSync, API)
+        last_sync = fsync(ETS, LastSync, Storage)
     }};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -54,15 +53,15 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-fsync(ETS, LastSync, API) ->
+fsync(ETS, LastSync, Storage) ->
     List = ets:select(ETS, [{
         {'$1', '$2', '$3', '$4'},
         [{'=<', LastSync, '$3'}],
         ['$_']
     }]),
     Status = strikead_lists:eforeach(fun
-        ({Id, _, _, true}) -> API:delete(Id);
-        ({Id, X, _, _}) -> API:store(Id, X)
+        ({Id, _, _, true}) -> Storage:delete(Id);
+        ({Id, X, _, _}) -> Storage:store(Id, X)
     end, List),
     case Status of
         ok -> strikead_calendar:now_millis();
