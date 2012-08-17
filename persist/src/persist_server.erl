@@ -23,7 +23,7 @@ store(Name, X) -> gen_server:call(Name, {store, X}).
 -spec select/1 :: (atom()) -> [term()].
 select(Name) -> gen_server:call(Name, select).
 
--spec delete/2 :: (name(), string()) -> ok.
+-spec delete/2 :: (atom(), string()) -> ok.
 delete(Name, Id) -> gen_server:call(Name, {delete, Id}).
 
 -spec get/2 :: (atom(), string()) -> maybe_m:monad(term()).
