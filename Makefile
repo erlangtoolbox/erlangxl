@@ -1,7 +1,7 @@
 PACKAGE = strikead-erlang-commons
 PROJECT = erlang-commons
 VERSION = \
-	`git log -1 --pretty=format:"%ci" | sed 's/[\ :-]//g' | sed 's/\+[0-9]\{4\}//'`
+	`./version.sh`
 PV = $(PACKAGE)-$(VERSION)
 
 SPECS = $(DESTDIR)/SPECS
@@ -15,7 +15,8 @@ SUBDIRS = \
 	strikead_csv \
 	strikead_eunit \
 	strikead_io \
-	strikead_net
+	strikead_net \
+	persist
 
 SUBDIRS_CLEAN = $(patsubst %, %.clean, $(SUBDIRS))
 
@@ -33,7 +34,7 @@ $(SUBDIRS_CLEAN):
 	$(MAKE) -C $(@:.clean=) clean
 
 rpm: clean
-	@tar czf $(SOURCES)/$(PV).tar.gz ../$(PROJECT)
+	tar -czf $(SOURCES)/$(PV).tar.gz --exclude=.git* ../$(PROJECT)
 	sed "s,{{VERSION}},$(VERSION)," \
 		$(PACKAGE).spec.in > $(SPECS)/$(PV).spec
 	rpmbuild -ba $(SPECS)/$(PV).spec
