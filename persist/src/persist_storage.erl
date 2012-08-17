@@ -7,7 +7,6 @@ behaviour_info(callbacks) -> [
     {store, 2},
     {delete, 1}
 ];
-%behaviour_info(callbacks) -> [{api, 1}];
 behaviour_info(_Other) -> undefined.
 
 
