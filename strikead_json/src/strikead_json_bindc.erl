@@ -1,16 +1,15 @@
--module(strikead_json_binder).
-
--export([compile/1, compile/2]).
+-module(strikead_json_bindc).
 
 -compile({parse_transform, do}).
 
-compile([Path, Dest]) -> compile(Path, Dest).
+-export([compile/2]).
+
 compile(Path, Dest) ->
     Module = filename:basename(Path, filename:extension(Path)),
     HrlPath = filename:join([Dest, "include", Module ++ ".hrl"]),
     ModulePath = filename:join([Dest, "src", Module ++ ".erl"]),
-    erlang:display("compile " ++ Path ++ " to " ++ Dest),
-    ok = do([error_m ||
+    do([error_m ||
+        io:format("compile ~p to ~p~n" , [Path, Dest]),
         Records <- file:consult(Path),
         generate_file(HrlPath, fun(F) -> generate_records(Records, F) end),
         generate_file(ModulePath, fun(F) -> generate_module(Records, Module, F) end)
@@ -119,7 +118,6 @@ generate_from_json([{Name, Fields} | T], Out) ->
         io:format(Out,"from_json_(J, ~p) -> \n", [Name]),
         io:format(Out, "#~p{", [Name]),
         generate_from_json_fields(Fields, Out),
-%        file:write(Out, sep(T, "};\n\n", "}.\n\n")),
         file:write(Out,  "};\n\n"),
         generate_from_json(T, Out)
     ]).

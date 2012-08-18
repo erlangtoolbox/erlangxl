@@ -1,4 +1,4 @@
--module(strikead_json_binder_tests).
+-module(rec_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 
