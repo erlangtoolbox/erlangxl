@@ -33,8 +33,9 @@ init({ETS, Interval, Storage}) ->
         })
     ]).
 
-handle_call(stop, _From, State = #state{timer = Timer}) ->
+handle_call(stop, _From, State = #state{timer = Timer, ets = ETS, last_sync = LastSync, storage = Storage}) ->
     timer:cancel(Timer),
+    fsync(ETS, LastSync, Storage),
     {stop, normal, ok, State}.
 
 handle_cast(_Msg, State) ->
