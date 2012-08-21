@@ -29,7 +29,7 @@ delete(Name, Id) -> gen_server:call(Name, {delete, Id}).
 -spec get/2 :: (atom(), string()) -> maybe_m:monad(term()).
 get(Name, Id) -> gen_server:call(Name, {get, Id}).
 
--spec stop/1 :: (atom()) -> maybe_m:monad(ok).
+-spec stop/1 :: (atom()) -> ok.
 stop(Name) -> gen_server:call(Name, stop).
 
 init({Name, Identify, StoreModule, Options}) ->
