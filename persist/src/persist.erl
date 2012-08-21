@@ -6,7 +6,7 @@
 
 -record(persister, {
     name :: atom(),
-    identify :: fun((tuple()) -> string()),
+    identify :: fun((tuple()) -> strikead_string:iostring()),
     ets :: ets:tid() | atom(),
     fsync :: pid()
 }).
@@ -14,11 +14,11 @@
 -opaque persister() :: #persister{}.
 -export_types([persister/0]).
 
--spec open/3 :: (atom(), fun((term()) -> string()), atom()) ->
+-spec open/3 :: (atom(), fun((term()) -> strikead_string:iostring()), atom()) ->
     error_m:monad(persister()).
 open(Name, Identify, StoreModule) -> open(Name, Identify, StoreModule, []).
 
--spec open/4 :: (atom(), fun((term()) -> string()), atom(), [{atom(), term()}]) ->
+-spec open/4 :: (atom(), fun((term()) -> strikead_string:iostring()), atom(), [{atom(), term()}]) ->
     error_m:monad(persister()).
 open(Name, Identify, StoreModule, Options) ->
     ETS = ets:new(strikead_string:mk_atom([Name, '_persister']), [
@@ -53,12 +53,12 @@ store(#persister{ets = ETS, identify = Id}, X) ->
 select(#persister{ets = ETS}) ->
     lists:flatten(ets:match(ETS, {'_', '$1', '_', false})).
 
--spec delete/2 :: (persister(), string()) -> ok.
+-spec delete/2 :: (persister(), strikead_string:iostring()) -> ok.
 delete(#persister{ets = ETS}, Id) ->
     ets:update_element(ETS, Id, [{3, strikead_calendar:now_millis()}, {4, true}]),
     ok.
 
--spec get/2 :: (persister(), string()) -> maybe_m:monad(term()).
+-spec get/2 :: (persister(), strikead_string:iostring()) -> maybe_m:monad(term()).
 get(#persister{ets = ETS}, Id) ->
     case ets:lookup(ETS, Id) of
         [{_, _, _, true}] -> undefined;
@@ -66,5 +66,5 @@ get(#persister{ets = ETS}, Id) ->
         _ -> undefined
     end.
 
--spec by_index/1 :: (pos_integer()) -> fun((term()) -> string()).
+-spec by_index/1 :: (pos_integer()) -> fun((term()) -> strikead_string:iostring()).
 by_index(N) -> fun(X) -> element(N, X) end.
