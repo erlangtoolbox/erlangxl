@@ -4,8 +4,8 @@ Name:           strikead-erlang-commons
 Version:        {{VERSION}}
 License:        Erlang Public License
 Release:        1
-Requires:       erlang yaws erlang-flake erlang-erleveldb
-BuildRequires:  erlang erlang-ktuo strikead-erlang-erlando yaws
+Requires:       erlang yaws erlang-flake erlang-erleveldb strikead-erlang-ktuo strikead-erlang-erlando
+BuildRequires:  erlang yaws strikead-erlang-erlando
 Group:          StrikeAd/Software
 Source:         %{realname}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-root
