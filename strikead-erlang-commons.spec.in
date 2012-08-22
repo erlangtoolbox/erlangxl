@@ -16,7 +16,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-root
 StrikeAd Erlang common library
 
 %prep
-%setup -n erlang-commons
+%setup -n %{realname}-%{version}
 
 %build
 make $MAKEOPTS
