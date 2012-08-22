@@ -5,16 +5,7 @@ Version:        {{VERSION}}
 License:        Erlang Public License
 Release:        1
 Requires:       erlang yaws erlang-flake erlang-erleveldb strikead-erlang-ktuo strikead-erlang-erlando
-BuildRequires:  erlang yaws
-## FIXME: As of Aug 22, Jenkins has 'erlang-erlando-2.8.2' and
-##        'erlang-ktuo-0.5.0.0' (illegally) installed, which happen to
-##        be enough to build erlang-commons.  However, none of these
-##        packages is currently maintained (we have own strikead-*
-##        packages instead), and strikead-erlang-erlando is apparently
-##        not suitable for building erlang-commons.
-##
-##        I am therefore dropping both erlando and ktuo from BuildRequires,
-##        just to work around this situation.
+BuildRequires:  erlang yaws strikead-erlang-erlando
 Group:          StrikeAd/Software
 Source:         %{realname}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-root
