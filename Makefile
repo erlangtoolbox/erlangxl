@@ -1,5 +1,4 @@
-PACKAGE = strikead-erlang-commons
-PROJECT = erlang-commons
+PACKAGE = erlang-commons
 VERSION = \
 	`./version.sh`
 PV = $(PACKAGE)-$(VERSION)
