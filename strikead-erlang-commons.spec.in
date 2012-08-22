@@ -41,6 +41,7 @@ function install_app
     absappdir=%{buildroot}/%{erl_lib_root}/$subapp
     mkdir -p $absappdir/ebin
     cp $1/ebin/*.beam $absappdir/ebin
+    ## just in this project .app files happen to reside in src/
     [ -r $1/src/$1.app ] && \
 	cp $1/src/$1.app $absappdir/ebin
 
@@ -65,7 +66,7 @@ done
 
 %files
 %defattr(-,root,root)
-%{erl_lib_root}/*
+%{erl_lib_root}
 
 %changelog
 * Mon Aug 20 2012 andrei.zavada@strikead.com
