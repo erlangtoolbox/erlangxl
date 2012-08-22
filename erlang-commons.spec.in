@@ -1,4 +1,4 @@
-%define realname strikead-erlang-commons
+%define realname erlang-commons
 Summary:        StrikeAd Erlang lib
 Name:           strikead-erlang-commons
 Version:        {{VERSION}}
@@ -7,7 +7,7 @@ Release:        1
 Requires:       erlang yaws erlang-flake erlang-erleveldb
 BuildRequires:  erlang erlang-ktuo strikead-erlang-erlando yaws
 Group:          StrikeAd/Software
-Source:         %{name}-%{version}.tar.gz
+Source:         %{realname}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-root
 
 %define erl_lib_root /usr/%{_lib}/erlang/lib
@@ -16,10 +16,10 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-root
 StrikeAd Erlang common library
 
 %prep
-%setup -n erlang-commons
+%setup -n %{realname}-%{version}
 
 %build
-make
+make $MAKEOPTS
 
 %install
 
@@ -35,17 +35,30 @@ apps="strikead_stdlib \
 	strikead_net \
 	persist"
 
-for app in $apps; do
-    %{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$common_vsn/ebin;
-    for f in $app/ebin/*; do
-	%{__install} $f %{buildroot}%{erl_lib_root}/$app-$common_vsn/ebin/`basename $f`;
-    done
-    if [ -d $app/include ]; then
-	%{__mkdir} -p %{buildroot}%{erl_lib_root}/$app-$common_vsn/include;
-        for i in $app/include/*; do
-            %{__install} $i %{buildroot}%{erl_lib_root}/$app-$common_vsn/include/`basename $i`;
-        done
+function install_app
+{
+    subapp="$1-%{version}"
+    absappdir=%{buildroot}/%{erl_lib_root}/$subapp
+    mkdir -p $absappdir/ebin
+    cp $1/ebin/*.beam $absappdir/ebin
+    ## just in this project .app files happen to reside in src/
+    [ -r $1/src/$1.app ] && \
+	cp $1/src/$1.app $absappdir/ebin
+
+    if [ -d $1/include ]; then
+	mkdir -p $absappdir/include
+	cp $1/include/*.hrl $absappdir/include
     fi
+
+    ## take care of subdirs
+    if [ -d $1/priv ]; then
+	mkdir -p $absappdir/priv
+	(cd $1; cp -a --parent priv $absappdir)
+    fi
+}
+
+for app in $apps; do
+    install_app $app
 done
 
 %Clean
@@ -53,10 +66,13 @@ done
 
 %files
 %defattr(-,root,root)
-%{erl_lib_root}/*/ebin/*
-%{erl_lib_root}/*/include/*
+%{erl_lib_root}
 
 %changelog
+* Mon Aug 20 2012 andrei.zavada@strikead.com
+- Look for .app files in */src/
+- Install any subdirs in */priv/
+- Mark whole dir in %files
 * Fri Aug 17 2012 andrei.zavada@strikead.com
 - Use version.sh
 * Mon Aug 13 2012 andrei.zavada@strikead.com
