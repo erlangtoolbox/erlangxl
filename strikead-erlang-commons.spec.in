@@ -19,7 +19,7 @@ StrikeAd Erlang common library
 %setup -n erlang-commons
 
 %build
-make -j5
+make $MAKEOPTS
 
 %install
 
