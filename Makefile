@@ -1,4 +1,4 @@
-PACKAGE = erlang-commons
+PACKAGE = erlangxl
 VERSION = \
 	`./version.sh`
 PV = $(PACKAGE)-$(VERSION)
