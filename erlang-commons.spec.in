@@ -1,6 +1,6 @@
-%define realname erlang-commons
-Summary:        StrikeAd Erlang lib
-Name:           strikead-erlang-commons
+%define realname erlangxl
+Summary:        ErlangXL
+Name:           strikead-erlangxl
 Version:        {{VERSION}}
 License:        Erlang Public License
 Release:        1
@@ -13,7 +13,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-root
 %define erl_lib_root /usr/%{_lib}/erlang/lib
 
 %description
-StrikeAd Erlang common library
+ErlangXL Library
 
 %prep
 %setup -n %{realname}-%{version}
@@ -25,14 +25,14 @@ make $MAKEOPTS
 
 common_vsn=`./version.sh`
 
-apps="strikead_stdlib \
-	strikead_json \
-	strikead_leveldb \
-	strikead_yaws \
-	strikead_csv \
-	strikead_eunit \
-	strikead_io \
-	strikead_net \
+apps="xl_stdlib \
+	xl_json \
+	xl_leveldb \
+	xl_yaws \
+	xl_csv \
+	xl_eunit \
+	xl_io \
+	xl_net \
 	persist"
 
 function install_app

@@ -4,8 +4,8 @@
 	{applications, [
 		kernel,
 		stdlib,
-		strikead_stdlib,
-		strikead_io
+		xl_stdlib,
+		xl_io
 	]},
 	{env, []}
 ]}.

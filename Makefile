@@ -7,14 +7,14 @@ SPECS = $(DESTDIR)/SPECS
 SOURCES = $(DESTDIR)/SOURCES
 
 SUBDIRS = \
-	strikead_stdlib \
-	strikead_json \
-	strikead_leveldb \
-	strikead_yaws \
-	strikead_csv \
-	strikead_eunit \
-	strikead_io \
-	strikead_net \
+	xl_stdlib \
+	xl_json \
+	xl_leveldb \
+	xl_yaws \
+	xl_csv \
+	xl_eunit \
+	xl_io \
+	xl_net \
 	persist
 
 SUBDIRS_CLEAN = $(patsubst %, %.clean, $(SUBDIRS))

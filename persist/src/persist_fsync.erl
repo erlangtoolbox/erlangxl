@@ -14,7 +14,7 @@
 -record(state, {
     ets :: ets:tid() | atom(),
     timer :: timer:tref(),
-    last_sync = strikead_calendar:now_millis() :: integer(),
+    last_sync = xl_calendar:now_millis() :: integer(),
     storage :: module()
 }).
 
@@ -60,12 +60,12 @@ fsync(ETS, LastSync, Storage) ->
         [{'=<', LastSync, '$3'}],
         ['$_']
     }]),
-    Status = strikead_lists:eforeach(fun
+    Status = xl_lists:eforeach(fun
             ({Id, _, _, true}) -> Storage:delete(Id);
             ({Id, X, _, _}) -> Storage:store(Id, X)
     end, List),
     case Status of
-        ok -> strikead_calendar:now_millis();
+        ok -> xl_calendar:now_millis();
         Error ->
             error_logger:error_msg("cannot fsync: ~p~n", [Error]),
             LastSync

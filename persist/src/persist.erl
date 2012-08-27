@@ -6,7 +6,7 @@
 
 -record(persister, {
     name :: atom(),
-    identify :: fun((tuple()) -> strikead_string:iostring()),
+    identify :: fun((tuple()) -> xl_string:iostring()),
     ets :: ets:tid() | atom(),
     fsync :: pid()
 }).
@@ -14,14 +14,14 @@
 -opaque persister() :: #persister{}.
 -export_types([persister/0]).
 
--spec open/3 :: (atom(), fun((term()) -> strikead_string:iostring()), atom()) ->
+-spec open/3 :: (atom(), fun((term()) -> xl_string:iostring()), atom()) ->
     error_m:monad(persister()).
 open(Name, Identify, StoreModule) -> open(Name, Identify, StoreModule, []).
 
--spec open/4 :: (atom(), fun((term()) -> strikead_string:iostring()), atom(), [{atom(), term()}]) ->
+-spec open/4 :: (atom(), fun((term()) -> xl_string:iostring()), atom(), [{atom(), term()}]) ->
     error_m:monad(persister()).
 open(Name, Identify, StoreModule, Options) ->
-    ETS = ets:new(strikead_string:mk_atom([Name, '_persister']), [
+    ETS = ets:new(xl_string:mk_atom([Name, '_persister']), [
         ordered_set, {keypos, 1}, protected
     ]),
     do([error_m ||
@@ -29,7 +29,7 @@ open(Name, Identify, StoreModule, Options) ->
         return([ets:insert(ETS, {Identify(X), X, 0, false}) || X <- Objects]),
         Fsync <- persist_fsync:start_link(
             ETS,
-            strikead_lists:kvfind(fsync_interval, Options, 5000),
+            xl_lists:kvfind(fsync_interval, Options, 5000),
             StoreModule
         ),
         return(#persister{
@@ -46,19 +46,19 @@ close(#persister{fsync = Fsync}) ->
 
 -spec store/2 :: (persister(), term()) -> ok.
 store(#persister{ets = ETS, identify = Id}, X) ->
-    true = ets:insert(ETS, {Id(X), X, strikead_calendar:now_millis(), false}),
+    true = ets:insert(ETS, {Id(X), X, xl_calendar:now_millis(), false}),
     ok.
 
 -spec select/1 :: (persister()) -> [term()].
 select(#persister{ets = ETS}) ->
     lists:flatten(ets:match(ETS, {'_', '$1', '_', false})).
 
--spec delete/2 :: (persister(), strikead_string:iostring()) -> ok.
+-spec delete/2 :: (persister(), xl_string:iostring()) -> ok.
 delete(#persister{ets = ETS}, Id) ->
-    ets:update_element(ETS, Id, [{3, strikead_calendar:now_millis()}, {4, true}]),
+    ets:update_element(ETS, Id, [{3, xl_calendar:now_millis()}, {4, true}]),
     ok.
 
--spec get/2 :: (persister(), strikead_string:iostring()) -> option_m:monad(term()).
+-spec get/2 :: (persister(), xl_string:iostring()) -> option_m:monad(term()).
 get(#persister{ets = ETS}, Id) ->
     case ets:lookup(ETS, Id) of
         [{_, _, _, true}] -> undefined;
@@ -66,5 +66,5 @@ get(#persister{ets = ETS}, Id) ->
         _ -> undefined
     end.
 
--spec by_index/1 :: (pos_integer()) -> fun((term()) -> strikead_string:iostring()).
+-spec by_index/1 :: (pos_integer()) -> fun((term()) -> xl_string:iostring()).
 by_index(N) -> fun(X) -> element(N, X) end.
