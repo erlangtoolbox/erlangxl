@@ -19,7 +19,7 @@
 %% ------------------------------------------------------------------
 
 start_link(Time, Module, Fun, Args) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Time, Module, Fun, Args], []).
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [Time, Module, Fun, Args], []).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -31,20 +31,20 @@ init(Params = [Time, Module, Fun, Args]) ->
     {ok, TimedTask}.
 
 handle_call(_Request, _From, State) ->
-  {noreply, ok, State}.
+    {noreply, ok, State}.
 
 handle_cast(_Msg, State) ->
-  {noreply, State}.
+    {noreply, State}.
 
 handle_info(_Info, State) ->
-  {noreply, State}.
+    {noreply, State}.
 
 terminate(_Reason, TimedTask) ->
     {ok, cancel} = timer:cancel(TimedTask),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
+    {ok, State}.
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions

@@ -9,7 +9,7 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-terminate/2, code_change/3]).
+    terminate/2, code_change/3]).
 
 -record(state, {
     ets :: ets:tid() | atom(),
@@ -41,7 +41,7 @@ handle_call(stop, _From, State = #state{timer = Timer, ets = ETS, last_sync = La
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info(fsync, State=#state{ets = ETS, last_sync = LastSync, storage = Storage}) ->
+handle_info(fsync, State = #state{ets = ETS, last_sync = LastSync, storage = Storage}) ->
     {noreply, State#state{
         last_sync = fsync(ETS, LastSync, Storage)
     }};
@@ -61,8 +61,8 @@ fsync(ETS, LastSync, Storage) ->
         ['$_']
     }]),
     Status = strikead_lists:eforeach(fun
-        ({Id, _, _, true}) -> Storage:delete(Id);
-        ({Id, X, _, _}) -> Storage:store(Id, X)
+            ({Id, _, _, true}) -> Storage:delete(Id);
+            ({Id, X, _, _}) -> Storage:store(Id, X)
     end, List),
     case Status of
         ok -> strikead_calendar:now_millis();

@@ -26,7 +26,7 @@ select(Name) -> gen_server:call(Name, select).
 -spec delete/2 :: (atom(), string()) -> ok.
 delete(Name, Id) -> gen_server:call(Name, {delete, Id}).
 
--spec get/2 :: (atom(), string()) -> maybe_m:monad(term()).
+-spec get/2 :: (atom(), string()) -> option_m:monad(term()).
 get(Name, Id) -> gen_server:call(Name, {get, Id}).
 
 -spec stop/1 :: (atom()) -> ok.

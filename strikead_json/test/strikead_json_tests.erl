@@ -25,6 +25,6 @@ from_json_test() ->
         strikead_json:from_json("{a:null}")),
     ?assertEqual({ok, [<<"1aa">>, 1]},
         strikead_json:from_json("[\"1aa\", 1]")),
-    ?assertEqual({ok, [{data,[]}, {keys, [<<"user1">>]}]},
+    ?assertEqual({ok, [{data, []}, {keys, [<<"user1">>]}]},
         strikead_json:from_json(<<"{\"keys\":[\"user1\"],\"data\":[]}">>)).
 

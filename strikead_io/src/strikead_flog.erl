@@ -11,7 +11,7 @@
 
 -record(state, {name, location, format, fd, current}).
 
-start_link(Name, Location, Format) when is_atom(Name)->
+start_link(Name, Location, Format) when is_atom(Name) ->
     gen_server:start_link({local, Name}, ?MODULE, {Name, Location, Format}, []).
 
 log(Name, A) -> gen_server:cast(Name, {log, A}).
@@ -24,19 +24,19 @@ flush(Name) ->
 
 init({Name, Location, Format}) ->
     info_msg("starting log ~p at ~s", [Name, Location]),
-    case update_state(#state{name=Name, location=Location, format=Format}) of
+    case update_state(#state{name = Name, location = Location, format = Format}) of
         {ok, State} -> {ok, State};
         {error, X} -> {stop, X}
     end.
 
-handle_call(flush, _From, State=#state{fd=Fd}) ->
+handle_call(flush, _From, State = #state{fd = Fd}) ->
     close(Fd),
-    {reply, ok, State#state{current=undefined, fd=undefined}};
+    {reply, ok, State#state{current = undefined, fd = undefined}};
 handle_call(_Req, _From, State) -> {noreply, State}.
 
 handle_cast({log, List}, S) ->
     case update_state(S) of
-        {ok, State=#state{fd=Fd, format=Format}} ->
+        {ok, State = #state{fd = Fd, format = Format}} ->
             Format(Fd, List),
             {noreply, State};
         {error, E} ->
@@ -44,28 +44,28 @@ handle_cast({log, List}, S) ->
             {noreply, S}
     end;
 
-handle_cast(stop, State=#state{fd = Fd}) ->
+handle_cast(stop, State = #state{fd = Fd}) ->
     close(Fd),
-    {stop, normal, State#state{current=undefined, fd=undefined}};
+    {stop, normal, State#state{current = undefined, fd = undefined}};
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info(_Msg, State) -> {noreply, State}.
 code_change(_Old, State, _Extra) -> {ok, State}.
-terminate(_Reason, #state{fd=Fd}) -> close(Fd), ok.
+terminate(_Reason, #state{fd = Fd}) -> close(Fd), ok.
 
 
-tsv_format_string([H|T]) -> lists:foldl( fun(X, S)  -> S  ++ "\t" ++ tsv_symbol(X) end, tsv_symbol(H), T) ++ "~n".
+tsv_format_string([H | T]) -> lists:foldl(fun(X, S) -> S ++ "\t" ++ tsv_symbol(X) end, tsv_symbol(H), T) ++ "~n".
 
 tsv_symbol(X) when is_binary(X); is_atom(X); is_list(X) andalso length(X) == 0 -> "~s";
-tsv_symbol([X|_]) when is_number(X) -> "~s";
+tsv_symbol([X | _]) when is_number(X) -> "~s";
 tsv_symbol(_) -> "~5000p".
 
-format_tsv(IoDevice, List)->
+format_tsv(IoDevice, List) ->
     io:format(IoDevice, tsv_format_string(List), List).
 
-format_tsv_timestamp(IoDevice, List)-> format_tsv(IoDevice, [strikead_calendar:format("yyyy-MM-dd HH:mm:ss", calendar:universal_time()) | List]).
+format_tsv_timestamp(IoDevice, List) -> format_tsv(IoDevice, [strikead_calendar:format("yyyy-MM-dd HH:mm:ss", calendar:universal_time()) | List]).
 
-format_terms(IoDevice, Terms)->
+format_terms(IoDevice, Terms) ->
     io:format(IoDevice, "~5000p~n", [Terms]).
 
 

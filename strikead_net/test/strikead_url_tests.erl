@@ -8,12 +8,12 @@ to_query_test() ->
 
 
 escape_params_test() ->
-    ?assertEqual([{a,"a%2bb"}],
-        strikead_url:escape_params([{a,"a+b"}])).
+    ?assertEqual([{a, "a%2bb"}],
+        strikead_url:escape_params([{a, "a+b"}])).
 
 substitute_test() ->
     ?assertEqual("http://strikead.com?a=a%2bb",
-    strikead_url:substitute("http://strikead.com?a={a}",[{a, "a+b"}])).
+        strikead_url:substitute("http://strikead.com?a={a}", [{a, "a+b"}])).
 
 domain_test() ->
     ?assertEqual("strikead.com", strikead_url:domain(2, "www.strikead.com")),

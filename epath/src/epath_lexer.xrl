@@ -1,7 +1,6 @@
 Definitions.
 
 Rules.
-"(?:[^"\\]|\\.)*" : {token, {string, TokenLine, TokenChars}}.
 \$[1-9][0-9]* : {token, {element, TokenLine, element_x(TokenChars)}}.
 \=\>|\=\<|\=|\>|\< : {token, {cmp, TokenLine, list_to_atom(TokenChars)}}.
 \[|\]|\(|\)|\,|; : {token, {list_to_atom(TokenChars), TokenLine}}.

@@ -9,8 +9,8 @@
 index_test() ->
     Csv = strikead_eunit:resource(?MODULE, "csvdb.csv"),
     os:cmd("rm " ++ strikead_csvdb:cache_path(Csv)),
-    Header = ["key","value"],
-    Tree = {3,{1,{entry,"one",14,10},nil,{2,{entry,"two",24,10},nil,{3,{entry,"three",34,12},nil,nil}}}},
+    Header = ["key", "value"],
+    Tree = {3, {1, {entry, "one", 14, 10}, nil, {2, {entry, "two", 24, 10}, nil, {3, {entry, "three", 34, 12}, nil, nil}}}},
     {Header, Tree, File} = strikead_csvdb:start_index(Csv, fun([Key, Value]) -> {list_to_integer(Key), Value} end),
     file:close(File).
 
@@ -43,15 +43,15 @@ unload_load_test() ->
 
 
 extract([Key, Value]) -> {list_to_integer(Key), Value}.
-accept_if_possible(Key, Value=#entry{value="three"}) -> {Key, Value};
-accept_if_possible(_Key, _Value)-> not_found.
+accept_if_possible(Key, Value = #entry{value = "three"}) -> {Key, Value};
+accept_if_possible(_Key, _Value) -> not_found.
 
 find(_, nil) -> not_found;
 find(Key, {Key, V, _, _}) -> {Key, V};
-find(Key, {K, V, _, nil}) when Key > K -> accept_if_possible(K,V);
-find(Key, {K, V, nil, _}) when Key < K -> accept_if_possible(K,V);
-find(Key, {K, V, _, {KR,_,_,_}}) when Key > K, Key < KR -> accept_if_possible(K,V);
+find(Key, {K, V, _, nil}) when Key > K -> accept_if_possible(K, V);
+find(Key, {K, V, nil, _}) when Key < K -> accept_if_possible(K, V);
+find(Key, {K, V, _, {KR, _, _, _}}) when Key > K, Key < KR -> accept_if_possible(K, V);
 find(Key, {K, _, _, Right}) when Key > K -> find(Key, Right);
 find(Key, {K, _, Left, _}) when Key < K -> find(Key, Left).
-    
-format(_Header, [Key,Value]) -> {Key,Value}.
+
+format(_Header, [Key, Value]) -> {Key, Value}.

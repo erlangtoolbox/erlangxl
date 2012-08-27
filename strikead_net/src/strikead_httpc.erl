@@ -41,7 +41,7 @@ call(Profile, Url) -> gen_server:call(Profile, {call, Url}).
 -record(state, {request_opts, profile}).
 
 init({App, Profile}) ->
-    do([error_m||
+    do([error_m ||
         inets:start(httpc, [{profile, Profile}]),
         ClientOpts <- application:get_env(App, Profile),
         httpc:set_options(
@@ -49,22 +49,22 @@ init({App, Profile}) ->
                 ClientOpts, {client, []})),
             Profile),
         return(#state{
-            request_opts=element(2,
+            request_opts = element(2,
                 strikead_lists:keyfind(request, 1, ClientOpts, {request, []})),
-            profile=Profile
+            profile = Profile
         })
     ]).
 
 handle_call({call, Url}, _From,
-    State=#state{profile=Profile, request_opts=Opts}) ->
+State = #state{profile = Profile, request_opts = Opts}) ->
     Result = case httpc:request(get, {Url, []}, Opts, [], Profile) of
         {ok, {{_, Code, Reason}, _, _}} ->
-            {ok, #http_resp{code=Code, reason=Reason}};
+            {ok, #http_resp{code = Code, reason = Reason}};
         E = {error, _} -> E
     end,
     {reply, Result, State};
 handle_call({post, Url, ContentType, RequestBody}, _From,
-    State=#state{profile=Profile, request_opts=Opts}) ->
+State = #state{profile = Profile, request_opts = Opts}) ->
     Result = case httpc:request(post, {Url, [], ContentType, RequestBody}, Opts, [], Profile) of
         {ok, {{_, Code, Reason}, Headers, Body}} ->
             {ok, #http_resp{

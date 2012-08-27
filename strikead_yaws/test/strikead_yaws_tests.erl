@@ -4,9 +4,9 @@
 -include_lib("yaws/include/yaws_api.hrl").
 
 get_test() ->
-    ?assertEqual({[{a, "b"}],[]},
+    ?assertEqual({[{a, "b"}], []},
         strikead_yaws:params([strikead_yaws:get(a)], mkargs())),
-    ?assertEqual({[],["Parameter 'x' must be present"]},
+    ?assertEqual({[], ["Parameter 'x' must be present"]},
         strikead_yaws:params([strikead_yaws:get(x)], mkargs())).
 
 opt_test() ->
@@ -44,20 +44,20 @@ list_test() ->
         strikead_yaws:params([strikead_yaws:list(x)], mkargs())).
 
 parse_params_test() ->
-    ?assertEqual([{a ,"b"}, {c, "d"}], strikead_yaws:parse_params(mkargs())).
+    ?assertEqual([{a, "b"}, {c, "d"}], strikead_yaws:parse_params(mkargs())).
 
 params_test() ->
-    ?assertEqual({[{a, "b"},{c, "d"}], []}, strikead_yaws:params([
+    ?assertEqual({[{a, "b"}, {c, "d"}], []}, strikead_yaws:params([
         strikead_yaws:get(a),
         strikead_yaws:get(c)
-    ],mkargs())).
+    ], mkargs())).
 
 mkargs(Query) ->
     strikead_yaws:clear_parse_caches(),
     #arg{
-        req = #http_request{method='GET', path="/test", version="HTTP/1.1"},
+        req = #http_request{method = 'GET', path = "/test", version = "HTTP/1.1"},
         querydata = string:join([atom_to_list(K) ++ "=" ++ V || {K, V} <- Query], "&")
     }.
 
-mkargs() -> mkargs([{a,"b"}, {c,"d"}]).
+mkargs() -> mkargs([{a, "b"}, {c, "d"}]).
 

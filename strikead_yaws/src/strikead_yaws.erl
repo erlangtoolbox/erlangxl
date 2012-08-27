@@ -37,7 +37,7 @@ list(Name) ->
 opt(Name) -> opt(Name, undefined).
 
 -spec opt/2 :: (atom(), fun((string())-> any())) -> extractor().
-opt(Name, Transform) when is_function(Transform)->
+opt(Name, Transform) when is_function(Transform) ->
     opt(Name, undefined, Transform);
 opt(Name, Default) -> opt(Name, Default, fun(X) -> X end).
 
@@ -48,7 +48,7 @@ opt(Name, Default, Transform) ->
             undefined -> {ok, {Name, Default}};
             {ok, X} -> {ok, {Name, Transform(X)}};
             X when is_tuple(X) ->
-                {error, strikead_string:format( "Single parameter '~p' expected", [Name])}
+                {error, strikead_string:format("Single parameter '~p' expected", [Name])}
         end
     end.
 
@@ -61,7 +61,7 @@ any(Alts, Message) ->
         end
     end.
 
--spec find/2 :: ([extractor()], #arg{}) -> maybe_m:monad(parameter()).
+-spec find/2 :: ([extractor()], #arg{}) -> option_m:monad(parameter()).
 find(Alts, Args) ->
     strikead_stream:mapfind(
         fun(F) ->
@@ -116,7 +116,7 @@ parse_params(Args) ->
     case (Args#arg.req)#http_request.method of
         'POST' ->
             lists:map(Atomize, yaws_api:parse_query(Args) ++
-            yaws_api:parse_post(Args));
+                yaws_api:parse_post(Args));
         'GET' -> lists:map(Atomize, yaws_api:parse_query(Args));
         _ -> undefined
     end.
@@ -141,7 +141,7 @@ find_cookie(Name, Args, Default) ->
         {ok, X} -> X
     end.
 
--spec find_cookie/2 :: (string(), #arg{}) -> maybe_m:monad(string()).
+-spec find_cookie/2 :: (string(), #arg{}) -> option_m:monad(string()).
 find_cookie(Name, Args) ->
     case yaws_api:find_cookie_val(Name, Args#arg.headers#headers.cookie) of
         "" -> undefined;

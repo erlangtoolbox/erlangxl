@@ -58,7 +58,7 @@ delete(#persister{ets = ETS}, Id) ->
     ets:update_element(ETS, Id, [{3, strikead_calendar:now_millis()}, {4, true}]),
     ok.
 
--spec get/2 :: (persister(), strikead_string:iostring()) -> maybe_m:monad(term()).
+-spec get/2 :: (persister(), strikead_string:iostring()) -> option_m:monad(term()).
 get(#persister{ets = ETS}, Id) ->
     case ets:lookup(ETS, Id) of
         [{_, _, _, true}] -> undefined;

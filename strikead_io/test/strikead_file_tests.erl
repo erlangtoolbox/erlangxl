@@ -31,11 +31,11 @@ write_terms_test() ->
     ok = strikead_file:delete("/tmp/test").
 
 read_files_test() ->
-	ok = strikead_file:write_file("/tmp/test/1/a", "dataa"),
-	ok = strikead_file:write_file("/tmp/test/2/b", "datab"),
-	ok = strikead_file:write_file("/tmp/test/2/c", "datac"),
-	?assertEqual({ok, [{"a", <<"dataa">>}, {"b", <<"datab">>}, {"c", <<"datac">>}]},
-		strikead_file:read_files(["/tmp/test/1/*","/tmp/test/2/*"])),
+    ok = strikead_file:write_file("/tmp/test/1/a", "dataa"),
+    ok = strikead_file:write_file("/tmp/test/2/b", "datab"),
+    ok = strikead_file:write_file("/tmp/test/2/c", "datac"),
+    ?assertEqual({ok, [{"a", <<"dataa">>}, {"b", <<"datab">>}, {"c", <<"datac">>}]},
+        strikead_file:read_files(["/tmp/test/1/*", "/tmp/test/2/*"])),
     ok = strikead_file:delete("/tmp/test").
 
 read_files_base_test() ->

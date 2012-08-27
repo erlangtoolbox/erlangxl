@@ -5,14 +5,14 @@
 
 -export([out404/3, out404/1, crashmsg/3]).
 
-out404(Args) ->  out404(Args, get(gc), get(sc)).
+out404(Args) -> out404(Args, get(gc), get(sc)).
 out404(Args, _GC, _SC) ->
     {abs_path, Path} = (Args#arg.req)#http_request.path,
     B = html(Path),
     [{status, 404},
-     {header, {content_type, "text/html"}},
-     {header, {connection, "close"}},
-     {html, B}].
+        {header, {content_type, "text/html"}},
+        {header, {connection, "close"}},
+        {html, B}].
 
 
 
@@ -24,8 +24,8 @@ html(Path) ->
     "<H1>Not Found</H1>"
     "The requested URL ", yaws_api:htmlize(Path), " was not found on this server.<P>"
     "<HR>",
-    yaws:address(),
-    " </BODY></HTML>"
+        yaws:address(),
+        " </BODY></HTML>"
     ], list_to_binary(L).
 
 

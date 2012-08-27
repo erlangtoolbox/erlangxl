@@ -32,24 +32,24 @@ add(DateTime, N, seconds) ->
     T2 = T1 + N,
     calendar:gregorian_seconds_to_datetime(T2);
 
-add(DateTime, N, minutes) -> add(DateTime, 60*N, seconds);
-add(DateTime, N, hours) -> add(DateTime, 60*N, minutes);
+add(DateTime, N, minutes) -> add(DateTime, 60 * N, seconds);
+add(DateTime, N, hours) -> add(DateTime, 60 * N, minutes);
 
-add(DateTime, N, days) -> add(DateTime, 24*N, hours);
+add(DateTime, N, days) -> add(DateTime, 24 * N, hours);
 
-add(DateTime, N, weeks) -> add(DateTime, 7*N, days);
+add(DateTime, N, weeks) -> add(DateTime, 7 * N, days);
 
-add({{YYYY, MM, DD}=Date, Time}, 0, months) ->
+add({{YYYY, MM, DD} = Date, Time}, 0, months) ->
     case calendar:valid_date(Date) of
-        true  -> {Date, Time};
-        false -> add({{YYYY, MM, DD-1}, Time}, 0, months) % Rolling back illegal 31,29
+        true -> {Date, Time};
+        false -> add({{YYYY, MM, DD - 1}, Time}, 0, months) % Rolling back illegal 31,29
     end;
 
-add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM < 12 -> add({{YYYY, MM+1, DD}, Time}, N-1, months);
-add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM =:= 12 -> add({{YYYY+1, 1, DD}, Time}, N-1, months);
-add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM > 1 -> add({{YYYY, MM-1, DD}, Time}, N+1, months);
-add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM =:= 1 -> add({{YYYY-1, 12, DD}, Time}, N+1, months);
-add(Date, N, years) -> add(Date, 12*N, months).
+add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM < 12 -> add({{YYYY, MM + 1, DD}, Time}, N - 1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM =:= 12 -> add({{YYYY + 1, 1, DD}, Time}, N - 1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM > 1 -> add({{YYYY, MM - 1, DD}, Time}, N + 1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM =:= 1 -> add({{YYYY - 1, 12, DD}, Time}, N + 1, months);
+add(Date, N, years) -> add(Date, 12 * N, months).
 
 % end of Jonas Enlund
 
@@ -64,7 +64,7 @@ day_of_week_name({Date, _}) ->
         7 -> "Sun"
     end.
 
-month_name({{_,Mon,_}, _}) ->
+month_name({{_, Mon, _}, _}) ->
     case Mon of
         1 -> "Jan";
         2 -> "Feb";
@@ -83,21 +83,21 @@ month_name({{_,Mon,_}, _}) ->
 -spec format(Pattern, Datetime) -> string() when
     Pattern :: string(),
     Datetime :: calendar:datetime().
-format(Pattern, Datetime) -> format(Pattern, Datetime, "" ).
+format(Pattern, Datetime) -> format(Pattern, Datetime, "").
 
 format([], _, Acc) -> Acc;
-format([$E,$E,$E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ day_of_week_name(Dt));
-format([$d,$d | Pattern], Dt={{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B",[Date])));
-format([$M,$M,$M | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ month_name(Dt));
-format([$M,$M | Pattern], Dt={{_, Mon, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B",[Mon])));
-format([$y,$y,$y,$y | Pattern], Dt={{Year, _, _},_}, Acc) -> format(Pattern, Dt, Acc ++ integer_to_list(Year));
-format([$H,$H | Pattern], Dt={_, {Hour, _, _}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B",[Hour])));
-format([$m,$m | Pattern], Dt={_, {_, Min, _}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B",[Min])));
-format([$s,$s | Pattern], Dt={_, {_,_,Sec}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B",[Sec])));
+format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ day_of_week_name(Dt));
+format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Date])));
+format([$M, $M, $M | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ month_name(Dt));
+format([$M, $M | Pattern], Dt = {{_, Mon, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Mon])));
+format([$y, $y, $y, $y | Pattern], Dt = {{Year, _, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ integer_to_list(Year));
+format([$H, $H | Pattern], Dt = {_, {Hour, _, _}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Hour])));
+format([$m, $m | Pattern], Dt = {_, {_, Min, _}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Min])));
+format([$s, $s | Pattern], Dt = {_, {_, _, Sec}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Sec])));
 format([H | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ [H]).
 
 -spec now_millis() -> integer().
 now_millis() ->
-    {Mega,Secs,Millis} = erlang:now(),
+    {Mega, Secs, Millis} = erlang:now(),
     (Mega * 1000000 + Secs) * 1000 + Millis div 1000.
 

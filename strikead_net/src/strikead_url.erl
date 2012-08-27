@@ -6,10 +6,10 @@
 to_query(List) ->
     string:join(
         [atom_to_list(Key) ++ "=" ++ escape(Value) || {Key, Value} <- List],
-    "&").
+        "&").
 
 -spec escape_params/1 :: (strikead_lists:kvlist_at())
-    -> strikead_lists:kvlist_at().
+        -> strikead_lists:kvlist_at().
 escape_params(List) ->
     lists:map(fun({K, V}) -> {K, escape(V)} end, List).
 

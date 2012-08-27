@@ -3,7 +3,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 find_test() ->
-    L = [1,2,3,4],
+    L = [1, 2, 3, 4],
     ?assertEqual({ok, 2}, strikead_lists:find(fun(X) -> X == 2 end, L)),
     ?assertEqual(undefined, strikead_lists:find(fun(X) -> X == 0 end, L)).
 
@@ -30,8 +30,8 @@ mapfilter_test() ->
             fun(X) when X rem 2 == 0 -> {ok, X * X}; (_) -> undefined end, L)).
 
 keypsort_test() ->
-    ?assertEqual([{z, 1},{x, 2},{y, 3}],
-        strikead_lists:keypsort([z,x,y], 1, [{x, 2},{z, 1},{y, 3}])).
+    ?assertEqual([{z, 1}, {x, 2}, {y, 3}],
+        strikead_lists:keypsort([z, x, y], 1, [{x, 2}, {z, 1}, {y, 3}])).
 
 sublistmatch_test() ->
     Pattern = [{a, 1}, {b, "x.*"}],
@@ -47,10 +47,10 @@ substitute_test() ->
     List = [{a, "1"}, {b, "x"}, {"c", 2}],
     ?assertEqual(["1", 1, "cxc", 2],
         strikead_lists:substitute(Pattern, List,
-        fun strikead_string:substitute/2)).
+            fun strikead_string:substitute/2)).
 
 keyfind_test() ->
-    ?assertEqual({x,y}, strikead_lists:keyfind(z, 1, [], {x,y})).
+    ?assertEqual({x, y}, strikead_lists:keyfind(z, 1, [], {x, y})).
 
 kvfind_test() ->
     ?assertEqual({ok, v}, strikead_lists:kvfind(k, [{k, v}])),
@@ -70,8 +70,8 @@ keyreplace_or_add_test() ->
         strikead_lists:keyreplace_or_add(1, [{z, 3}], [{x, 1}, {y, 2}])).
 
 split_test() ->
-    ?assertEqual({[1,2], [3,4]}, strikead_lists:split(2, [1,2,3,4])),
-    ?assertEqual({[1,2], []}, strikead_lists:split(2, [1,2])),
+    ?assertEqual({[1, 2], [3, 4]}, strikead_lists:split(2, [1, 2, 3, 4])),
+    ?assertEqual({[1, 2], []}, strikead_lists:split(2, [1, 2])),
     ?assertEqual({[1], []}, strikead_lists:split(2, [1])).
 
 

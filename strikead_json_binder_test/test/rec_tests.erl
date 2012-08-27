@@ -27,18 +27,18 @@ undefined_null_test() ->
 
 tuple_test() ->
     ?assertEqual("{\"a\":{\"x\":1,\"y\":2}}",
-        rec:to_json(#tupleobj{a=[{x,1}, {y,2}]})),
+        rec:to_json(#tupleobj{a = [{x, 1}, {y, 2}]})),
     ?assertEqual("{\"a\":{\"x\":\"\",\"y\":2}}",
-        rec:to_json(#tupleobj{a=[{x,<<>>}, {y,2}]})),
+        rec:to_json(#tupleobj{a = [{x, <<>>}, {y, 2}]})),
     ?assertEqual("{\"a\":{\"x\":{\"z\":[\"a\",\"b\"]},\"y\":2}}",
-        rec:to_json(#tupleobj{a=[{x,[{z,[<<"a">>, <<"b">>]}]}, {y,2}]})).
+        rec:to_json(#tupleobj{a = [{x, [{z, [<<"a">>, <<"b">>]}]}, {y, 2}]})).
 
 
 optional_obj_lists_bug_test() ->
     ?assertEqual({ok, #insertion_order{
-            id = <<"3">>,
-            name = <<"campaign3">>,
-            total_budget = <<"eppp">>,
-            creatives = []}
-        }, rec:from_json("{\"id\":\"3\",\"name\":\"campaign3\",\"total_budget\": \"eppp\"}", insertion_order)).
+        id = <<"3">>,
+        name = <<"campaign3">>,
+        total_budget = <<"eppp">>,
+        creatives = []}
+    }, rec:from_json("{\"id\":\"3\",\"name\":\"campaign3\",\"total_budget\": \"eppp\"}", insertion_order)).
 

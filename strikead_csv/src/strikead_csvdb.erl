@@ -68,8 +68,8 @@ index(ExtractF, Path, IndexPath) ->
                 H = strikead_csv:parse_line(HeaderLine),
                 T = strikead_stream:ifoldl(fun({Line, Offset}, Tree, I) ->
                     progress(I),
-                    {Key,Value} = ExtractF(strikead_csv:parse_line(Line)),
-                    gb_trees:insert(Key, #entry{value=Value, offset=Offset, length=length(Line)}, Tree)
+                    {Key, Value} = ExtractF(strikead_csv:parse_line(Line)),
+                    gb_trees:insert(Key, #entry{value = Value, offset = Offset, length = length(Line)}, Tree)
                 end, gb_trees:empty(), Lines),
                 save_cache(IndexPath, H, T),
                 {H, T}
@@ -77,7 +77,7 @@ index(ExtractF, Path, IndexPath) ->
     end).
 
 
-progress(I) when I rem 10000 == 0 -> error_logger:info_report(io_lib:format("progress: ~p",[I]));
+progress(I) when I rem 10000 == 0 -> error_logger:info_report(io_lib:format("progress: ~p", [I]));
 progress(_) -> none.
 
 
@@ -85,7 +85,7 @@ find(Key, Db) ->
     {_, T} = Db#db.tree,
     H = Db#db.handler,
     case H:find(Key, T) of
-        {_, #entry{offset=Offset, length=Length}}->
+        {_, #entry{offset = Offset, length = Length}} ->
             {ok, Line} = file:pread(Db#db.file, Offset, Length),
             H:format(Db#db.header, strikead_csv:parse_line(binary_to_list(Line)));
         not_found -> not_found
@@ -110,7 +110,7 @@ info() -> gen_server:call(?MODULE, info).
 
 init([Location, Handler, sync]) ->
     {Header, Tree, File} = start_index(Location, fun(X) -> Handler:extract(X) end),
-    {ok, #db{header=Header, tree=Tree, handler=Handler, file=File}};
+    {ok, #db{header = Header, tree = Tree, handler = Handler, file = File}};
 init([Location, Handler, async]) ->
     gen_server:cast(?MODULE, {load, Location, Handler}),
     {ok, not_available}.
@@ -119,13 +119,13 @@ handle_cast(stop, Db) -> {stop, normal, Db};
 handle_cast({load, Location, Handler}, State) ->
     spawn_link(fun() ->
         {Header, Tree, File} = start_index(Location, fun(X) -> Handler:extract(X) end),
-        gen_server:call(?MODULE, {ready,  #db{header=Header, tree=Tree, handler=Handler, file=File}})
+        gen_server:call(?MODULE, {ready, #db{header = Header, tree = Tree, handler = Handler, file = File}})
     end),
     {noreply, State};
 handle_cast(_Msg, Db) -> {noreply, Db}.
 
 handle_call(info, _From, State) -> {reply, process_info(self(), binary), State};
-handle_call({lookup, _Key}, _From, State=not_available) -> {reply, State, State};
+handle_call({lookup, _Key}, _From, State = not_available) -> {reply, State, State};
 handle_call({lookup, Key}, _From, Db) -> {reply, find(Key, Db), Db};
 handle_call(unload, _From, not_available) -> {reply, ok, not_available};
 handle_call(unload, _From, Db) -> file:close(Db#db.file), {reply, ok, not_available, hibernate};
