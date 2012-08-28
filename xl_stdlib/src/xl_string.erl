@@ -1,9 +1,9 @@
 -module(xl_string).
 
--export([empty/1, not_empty/1, strip/1, quote/1, stripthru/1, format/2,
+-export([empty/1, not_empty/1, strip/1, quote/1, unquote/1, stripthru/1, format/2,
     to_float/1, substitute/2, to_string/1, mk_atom/1, to_upper/1, to_lower/1,
     equal_ignore_case/2, join/2, join/1, to_atom/1, to_binary/1, to_integer/1,
-    generate_uuid/0]).
+    generate_uuid/0, replace/3]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
@@ -28,7 +28,22 @@ strip(T, backward) -> T.
 stripthru(S) -> [X || X <- S, X /= $\n andalso X /= $\r andalso X /= $\t].
 
 -spec quote/1 :: (string()) -> string().
-quote(Str) -> format("~5000p", [Str]).
+quote(S) -> format("~5000p", [S]).
+
+-spec unquote/1 :: (string()) -> string().
+unquote(S) -> replace(string:strip(S, both, $"), "\\", "").
+
+replace(S, Search, Replace) -> replace(S, Search, Replace, []).
+replace([], _Search, _Replace, Acc) -> lists:flatten(Acc);
+replace(S, Search, Replace, Acc) ->
+    SearchLength = string:len(Search),
+    Pos = string:str(S, Search),
+    case Pos of
+        0 -> replace([], Search, Replace, [Acc | S]);
+        _ ->
+            replace(string:substr(S, Pos + SearchLength),
+                Search, Replace, [Acc, string:substr(S, 1, Pos - 1) | Replace])
+    end.
 
 -spec format/2 :: (io:format(), [term()]) -> string().
 format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
@@ -113,6 +128,4 @@ to_integer(X) when is_binary(X) -> list_to_integer(binary_to_list(X)).
 generate_uuid() ->
     hd(flake_harness:generate(1, 62)).
 
-% Local Variables:
-% indent-tabs-mode: nil
-% End:
+

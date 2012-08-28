@@ -55,3 +55,8 @@ join_test() ->
     ?assertEqual("aaabbbccc",
         xl_string:join([<<"aaa">>, "bbb", <<"ccc">>])).
 
+unquote_test() ->
+    ?assertEqual("aaa\"a", xl_string:unquote("\"aaa\\\"a\"")).
+
+replace_test() ->
+    ?assertEqual("abeabe", xl_string:replace("abcdeabcde", "cd", "")).
