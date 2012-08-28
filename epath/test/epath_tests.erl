@@ -1,6 +1,6 @@
 %% Copyright
 -module(epath_tests).
--author("volodymyr.kyrychenko@strikead.com").
+-author("Volodymyr Kyrychenko <volodymyr.kyrychenko@strikead.com>").
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -15,6 +15,5 @@
     {env, []}
 ]}).
 
-select_test() ->
-%    ?assertEqual({ok, [kernel, stdlib]}, epath:select("/$3/[$3 = applications]/$2", ?APP)).
-    ok.
+select_test______() ->
+    ?assertEqual({ok, [kernel, stdlib]}, epath:select("/$3/[$3 == applications]/$2", ?APP)).

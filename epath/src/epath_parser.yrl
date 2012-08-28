@@ -1,6 +1,6 @@
 Nonterminals epath selector arg expression.
 
-Terminals element atom '[' ']' cmp.
+Terminals element atom string binary '[' ']' '(' ')' ',' ';' cmp.
 
 Rootsymbol epath.
 
@@ -11,7 +11,10 @@ selector -> '[' expression ']' : {find, '$2'}.
 expression -> arg cmp arg : {token_value('$2'), '$1', '$3'}.
 arg -> element : {element, token_value('$1')}.
 arg -> atom : {atom, token_value('$1')}.
+arg -> string : {string, token_value('$1')}.
+arg -> binary : {binary, token_value('$1')}.
 
 Erlang code.
 token_value({_, _, X}) -> X;
 token_value({X, _}) -> X.
+

@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/epath/epath.iml" filepath="$PROJECT_DIR$/epath/epath.iml" />
-      <module fileurl="file://$PROJECT_DIR$/erlang-commons.iml" filepath="$PROJECT_DIR$/erlang-commons.iml" />
+      <module fileurl="file://$PROJECT_DIR$/erlangxl.iml" filepath="$PROJECT_DIR$/erlangxl.iml" />
       <module fileurl="file://$PROJECT_DIR$/persist/persist.iml" filepath="$PROJECT_DIR$/persist/persist.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_csv/xl_csv.iml" filepath="$PROJECT_DIR$/xl_csv/xl_csv.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_eunit/xl_eunit.iml" filepath="$PROJECT_DIR$/xl_eunit/xl_eunit.iml" />
