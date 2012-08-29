@@ -5,7 +5,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([select/2, select/3, update/3, update/4]).
+-export([select/2, select/3, update/3, update/4, concat/3, concat/4]).
 
 -spec select/3 :: (string(), list(), tuple() | list()) -> error_m:monad(option_m:monad(term())).
 select(EPath, Params, X) -> select(xl_string:format(EPath, Params), X).
@@ -13,8 +13,7 @@ select(EPath, Params, X) -> select(xl_string:format(EPath, Params), X).
 -spec select/2 :: (string(), tuple() | list()) -> error_m:monad(option_m:monad(term())).
 select(EPath, X) ->
     do([error_m ||
-        Tokens <- epath_lexer:parse(EPath),
-        Tree <- epath_parser:parse(Tokens),
+        Tree <- parse(EPath),
         return(select_(Tree, X))
     ]).
 
@@ -43,20 +42,35 @@ update(EPath, Params, R, X) -> update(xl_string:format(EPath, Params), R, X).
 -spec update/3 :: (string(), any(), tuple() | list()) -> error_m:monad(term()).
 update(EPath, R, X) ->
     do([error_m ||
-        Tokens <- epath_lexer:parse(EPath),
-        Tree <- epath_parser:parse(Tokens),
-        return(update_(Tree, R, X))
+        Tree <- parse(EPath),
+        return(update_(Tree, R, X, fun(Value, _) -> Value end))
     ]).
 
-update_([], R, _X) -> R;
-update_([{element, N} | Tree], R, X) when is_tuple(X), N =< size(X) ->
-    setelement(N, X, update_(Tree, R, element(N, X)));
-update_([{find, P} | Tree], R, X) when is_list(X) ->
+update_([], R, X, Mutate) -> Mutate(R, X);
+update_([{element, N} | Tree], R, X, Mutate) when is_tuple(X), N =< size(X) ->
+    setelement(N, X, update_(Tree, R, element(N, X), Mutate));
+update_([{find, P} | Tree], R, X, Mutate) when is_list(X) ->
     Predicate = predicate(P),
     lists:map(fun(E) ->
         case Predicate(E) of
-            true -> update_(Tree, R, E);
+            true -> update_(Tree, R, E, Mutate);
             false -> E
         end
     end, X);
-update_(_Tree, _R, X) -> X.
+update_(_Tree, _R, X, _Mutate) -> X.
+
+-spec concat/4 :: (string(), list(), any(), tuple() | list()) -> error_m:monad(term()).
+concat(EPath, Params, R, X) -> concat(xl_string:format(EPath, Params), R, X).
+
+-spec concat/3 :: (string(), any(), tuple() | list()) -> error_m:monad(term()).
+concat(EPath, R, X) ->
+    do([error_m ||
+        Tree <- parse(EPath),
+        return(update_(Tree, R, X, fun(L1, L2) -> L1 ++ L2 end))
+    ]).
+
+parse(EPath) ->
+    do([error_m ||
+        Tokens <- epath_lexer:parse(EPath),
+        epath_parser:parse(Tokens)
+    ]).

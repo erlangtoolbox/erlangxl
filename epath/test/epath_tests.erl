@@ -36,3 +36,12 @@ update_test() ->
         {applications, x},
         {env, []}
     ]}}, epath:update("/$3/[$1 == applications]/$2", x, ?APP)).
+
+concat_test() ->
+    ?assertEqual({ok, {application, epath, [
+        {description, ""},
+        {vsn, "1"},
+        {registered, []},
+        {applications, [epath, kernel, stdlib]},
+        {env, []}
+    ]}}, epath:concat("/$3/[$1 == applications]/$2", [epath], ?APP)).
