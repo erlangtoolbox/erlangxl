@@ -16,7 +16,7 @@ condition_test() ->
         {'[', 1},
         {element, 1, 2},
         {cmp, 1, '=='},
-        {atom, 1, "app"},
+        {atom, 1, app},
         {']', 1}
     ]}, epath_lexer:parse("/$1/[$2 == app]")).
 

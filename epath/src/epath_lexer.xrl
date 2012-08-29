@@ -6,8 +6,8 @@ Rules.
 \$[1-9][0-9]* : {token, {element, TokenLine, element_x(TokenChars)}}.
 =>|=<|==|>|< : {token, {cmp, TokenLine, list_to_atom(TokenChars)}}.
 \[|\]|\(|\)|\,|; : {token, {list_to_atom(TokenChars), TokenLine}}.
-[a_z][a-zA-Z0-9\_]* : {token, {atom, TokenLine, TokenChars}}.
-'[^']+' : {token, {atom, TokenLine, TokenChars}}.
+[a-z][a-zA-Z0-9\_]* : {token, {atom, TokenLine, list_to_atom(TokenChars)}}.
+'[^']*' : {token, {atom, TokenLine, list_to_atom(TokenChars)}}.
 / : skip_token.
 \s+ : skip_token.
 

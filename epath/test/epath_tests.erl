@@ -15,5 +15,24 @@
     {env, []}
 ]}).
 
-select_test______() ->
-    ?assertEqual({ok, [kernel, stdlib]}, epath:select("/$3/[$3 == applications]/$2", ?APP)).
+select_test() ->
+    ?assertEqual({ok, {ok, [kernel, stdlib]}},
+        epath:select("/$3/[$1 == applications]/$2", ?APP)),
+    ?assertEqual({ok, {ok, {vsn, "1"}}},
+        epath:select("/$3/[$2 == \"1\"]", ?APP)).
+
+update_test() ->
+    ?assertEqual({ok, {application, epath, [
+        {description, ""},
+        {vsn, "1"},
+        {registered, []},
+        {apps, []},
+        {env, []}
+    ]}}, epath:update("/$3/[$1 == applications]", {apps, []}, ?APP)),
+    ?assertEqual({ok, {application, epath, [
+        {description, ""},
+        {vsn, "1"},
+        {registered, []},
+        {applications, x},
+        {env, []}
+    ]}}, epath:update("/$3/[$1 == applications]/$2", x, ?APP)).
