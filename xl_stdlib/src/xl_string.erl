@@ -15,14 +15,13 @@ empty(S) -> S == "".
 not_empty(S) -> S /= "".
 
 -spec strip/1 :: (string()) -> string().
-strip(S) -> strip(S, forward).
-strip("", _) -> "";
-strip([$  | T], Dir) -> strip(T, Dir);
-strip([$\t | T], Dir) -> strip(T, Dir);
-strip([$\r | T], Dir) -> strip(T, Dir);
-strip([$\n | T], Dir) -> strip(T, Dir);
-strip(T, forward) -> lists:reverse(strip(lists:reverse(T), backward));
-strip(T, backward) -> T.
+strip(S) -> lists:reverse(strip_(lists:reverse(strip_(S)))).
+strip_("") -> "";
+strip_([$  | T]) -> strip(T);
+strip_([$\t | T]) -> strip(T);
+strip_([$\r | T]) -> strip(T);
+strip_([$\n | T]) -> strip(T);
+strip_(S) -> S.
 
 -spec stripthru/1 :: (string()) -> string().
 stripthru(S) -> [X || X <- S, X /= $\n andalso X /= $\r andalso X /= $\t].
