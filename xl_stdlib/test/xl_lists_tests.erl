@@ -75,3 +75,11 @@ split_test() ->
     ?assertEqual({[1], []}, xl_lists:split(2, [1])).
 
 
+insert_before_test() ->
+    ?assertEqual(
+        [1, 2, 3], 
+        xl_lists:insert_before(3, 2, [1, 3])),
+    ?assertEqual(
+        [one, two, three, four, four],
+        xl_lists:insert_before(four, three, [one, two, four, four])
+    ).
