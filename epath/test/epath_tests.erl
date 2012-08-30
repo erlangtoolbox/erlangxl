@@ -21,6 +21,10 @@ select_test() ->
     ?assertEqual({ok, {ok, {vsn, "1"}}},
         epath:select("/$3/[$2 == \"1\"]", ?APP)).
 
+eselect_test() ->
+    ?assertEqual({error, error},
+        epath:eselect("/$3/[$1 == ~p]/$2", [applic], ?APP, error)).
+
 update_test() ->
     ?assertEqual({ok, {application, epath, [
         {description, ""},
