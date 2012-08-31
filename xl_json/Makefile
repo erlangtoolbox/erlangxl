@@ -1,8 +1,5 @@
-BINDS = $(wildcard */*.bind)
-EXTRA_TARGETS = $(BINDS)
-%.bind:
-	erl -pz ../xl_json/ebin -pz ../xl_stdlib/ebin \
-		-noshell \
-		-run xl_json_binder compile $(@D) $< -s init stop
+# this is where erlando beams can be found when building on a system
+# w/out strikead-erlang-erlandox properly installed
+export ERL_LIBS=../lib
 
 include ../Makefile.inc
