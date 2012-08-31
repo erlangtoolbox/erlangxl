@@ -1,8 +1,8 @@
 # ; -*- mode: makefile -*-
 
-ERLS  = $(wildcard src/*.erl)
-HRLS  = $(wildcard include/*.hrl)
-BEAMS = $(patsubst src/%.erl, ebin/%.beam, $(ERLS))
+ERLS  := $(wildcard src/*.erl)
+HRLS  := $(wildcard include/*.hrl)
+BEAMS := $(patsubst src/%.erl, ebin/%.beam, $(ERLS))
 
 ERL_FLAGS = \
 	+warn_unused_function \
