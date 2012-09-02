@@ -5,12 +5,17 @@
 -compile({parse_transform, do}).
 
 %% API
--export([select/2, select/3, update/3, update/4, concat/3, concat/4, eselect/4]).
+-export([select/2, select/3, update/3, update/4, concat/3, concat/4, eselect/3,
+    eselect/4]).
 
 -spec eselect/4 :: (string(), list(), tuple() | list(), term()) -> error_m:monad(term()).
 eselect(EPath, Params, X, Error) ->
+    eselect(xl_string:format(EPath, Params), X, Error).
+
+-spec eselect/3 :: (string(), tuple() | list(), term()) -> error_m:monad(term()).
+eselect(EPath, X, Error) ->
     do([error_m ||
-        R <- select(xl_string:format(EPath, Params), X),
+        R <- select(EPath, X),
         option_m:to_error_m(R, Error)
     ]).
 
