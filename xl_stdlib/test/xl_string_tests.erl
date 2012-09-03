@@ -60,3 +60,7 @@ unquote_test() ->
 
 replace_test() ->
     ?assertEqual("abeabe", xl_string:replace("abcdeabcde", "cd", "")).
+
+to_binary_test() ->
+    ?assertEqual(<<"1">>, xl_string:to_binary(1)),
+    ?assertEqual(<<"str">>, xl_string:to_binary("str")).
