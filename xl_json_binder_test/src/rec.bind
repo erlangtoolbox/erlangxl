@@ -8,23 +8,16 @@
 
 {rec2, [
 	{opt_rec_def, rec, optional},
-	{opt_rec, rec, {optional, undefined}},
+	{opt_rec, rec, optional},
 	{opt_list_rec, {list, rec}, {optional, []}}
 ]}.
 
 {simple, [{a, integer, required}]}.
-{nullobj, [{a, simple, required}]}.
+{nullobj, [{a, simple, optional}]}.
 
-{tupleobj, [{a, custom, required}]}.
+{tupleobj, [{a, any, required}]}.
 
 {strnull, [{a, string, required}]}.
-
-{insertion_order, [
-	{id, string, required},
-	{name, string, required},
-	{total_budget, float, required},
-	{creatives, {list, creative}, {optional, []}}
-]}.
 
 {creative, [
 	{id, string, required},
@@ -35,3 +28,11 @@
 	{click_url, string, required},
 	{landing_url, string, {optional, undefined}}
 ]}.
+
+{insertion_order, [
+	{id, string, required},
+	{name, string, required},
+	{total_budget, float, required},
+	{creatives, {list, creative}, {optional, []}}
+]}.
+

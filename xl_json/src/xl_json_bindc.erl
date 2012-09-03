@@ -19,16 +19,43 @@ compile(Path, Dest) ->
 generate_records([], _Out) -> ok;
 generate_records([{Name, Fields} | T], Out) ->
     do([error_m ||
-        file:write(Out, "\n-record(" ++ atom_to_list(Name) ++ ", {\n\t" ++
-            string:join([generate_field(Field) || Field <- Fields], ",\n\t") ++
-                "\n})."),
+        io:format(Out, "~n-record(~s, {~n\t~s~n}).", [Name, string:join([generate_field(Field) || Field <- Fields], ",\n\t")]),
         generate_records(T, Out)
     ]).
 
-generate_field({Name, _Type, required}) -> atom_to_list(Name);
-%string, integer, boolean, float, record
-generate_field({Name, _T, optional}) -> atom_to_list(Name);
-generate_field({Name, _T, {optional, Default}}) -> lists:flatten(io_lib:format("~p = ~p", [Name, Default]));
+generate_field({Name, any, required}) ->
+    xl_string:format("~s = error({required, ~p}) :: any()", [Name, Name]);
+generate_field({Name, string, required}) ->
+    xl_string:format("~s = error({required, ~p}) :: binary()", [Name, Name]);
+generate_field({Name, Type, required})
+    when Type == integer; Type == float; Type == boolean ->
+    xl_string:format("~s = error({required, ~p}) :: ~s()", [Name, Name, Type]);
+generate_field({Name, {list, string}, required}) ->
+    xl_string:format("~s = error({required, ~p}) :: [binary()]", [Name, Name]);
+generate_field({Name, {list, Type}, required})
+    when Type == integer; Type == float; Type == boolean ->
+    xl_string:format("~s = error({required, ~p}) :: [~s()]", [Name, Name, Type]);
+generate_field({Name, {list, Type}, required}) ->
+    xl_string:format("~s = error({required, ~p}) :: [#~s{}]", [Name, Name, Type]);
+generate_field({Name, Type, required}) ->
+    xl_string:format("~s = error({required, ~p}) :: #~s{}", [Name, Name, Type]);
+
+generate_field({Name, any, {optional, Default}}) ->
+    xl_string:format("~s = ~p :: any()", [Name, Default]);
+generate_field({Name, string, {optional, Default}}) ->
+    xl_string:format("~s = ~p :: binary()", [Name, Default]);
+generate_field({Name, Type, {optional, Default}})
+    when Type == integer; Type == float; Type == boolean ->
+    xl_string:format("~s = ~p :: ~s()", [Name, Default, Type]);
+generate_field({Name, {list, string}, {optional, Default}}) ->
+    xl_string:format("~s = ~p :: [binary()]", [Name, Default]);
+generate_field({Name, {list, Type}, {optional, Default}})
+    when Type == integer; Type == float; Type == boolean ->
+    xl_string:format("~s = ~p :: [~s()]", [Name, Default, Type]);
+generate_field({Name, {list, Type}, {optional, Default}}) ->
+    xl_string:format("~s = ~p :: [#~s{}]", [Name, Default, Type]);
+generate_field({Name, Type, optional}) ->
+    xl_string:format("~s :: #~s{}", [Name, Type]);
 generate_field(D) -> {error, {dont_understand, D}}.
 
 generate_file(Path, Generate) ->
@@ -90,7 +117,7 @@ generate_to_json_field(RecordName, {Name, float, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, boolean, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
-generate_to_json_field(RecordName, {Name, custom, _}, Out) ->
+generate_to_json_field(RecordName, {Name, any, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, {list, string}, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);

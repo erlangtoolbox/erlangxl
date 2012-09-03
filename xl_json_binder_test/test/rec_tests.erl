@@ -16,16 +16,14 @@ optinal_values_test() ->
     ?assertEqual({ok, #rec{}}, rec:from_json("{}", rec)).
 
 undefined_null_test() ->
-    ?assertEqual("{\"a\":null}", rec:to_json(#simple{})),
-    ?assertEqual("{\"a\":null}", rec:to_json(#nullobj{})),
-    ?assertEqual("{\"a\":null}", rec:to_json(#strnull{})),
+    ?assertEqual("{\"a\":null}", rec:to_json(#nullobj{a = undefined})),
+    ?assertEqual("{\"a\":null}", rec:to_json(#strnull{a = undefined})),
     ?assertEqual("{\"a\":\"a\\nb\"}", rec:to_json(#strnull{a = <<"a\nb">>})),
     ?assertEqual("{\"a\":\"\"}", rec:to_json(#strnull{a = <<>>})),
-    ?assertEqual({ok, #simple{}}, rec:from_json(rec:to_json(#simple{}), simple)),
     ?assertEqual({ok, #nullobj{}}, rec:from_json(rec:to_json(#nullobj{}), nullobj)).
 
 
-tuple_test() ->
+any_test() ->
     ?assertEqual("{\"a\":{\"x\":1,\"y\":2}}",
         rec:to_json(#tupleobj{a = [{x, 1}, {y, 2}]})),
     ?assertEqual("{\"a\":{\"x\":\"\",\"y\":2}}",
