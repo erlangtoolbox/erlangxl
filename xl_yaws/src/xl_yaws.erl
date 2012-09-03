@@ -10,7 +10,7 @@
 -type extractor() :: fun((#arg{}) -> error_m:monad(parameter())).
 
 -spec get/1 :: (atom()) -> extractor().
-get(Name) -> get(Name, xl_string:format("Parameter '~p' must be present", [Name])).
+get(Name) -> get(Name, xl_string:format("Parameter '~s' must be present", [Name])).
 
 -spec get/2 :: (atom(), string()) -> extractor().
 get(Name, Message) ->
@@ -19,7 +19,7 @@ get(Name, Message) ->
             undefined -> {error, Message};
             {ok, X} -> {ok, {Name, X}};
             X when is_tuple(X) ->
-                {error, xl_string:format("Single parameter '~p' expected", [Name])}
+                {error, xl_string:format("Single parameter '~s' expected", [Name])}
         end
     end.
 
