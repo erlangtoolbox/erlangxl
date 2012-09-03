@@ -40,6 +40,8 @@ generate_field({Name, {list, Type}, required}) ->
 generate_field({Name, Type, required}) ->
     xl_string:format("~s = error({required, ~p}) :: #~s{}", [Name, Name, Type]);
 
+generate_field({Name, any, optional}) ->
+    xl_string:format("~s :: any()", [Name]);
 generate_field({Name, any, {optional, Default}}) ->
     xl_string:format("~s = ~p :: any()", [Name, Default]);
 generate_field({Name, string, {optional, Default}}) ->
