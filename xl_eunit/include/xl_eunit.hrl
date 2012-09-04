@@ -10,11 +10,13 @@ end).
     try
         ?assertEqual(X, Y)
     catch
-        error:{assertEqual_failed, [M,L,Ex,E,V]} ->
+        error:{assertEqual_failed, [M, L, Ex, {expected, E}, {value, V}]} ->
             erlang:display(M),
             erlang:display(L),
             erlang:display(Ex),
+            erlang:display('expected:'),
             erlang:display(E),
+            erlang:display('value:'),
             erlang:display(V),
             error(assertEqual_failed)
     end

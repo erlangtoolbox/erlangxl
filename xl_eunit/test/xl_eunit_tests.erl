@@ -6,6 +6,6 @@
 -include("xl_eunit.hrl").
 
 assertEquals_test() ->
-%    ?assertEquals(true, false).
+    ?assertEquals(true, false).
 %    this is for assertEquals debugging
-     ok.
+%     ok.
