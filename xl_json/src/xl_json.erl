@@ -44,4 +44,3 @@ ktuo_find(Field, {obj, Fields}, Default) when is_list(Fields) ->
         {ok, V} -> V;
         _ -> Default
     end.
-
