@@ -17,6 +17,8 @@ to_float_test() ->
 
 substitute_test() ->
     ?assertEqual("xyz1",
+        xl_string:substitute("x@a_a@z@b-b@", [{a_a, "y"}, {'b-b', 1}], {$@, $@})),
+    ?assertEqual("xyz1",
         xl_string:substitute("x{a_a}z{b-b}", [{a_a, "y"}, {'b-b', 1}])),
     ?assertEqual("xyz1",
         xl_string:substitute("x{a}z{b}", [{a, "y"}, {b, 1}])),
