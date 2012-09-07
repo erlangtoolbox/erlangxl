@@ -10,3 +10,10 @@ parse_test() ->
         {element, 1},
         {find, {'==', {element, 2}, {atom, app}}}
     ]}, epath_parser:parse(Tokens)).
+
+parse_select_test() ->
+    {ok, Tokens} = epath_lexer:parse("/$1/[$2 == app]*"),
+    ?assertEqual({ok, [
+        {element, 1},
+        {select, {'==', {element, 2}, {atom, app}}}
+    ]}, epath_parser:parse(Tokens)).

@@ -37,7 +37,9 @@ select_([{find, P} | Tree], X) when is_list(X) ->
         Y <- xl_lists:find(predicate(P), X),
         select_(Tree, Y)
     ]);
-select_(_Tree, _X) -> {ok, undefined}.
+select_([{select, P} | Tree], X) when is_list(X) ->
+    monad:flatten(option_m, [select_(Tree, Y) || Y <- lists:filter(predicate(P), X)]);
+select_(_Tree, _X) -> undefined.
 
 predicate({Op, A1, A2}) ->
     fun(X) ->
@@ -62,6 +64,12 @@ update_([], R, X, Mutate) -> Mutate(R, X);
 update_([{element, N} | Tree], R, X, Mutate) when is_tuple(X), N =< size(X) ->
     setelement(N, X, update_(Tree, R, element(N, X), Mutate));
 update_([{find, P} | Tree], R, X, Mutate) when is_list(X) ->
+    Predicate = predicate(P),
+    case lists:splitwith(fun(E) -> not(Predicate(E)) end, X) of
+        {F, []} -> F;
+        {F, [H|T]} -> lists:concat([F, [update_(Tree, R, H, Mutate)], T])
+    end;
+update_([{select, P} | Tree], R, X, Mutate) when is_list(X) ->
     Predicate = predicate(P),
     lists:map(fun(E) ->
         case Predicate(E) of
