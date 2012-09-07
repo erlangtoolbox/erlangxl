@@ -6,18 +6,19 @@ end).
 
 -define(assertOk(X), ?assertEqual(ok, element(1, X))).
 
--define(assertEquals(X, Y), begin
-    try
-        ?assertEqual(X, Y)
-    catch
-        error:{assertEqual_failed, [M, L, Ex, {expected, E}, {value, V}]} ->
-            erlang:display(M),
-            erlang:display(L),
-            erlang:display(Ex),
-            erlang:display('expected:'),
-            erlang:display(E),
-            erlang:display('value:'),
-            erlang:display(V),
-            error(assertEqual_failed)
-    end
-end).
+-define(assertEquals(Expect, Expr),
+    ((fun() ->
+        case (Expr) of
+            Expect -> ok;
+            Value ->
+                erlang:display({module, ?MODULE}),
+                erlang:display({line, ?LINE}),
+                erlang:display({expression, ??Expr}),
+                erlang:display('expected:'),
+                erlang:display(Expect),
+                erlang:display('value:'),
+                erlang:display(Value),
+                erlang:error(assertEqual_failed)
+        end
+    end)())
+).
