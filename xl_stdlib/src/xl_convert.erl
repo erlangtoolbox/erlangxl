@@ -5,7 +5,7 @@
 -type primitive_type() :: atom() | binary() | string() | float() | integer().
 
 %% API
--export([to_string/1, to_atom/1, to_float/1, to_binary/1, to_integer/1]).
+-export([to_string/1, to_atom/1, to_float/1, to_binary/1, to_integer/1, make_atom/1]).
 
 -spec to_string/1 :: (primitive_type()) -> string().
 to_string(V) when is_binary(V) -> binary_to_list(V);
@@ -39,3 +39,6 @@ to_binary(X) when is_binary(X) -> X.
 to_integer(X) when is_list(X) -> list_to_integer(X);
 to_integer(X) when is_atom(X) -> list_to_integer(atom_to_list(X));
 to_integer(X) when is_binary(X) -> list_to_integer(binary_to_list(X)).
+
+-spec make_atom/1 :: ([primitive_type()]) -> atom().
+make_atom(L) -> list_to_atom(string:join([to_string(X) || X <- L], "")).

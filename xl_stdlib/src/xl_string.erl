@@ -79,7 +79,7 @@ replace_macro(X, _Map, _) -> X.
 to_string(X) -> xl_convert:to_string(X).
 
 -spec mk_atom/1 :: ([atom() | binary() | string() | float() | integer()]) -> atom().
-mk_atom(L) when is_list(L) -> list_to_atom(lists:concat(L)).
+mk_atom(L) -> xl_convert:make_atom(L).
 
 -spec to_atom/1 :: (iostring() | atom()) -> atom().
 to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
