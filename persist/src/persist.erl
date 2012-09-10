@@ -2,7 +2,11 @@
 
 -compile({parse_transform, do}).
 
--export([open/4, open/3, close/1, store/2, select/1, delete/2, get/2, by_index/1]).
+-export([open/4, open/3, close/1, store/2, select/1, delete/2, get/2, by_index/1,
+    changes/2, identify/2]).
+
+% Internal
+-export([ets_changes/2]).
 
 -record(persister, {
     name :: atom(),
@@ -68,3 +72,21 @@ get(#persister{ets = ETS}, Id) ->
 
 -spec by_index/1 :: (pos_integer()) -> fun((term()) -> xl_string:iostring()).
 by_index(N) -> fun(X) -> element(N, X) end.
+
+-spec changes/2 :: (persister(), integer()) ->
+    [{update | delete, term() | binary()}].
+changes(#persister{ets = ETS}, Since) ->
+    lists:map(fun
+        ({Id, _, _, true}) -> {delete, Id};
+        ({_, X, _, false}) -> {update, X}
+    end, ets_changes(ETS, Since)).
+
+-spec identify/2 :: (persister(), term()) -> xl_string:iostring().
+identify(#persister{identify = I}, X) -> I(X).
+
+ets_changes(ETS, Since) ->
+    ets:select(ETS, [{
+        {'$1', '$2', '$3', '$4'},
+        [{'=<', Since, '$3'}],
+        ['$_']
+    }]).

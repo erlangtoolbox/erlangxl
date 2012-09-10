@@ -18,8 +18,8 @@ stop(Pid) -> xl_gen_periodic:stop(Pid).
 
 % xl_gen_periodic callbacks
 -record(state, {
-    ets = error({undefined, ets}):: ets:tid() | atom(),
-    storage = error({undefined, storage}):: module()
+    ets = error({undefined, ets}) :: ets:tid() | atom(),
+    storage = error({undefined, storage}) :: module()
 }).
 
 init({ETS, Storage}) ->
@@ -38,15 +38,10 @@ terminate(_Reason, LastAction, #state{ets = ETS, storage = Storage}) ->
 
 % Internal functions
 fsync(ETS, LastSync, Storage) ->
-    List = ets:select(ETS, [{
-        {'$1', '$2', '$3', '$4'},
-        [{'=<', LastSync, '$3'}],
-        ['$_']
-    }]),
     Status = xl_lists:eforeach(fun
-            ({Id, _, _, true}) -> Storage:delete(Id);
-            ({Id, X, _, _}) -> Storage:store(Id, X)
-    end, List),
+        ({Id, _, _, true}) -> Storage:delete(Id);
+        ({Id, X, _, false}) -> Storage:store(Id, X)
+    end, persist:ets_changes(ETS, LastSync)),
     case Status of
         ok -> ok;
         Error -> error_logger:error_msg("cannot fsync: ~p~n", [Error])
