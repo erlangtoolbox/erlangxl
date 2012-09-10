@@ -11,10 +11,6 @@ strip_empty_test() ->
 stripthru_test() ->
     ?assertEqual("abc\"\\n\"", xl_string:stripthru("a\tb\nc\"\\n\"")).
 
-to_float_test() ->
-    ?assertEqual(0.0, xl_string:to_float("0")),
-    ?assertEqual(0.0, xl_string:to_float("0.0")).
-
 substitute_test() ->
     ?assertEqual("xyz1",
         xl_string:substitute("x@a_a@z@b-b@", [{a_a, "y"}, {'b-b', 1}], {$@, $@})),
@@ -32,16 +28,6 @@ substitute_test() ->
         xl_string:substitute("x{a.b}", [{'a.b', "y"}])),
     ?assertEqual("xyz{}",
         xl_string:substitute("x{a}z{}", [{a, "y"}])).
-
-to_string_test() ->
-    ?assertEqual("1", xl_string:to_string(1)),
-    ?assertEqual("2.2", xl_string:to_string(2.2)),
-    ?assertEqual("true", xl_string:to_string(true)),
-    ?assertEqual("x", xl_string:to_string("x")),
-    ?assertEqual("Y", xl_string:to_string(<<"Y">>)).
-
-mk_atom_test() ->
-    ?assertEqual(atomAB1, xl_string:mk_atom([atom, "AB", 1])).
 
 equal_ignore_case_test() ->
     ?assert(xl_string:equal_ignore_case(<<"A">>, <<"a">>)),
@@ -62,7 +48,3 @@ unquote_test() ->
 
 replace_test() ->
     ?assertEqual("abeabe", xl_string:replace("abcdeabcde", "cd", "")).
-
-to_binary_test() ->
-    ?assertEqual(<<"1">>, xl_string:to_binary(1)),
-    ?assertEqual(<<"str">>, xl_string:to_binary("str")).

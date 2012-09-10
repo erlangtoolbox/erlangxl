@@ -21,7 +21,7 @@ open(Name, Identify, StoreModule) -> open(Name, Identify, StoreModule, []).
 -spec open/4 :: (atom(), fun((term()) -> xl_string:iostring()), atom(), [{atom(), term()}]) ->
     error_m:monad(persister()).
 open(Name, Identify, StoreModule, Options) ->
-    ETS = ets:new(xl_string:mk_atom([Name, '_persister']), [
+    ETS = ets:new(xl_convert:to_atom(lists:concat([Name, '_persister'])), [
         ordered_set, {keypos, 1}, protected
     ]),
     do([error_m ||

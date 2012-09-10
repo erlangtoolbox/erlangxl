@@ -14,7 +14,7 @@ escape_params(List) ->
     lists:map(fun({K, V}) -> {K, escape(V)} end, List).
 
 -spec escape/1 :: (term()) -> string().
-escape(V) -> edoc_lib:escape_uri(xl_string:to_string(V)).
+escape(V) -> edoc_lib:escape_uri(xl_convert:to_string(V)).
 
 -spec substitute/2 :: (string(), xl_lists:kvlist_at()) -> string().
 substitute(Url, Map) ->

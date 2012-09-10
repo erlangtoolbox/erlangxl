@@ -8,6 +8,13 @@
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
 
+-deprecated({to_float, 1}).
+-deprecated({to_string, 1}).
+-deprecated({mk_atom, 1}).
+-deprecated({to_atom, 1}).
+-deprecated({to_binary, 1}).
+-deprecated({to_integer, 1}).
+
 -spec empty/1 :: (string()) -> boolean().
 empty(S) -> S == "".
 
@@ -48,13 +55,7 @@ replace(S, Search, Replace, Acc) ->
 format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
 
 -spec to_float/1 :: (iostring()) -> float().
-to_float(X) when is_binary(X) -> to_float(binary_to_list(X));
-to_float(X) ->
-    try
-        list_to_float(X)
-    catch
-        _:_ -> float(list_to_integer(X))
-    end.
+to_float(X)  -> xl_convert:to_float(X).
 
 -spec substitute/2 :: (string(), xl_lists:kvlist_at()) -> string().
 substitute(Str, Map) -> substitute(Str, Map, {${, $}}).
@@ -74,18 +75,16 @@ replace_macro([Open | T], Map, {Open, Close}) ->
 replace_macro(X, _Map, _) -> X.
 
 
--spec to_string/1 :: (atom() | binary() | string() | float() | integer())
-        -> string().
-to_string(V) when is_binary(V) -> binary_to_list(V);
-to_string(V) when is_atom(V) -> atom_to_list(V);
-to_string(V) when is_list(V) -> V;
-to_string(V) when is_float(V); is_integer(V) -> format("~p", [V]);
-to_string(V) -> format("~p", [V]).
+-spec to_string/1 :: (atom() | binary() | string() | float() | integer()) -> string().
+to_string(X) -> xl_convert:to_string(X).
 
--spec mk_atom/1 :: ([atom() | binary() | string() | float() | integer()]) ->
-    atom().
-mk_atom(L) when is_list(L) ->
-    list_to_atom(string:join([to_string(X) || X <- L], "")).
+-spec mk_atom/1 :: ([atom() | binary() | string() | float() | integer()]) -> atom().
+mk_atom(L) when is_list(L) -> list_to_atom(lists:concat(L)).
+
+-spec to_atom/1 :: (iostring() | atom()) -> atom().
+to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
+to_atom(X) when is_list(X) -> list_to_atom(X);
+to_atom(X) when is_atom(X) -> X.
 
 -spec equal_ignore_case/2 :: (iostring(), iostring()) -> boolean().
 equal_ignore_case(A, B) when is_list(A), is_list(B);
@@ -113,21 +112,12 @@ join(List, Delim) -> string:join([to_string(X) || X <- List], Delim).
 -spec join/1 :: ([iostring()]) -> string().
 join(List) -> join(List, "").
 
--spec to_atom/1 :: (iostring() | atom()) -> atom().
-to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
-to_atom(X) when is_list(X) -> list_to_atom(X);
-to_atom(X) when is_atom(X) -> X.
 
 -spec to_binary/1 :: (integer() | iostring() | atom()) -> binary().
-to_binary(X) when is_integer(X) -> to_binary(integer_to_list(X));
-to_binary(X) when is_atom(X) -> atom_to_binary(X, utf8);
-to_binary(X) when is_list(X) -> list_to_binary(X);
-to_binary(X) when is_binary(X) -> X.
+to_binary(X) -> xl_convert:to_binary(X).
 
 -spec to_integer/1 :: (iostring() | atom() | binary()) -> integer().
-to_integer(X) when is_list(X) -> list_to_integer(X);
-to_integer(X) when is_atom(X) -> list_to_integer(atom_to_list(X));
-to_integer(X) when is_binary(X) -> list_to_integer(binary_to_list(X)).
+to_integer(X) -> xl_conver:to_integer(X).
 
 -spec generate_uuid/0 :: () -> binary().
 generate_uuid() ->
