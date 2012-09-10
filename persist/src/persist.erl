@@ -30,10 +30,11 @@ open(Name, Identify, StoreModule, Options) ->
     ]),
     do([error_m ||
         Objects <- StoreModule:load(),
-        return([ets:insert(ETS, {Identify(X), X, 0, false}) || X <- Objects]),
+        return([ets:insert(ETS, X) || X <- Objects]),
         Fsync <- persist_fsync:start_link(
             ETS,
             xl_lists:kvfind(fsync_interval, Options, 5000),
+            xl_lists:kvfind(fsync_delete, Options, true),
             StoreModule
         ),
         return(#persister{
