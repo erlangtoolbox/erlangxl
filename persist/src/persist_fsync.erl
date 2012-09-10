@@ -42,7 +42,7 @@ terminate(_Reason, LastAction, #state{ets = ETS, delete = Delete, storage = Stor
 fsync(ETS, LastSync, Delete, Storage) ->
     Status = xl_lists:eforeach(fun
         ({Id, _, _, true}) when Delete -> Storage:delete(Id);
-        (R = {Id, _, _, false}) -> Storage:store(Id, R)
+        (R = {Id, _, _, _}) -> Storage:store(Id, R)
     end, persist:ets_changes(ETS, LastSync)),
     case Status of
         ok -> ok;
