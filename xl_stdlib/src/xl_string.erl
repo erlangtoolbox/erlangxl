@@ -47,7 +47,8 @@ replace(S, Search, Replace, Acc) ->
 -spec format/2 :: (io:format(), [term()]) -> string().
 format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
 
--spec to_float/1 :: (string()) -> float().
+-spec to_float/1 :: (iostring()) -> float().
+to_float(X) when is_binary(X) -> to_float(binary_to_list(X));
 to_float(X) ->
     try
         list_to_float(X)
