@@ -7,7 +7,6 @@
 generic_test() ->
     R = #rec{},
     ?assertEqual({ok, R}, rec:from_json(rec:to_json(R), rec)),
-
     R2 = #rec2{opt_rec_def = R, opt_rec = R, opt_list_rec = [R, R]},
     erlang:display(rec:to_json(R2)),
     ?assertEqual({ok, R2}, rec:from_json(rec:to_json(R2), rec2)).

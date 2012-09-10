@@ -2,6 +2,7 @@
  	{opt_int, integer, {optional, 1}},
  	{opt_bool, boolean, {optional, true}},
  	{opt_str, string, {optional, <<"default">>}},
+ 	{opt_atom, atom, {optional, default}},
  	{opt_int_def, integer, {optional, 1}},
  	{opt_list_int_def, {list, integer}, {optional, []}}
 ] }.

@@ -2,7 +2,7 @@
 
 -export([to_json/1, from_json/1]).
 %%binder rt
--export([ktuo_find/2, ktuo_find/3]).
+-export([ktuo_find/3, ktuo_find/4]).
 
 -spec to_json/1 :: (Param) -> string()
     when Param :: (binary() | atom() | number() | [Param] | [{Param, Param}]).
@@ -33,14 +33,19 @@ ktuo_transform(X) when is_list(X) ->
 ktuo_transform(null) -> undefined;
 ktuo_transform(X) -> X.
 
--spec ktuo_find/2 :: (atom(), {obj, [{binary(), term()}]}) -> term().
-ktuo_find(Field, Obj) -> ktuo_find(Field, Obj, undefined).
+-type prim_type() :: string | integer | float | atom | boolean.
+-type type() :: prim_type() | [prim_type()] | undefined.
 
--spec ktuo_find/3 :: (atom(), {obj, [{binary(), term()}]}, term()) -> term().
-ktuo_find(_Field, undefined, Default) -> Default;
-ktuo_find(Field, {obj, Fields}, Default) when is_list(Fields) ->
+-spec ktuo_find/3 :: (atom(), {obj, [{binary(), term()}]}, type()) -> term().
+ktuo_find(Field, Obj, Type) -> ktuo_find(Field, Obj, undefined, Type).
+
+-spec ktuo_find/4 :: (atom(), {obj, [{binary(), term()}]}, term(), type()) -> term().
+ktuo_find(_Field, undefined, Default, _Type) -> Default;
+ktuo_find(Field, {obj, Fields}, Default, Type) when is_list(Fields) ->
     case xl_lists:kvfind(atom_to_binary(Field, utf8), Fields) of
         {ok, null} -> undefined;
+        {ok, V} when Type == atom -> binary_to_atom(V, utf8);
+        {ok, V} when Type == {list, atom} -> lists:map(fun(X) -> binary_to_atom(X, utf8) end, V);
         {ok, V} -> V;
         _ -> Default
     end.

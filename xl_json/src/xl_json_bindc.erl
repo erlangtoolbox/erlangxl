@@ -27,13 +27,13 @@ generate_field({Name, any, required}) ->
     xl_string:format("~s = error({required, ~p}) :: any()", [Name, Name]);
 generate_field({Name, string, required}) ->
     xl_string:format("~s = error({required, ~p}) :: binary()", [Name, Name]);
-generate_field({Name, Type, required})
-    when Type == integer; Type == float; Type == boolean ->
+generate_field({Name, Type, required}) when
+    Type == integer; Type == float; Type == boolean; Type == atom ->
     xl_string:format("~s = error({required, ~p}) :: ~s()", [Name, Name, Type]);
 generate_field({Name, {list, string}, required}) ->
     xl_string:format("~s = error({required, ~p}) :: [binary()]", [Name, Name]);
-generate_field({Name, {list, Type}, required})
-    when Type == integer; Type == float; Type == boolean ->
+generate_field({Name, {list, Type}, required}) when
+    Type == integer; Type == float; Type == boolean; Type == atom ->
     xl_string:format("~s = error({required, ~p}) :: [~s()]", [Name, Name, Type]);
 generate_field({Name, {list, Type}, required}) ->
     xl_string:format("~s = error({required, ~p}) :: [#~s{}]", [Name, Name, Type]);
@@ -46,13 +46,13 @@ generate_field({Name, any, {optional, Default}}) ->
     xl_string:format("~s = ~p :: any()", [Name, Default]);
 generate_field({Name, string, {optional, Default}}) ->
     xl_string:format("~s = ~p :: binary()", [Name, Default]);
-generate_field({Name, Type, {optional, Default}})
-    when Type == integer; Type == float; Type == boolean ->
+generate_field({Name, Type, {optional, Default}}) when
+    Type == integer; Type == float; Type == boolean; Type == atom ->
     xl_string:format("~s = ~p :: ~s()", [Name, Default, Type]);
 generate_field({Name, {list, string}, {optional, Default}}) ->
     xl_string:format("~s = ~p :: [binary()]", [Name, Default]);
-generate_field({Name, {list, Type}, {optional, Default}})
-    when Type == integer; Type == float; Type == boolean ->
+generate_field({Name, {list, Type}, {optional, Default}}) when
+    Type == integer; Type == float; Type == boolean; Type == atom ->
     xl_string:format("~s = ~p :: [~s()]", [Name, Default, Type]);
 generate_field({Name, {list, Type}, {optional, Default}}) ->
     xl_string:format("~s = ~p :: [#~s{}]", [Name, Default, Type]);
@@ -113,6 +113,8 @@ generate_to_json_fields(RecordName, [Field = {Name, _, _} | Fields], Out) ->
 
 generate_to_json_field(RecordName, {Name, string, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
+generate_to_json_field(RecordName, {Name, atom, _}, Out) ->
+    io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, integer, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, float, _}, Out) ->
@@ -122,6 +124,8 @@ generate_to_json_field(RecordName, {Name, boolean, _}, Out) ->
 generate_to_json_field(RecordName, {Name, any, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, {list, string}, _}, Out) ->
+    io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
+generate_to_json_field(RecordName, {Name, {list, atom}, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
 generate_to_json_field(RecordName, {Name, {list, integer}, _}, Out) ->
     io:format(Out, "xl_json:to_json(R#~p.~p)", [RecordName, Name]);
@@ -160,21 +164,21 @@ generate_from_json_fields([Field | Fields], Out) ->
     ]).
 
 
-generate_from_json_field({Name, Type, {optional, Default}}, Out)
-    when Type == string; Type == integer; Type == float; Type == boolean;
+generate_from_json_field({Name, Type, {optional, Default}}, Out) when
+    Type == string; Type == atom; Type == integer; Type == float; Type == boolean;
     Type == {list, string}; Type == {list, integer}; Type == {list, float};
-    Type == {list, boolean} ->
-    io:format(Out, "~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Default]);
-generate_from_json_field({Name, Type, required}, Out)
-    when Type == string; Type == integer; Type == float; Type == boolean;
+    Type == {list, boolean}; Type == {list, atom} ->
+    io:format(Out, "~p = xl_json:ktuo_find(~p, J, ~p, ~p)", [Name, Name, Default, Type]);
+generate_from_json_field({Name, Type, required}, Out) when
+    Type == string; Type == atom; Type == integer; Type == float; Type == boolean;
     Type == {list, string}; Type == {list, integer}; Type == {list, float};
-    Type == {list, boolean} ->
-    io:format(Out, "~p = xl_json:ktuo_find(~p, J)", [Name, Name]);
+    Type == {list, boolean}; Type == {list, atom} ->
+    io:format(Out, "~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Type]);
 generate_from_json_field({Name, {list, Rec}, {optional, Default}}, Out) ->
-    io:format(Out, "~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p)]", [Name, Rec, Name, Default]);
+    io:format(Out, "~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, undefined)]", [Name, Rec, Name, Default]);
 generate_from_json_field({Name, {list, Rec}, required}, Out) ->
-    io:format(Out, "~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J)]", [Name, Rec, Name]);
+    io:format(Out, "~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, undefined)]", [Name, Rec, Name]);
 generate_from_json_field({Name, Rec, _}, Out) ->
-    io:format(Out, "~p = from_json_(xl_json:ktuo_find(~p, J), ~p)", [Name, Name, Rec]);
+    io:format(Out, "~p = from_json_(xl_json:ktuo_find(~p, J, undefined), ~p)", [Name, Name, Rec]);
 generate_from_json_field(Field, _Out) -> {error, {dont_understand, Field}}.
 
