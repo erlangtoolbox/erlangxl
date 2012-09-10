@@ -2,7 +2,7 @@
 
 -export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
     sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
-    kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3]).
+    kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1]).
 
 -type kvlist(A, B) :: [{A, B}].
 -type kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float()).
@@ -152,11 +152,18 @@ eflatten(E) -> E.
 -spec insert_before/3 :: (any(), any(), list()) -> list().
 insert_before(BeforeElem, Elem, List) ->
     {Head, Tail} = lists:splitwith(fun(E) ->
-                case  E of
-                    BeforeElem ->
-                        false;
-                    _ ->
-                        true
-                end
-        end, List),
+        case  E of
+            BeforeElem ->
+                false;
+            _ ->
+                true
+        end
+    end, List),
     Head ++ [Elem] ++ Tail.
+
+-spec random/1 :: ([term()]) -> option_m:monad(term()).
+random(List) ->
+    case length(List) of
+        0 -> undefined;
+        L -> {ok, lists:nth(random:uniform(L), List)}
+    end.
