@@ -168,7 +168,6 @@ read_files(Wildcards, Option) ->
         end
     end, [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)])).
 
-%todo handle symlinks
 delete(Path) ->
     case type(Path) of
         {ok, regular} ->
