@@ -1,0 +1,6 @@
+{ref, [
+    {a, {rec, rec}, optional},
+    {b, {rec, rec}, required},
+    {la, {list, {rec, rec}}, {optional, []}},
+    {lb, {list, {rec, rec}}, required}
+]}.

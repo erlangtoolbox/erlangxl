@@ -2,6 +2,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-include("ref.hrl").
 -include("rec.hrl").
 
 generic_test() ->
@@ -39,3 +40,6 @@ optional_obj_lists_bug_test() ->
         creatives = []}
     }, rec:from_json("{\"id\":\"3\",\"name\":\"campaign3\",\"total_budget\": \"eppp\"}", insertion_order)).
 
+reference_test() ->
+    R = #ref{b = #rec{}, lb = [#rec{}, #rec{}]},
+    ?assertEqual({ok, R}, ref:from_json(ref:to_json(R), ref)).
