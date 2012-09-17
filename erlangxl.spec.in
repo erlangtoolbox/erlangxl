@@ -5,6 +5,7 @@ Version:        {{VERSION}}
 License:        Erlang Public License
 Release:        1
 Requires:       erlang yaws erlang-flake erlang-erleveldb strikead-erlang-ktuo strikead-erlang-erlandox
+Conflicts:	strikead-erlang-commons
 BuildRequires:  erlang yaws
 # it actually also build-requires strikead-erlang-erlandox; since
 # jenkins is not likely to have it, there is a workaround in
