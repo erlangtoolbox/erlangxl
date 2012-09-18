@@ -56,7 +56,7 @@ init({App, Profile}) ->
     ]).
 
 handle_call({call, Url}, _From,
-State = #state{profile = Profile, request_opts = Opts}) ->
+	    State = #state{profile = Profile, request_opts = Opts}) ->
     Result = case httpc:request(get, {Url, []}, Opts, [], Profile) of
         {ok, {{_, Code, Reason}, _, _}} ->
             {ok, #http_resp{code = Code, reason = Reason}};
@@ -64,7 +64,7 @@ State = #state{profile = Profile, request_opts = Opts}) ->
     end,
     {reply, Result, State};
 handle_call({post, Url, ContentType, RequestBody}, _From,
-State = #state{profile = Profile, request_opts = Opts}) ->
+	    State = #state{profile = Profile, request_opts = Opts}) ->
     Result = case httpc:request(post, {Url, [], ContentType, RequestBody}, Opts, [], Profile) of
         {ok, {{_, Code, Reason}, Headers, Body}} ->
             {ok, #http_resp{

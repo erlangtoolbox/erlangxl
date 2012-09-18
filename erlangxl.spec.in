@@ -4,8 +4,15 @@ Name:           strikead-erlangxl
 Version:        {{VERSION}}
 License:        Erlang Public License
 Release:        1
-Requires:       erlang yaws erlang-flake erlang-erleveldb strikead-erlang-ktuo strikead-erlang-erlando
-BuildRequires:  erlang yaws strikead-erlang-erlando
+Requires:       erlang yaws erlang-flake erlang-erleveldb strikead-erlang-ktuo strikead-erlang-erlandox
+Conflicts:	strikead-erlang-commons
+BuildRequires:  erlang yaws
+# it actually also build-requires strikead-erlang-erlandox; since
+# jenkins is not likely to have it, there is a workaround in
+# Makefile.inc (the parse_transorm.beam will be looked for in
+# $BUILDROOT/lib, where it will be deposited by a previous run of
+# ebt). For building it standalone, just install
+# strikead-erlang-erlando.
 Group:          StrikeAd/Software
 Source:         %{realname}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-root
@@ -69,6 +76,8 @@ done
 %{erl_lib_root}
 
 %changelog
+* Fri Aug 31 2012 andrei.zavada@strikead.com
+- Workaround for erlandox build-requirement
 * Mon Aug 20 2012 andrei.zavada@strikead.com
 - Look for .app files in */src/
 - Install any subdirs in */priv/
