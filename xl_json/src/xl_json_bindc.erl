@@ -178,16 +178,16 @@ generate_from_json_field({Name, Type, required}) when
     Type == {list, string}; Type == {list, integer}; Type == {list, float};
     Type == {list, boolean}; Type == {list, atom} ->
     {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Type])};
-generate_from_json_field({Name, {list, {Mod, Rec}}, {optional, Default}}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, undefined)]", [Name, Mod, Rec, Name, Default])};
-generate_from_json_field({Name, {list, Rec}, {optional, Default}}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, undefined)]", [Name, Rec, Name, Default])};
-generate_from_json_field({Name, {list, {Mod, Rec}}, required}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, undefined)]", [Name, Mod, Rec, Name])};
-generate_from_json_field({Name, {list, Rec}, required}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, undefined)]", [Name, Rec, Name])};
-generate_from_json_field({Name, {Mod, Rec}, _}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = ~p:from_json_(xl_json:ktuo_find(~p, J, undefined), ~p)", [Name, Mod, Name, Rec])};
+generate_from_json_field({Name, {list, Type = {Mod, Rec}}, {optional, Default}}) when is_atom(Rec) ->
+    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Mod, Rec, Name, Default, Type])};
+generate_from_json_field({Name, Type = {list, Rec}, {optional, Default}}) when is_atom(Rec) ->
+    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Rec, Name, Default, Type])};
+generate_from_json_field({Name, Type = {list, {Mod, Rec}}, required}) when is_atom(Rec) ->
+    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p)]", [Name, Mod, Rec, Name, Type])};
+generate_from_json_field({Name, Type = {list, Rec}, required}) when is_atom(Rec) ->
+    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p)]", [Name, Rec, Name, Type])};
+generate_from_json_field({Name, Type = {Mod, Rec}, _}) when is_atom(Rec) ->
+    {ok, xl_string:format("~p = ~p:from_json_(xl_json:ktuo_find(~p, J, ~p), ~p)", [Name, Mod, Name, Type, Rec])};
 generate_from_json_field({Name, Rec, _}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = from_json_(xl_json:ktuo_find(~p, J, undefined), ~p)", [Name, Name, Rec])};
+    {ok, xl_string:format("~p = from_json_(xl_json:ktuo_find(~p, J, ~p), ~p)", [Name, Name, Rec, Rec])};
 generate_from_json_field(Field) -> {error, {dont_understand, Field}}.
