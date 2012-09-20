@@ -43,3 +43,7 @@ optional_obj_lists_bug_test() ->
 reference_test() ->
     R = #ref{b = #rec{}, lb = [#rec{}, #rec{}]},
     ?assertEqual({ok, R}, ref:from_json(ref:to_json(R), ref)).
+
+list_test() ->
+    L = [#rec{}, #rec{}, #rec{}],
+    ?assertEqual({ok, L}, rec:from_json(rec:to_json(L), rec)).

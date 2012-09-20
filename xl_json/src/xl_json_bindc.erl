@@ -87,12 +87,19 @@ generate_module(Records, Name, Out) ->
         file:write(Out, "-include(\"" ++ Name ++ ".hrl\").\n\n"),
         file:write(Out, "-export([to_json/1, from_json/2, from_json_/2]).\n\n"),
         file:write(Out, "to_json(undefined) -> \"null\";\n\n"),
+        file:write(Out, "to_json(L) when is_list(L) -> \"[\" ++ string:join([to_json(R) || R <- L], \",\") ++ \"]\";\n\n"),
         generate_to_json(Records, Out),
         file:write(Out, "from_json(Json, Record) when is_list(Json); is_binary(Json) ->\n"
         "\tcase ktj_parse:parse(Json) of\n"
-        "\t\t{J, _, _} ->\n"
+        "\t\t{L, _, _} when is_list(L)->\n"
         "\t\t\ttry\n"
-        "\t\t\t\t{ok, from_json_(J, Record)}\n"
+        "\t\t\t\t{ok, [from_json_(R, Record) || R <- L]}\n"
+        "\t\t\tcatch\n"
+        "\t\t\t\terror:X -> {error, X}\n"
+        "\t\t\tend;\n"
+        "\t\t{R, _, _} ->\n"
+        "\t\t\ttry\n"
+        "\t\t\t\t{ok, from_json_(R, Record)}\n"
         "\t\t\tcatch\n"
         "\t\t\t\terror:X -> {error, X}\n"
         "\t\t\tend;\n"
