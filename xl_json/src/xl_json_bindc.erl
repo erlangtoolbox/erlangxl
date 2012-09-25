@@ -24,52 +24,97 @@ generate_records(Records, Out) ->
         ])
     end, Records).
 
-generate_field({Name, any, required}) ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: any()", [Name, Name])};
-generate_field({Name, string, required}) ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: binary()", [Name, Name])};
-generate_field({Name, Type, required}) when
-    Type == integer; Type == float; Type == boolean; Type == atom ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: ~s()", [Name, Name, Type])};
-generate_field({Name, {list, string}, required}) ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: [binary()]", [Name, Name])};
-generate_field({Name, {list, Type}, required}) when
-    Type == integer; Type == float; Type == boolean; Type == atom ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: [~s()]", [Name, Name, Type])};
-generate_field({Name, {list, Type}, required}) when is_atom(Type) ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: [#~s{}]", [Name, Name, Type])};
-generate_field({Name, {list, {_Mod, Type}}, required}) when is_atom(Type) ->
-    {ok, xl_string:format("%:: #[~s{}]~n\t~s = error({required, ~p})", [Type, Name, Name])};
-generate_field({Name, {_Mod, Type}, required}) when is_atom(Type) ->
-    {ok, xl_string:format("%:: #~s{}~n\t~s = error({required, ~p})", [Type, Name, Name])};
-generate_field({Name, Type, required}) when is_atom(Type) ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: #~s{}", [Name, Name, Type])};
-generate_field({Name, any, optional}) ->
-    {ok, xl_string:format("~s :: any()", [Name])};
-generate_field({Name, any, {optional, Default}}) ->
-    {ok, xl_string:format("~s = ~p :: any()", [Name, Default])};
-generate_field({Name, string, {optional, Default}}) ->
-    {ok, xl_string:format("~s = ~p :: binary()", [Name, Default])};
-generate_field({Name, Type, {optional, Default}}) when
-    Type == integer; Type == float; Type == boolean; Type == atom ->
-    {ok, xl_string:format("~s = ~p :: ~s()", [Name, Default, Type])};
-generate_field({Name, {list, string}, {optional, Default}}) ->
-    {ok, xl_string:format("~s = ~p :: [binary()]", [Name, Default])};
-generate_field({Name, {list, Type}, {optional, Default}}) when
-    Type == integer; Type == float; Type == boolean; Type == atom ->
+
+%primitives
+generate_field({Name, string}) -> generate_field({Name, binary});
+generate_field({Name, Type}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == binary;
+    Type == any ->
+    {ok, xl_string:format("~p = error({required, ~p}) :: ~p()", [Name, Name, Type])};
+generate_field({Name, Type}) when is_atom(Type) ->
+    {ok, xl_string:format("~p = error({required, ~p}) :: #~p{}", [Name, Name, Type])};
+generate_field({Name, {Module, Type}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = error({required, ~p}) ", [Name, Name])};
+
+%primitives with defaults
+generate_field({Name, {Type, Default}}) when
+    is_binary(Default), Type == binary;
+    is_integer(Default), Type == integer;
+    is_float(Default), Type == float;
+    is_atom(Default), Type == atom;
+    Default == true, Type == boolean;
+    Default == false, Type == boolean;
+    is_list(Default), Type == any ->
+    {ok, xl_string:format("~p = ~p :: ~p()", [Name, Default, Type])};
+generate_field({Name, {string, Default}}) ->
+    generate_field({Name, {binary, Default}});
+
+%lists
+generate_field({Name, {list, string}}) -> generate_field({Name, {list, binary}});
+generate_field({Name, {list, Type}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == binary;
+    Type == any ->
+    {ok, xl_string:format("~p = error({required, ~p}) :: [~s()]", [Name, Name, Type])};
+generate_field({Name, {list, Type}}) when is_atom(Type) ->
+    {ok, xl_string:format("~p = error({required, ~p}) :: [#~s{}]", [Name, Name, Type])};
+generate_field({Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = error({required, ~p})", [Name, Name])};
+
+%lists with defaults
+generate_field({Name, {list, string, Default}}) -> generate_field({Name, {list, binary, Default}});
+generate_field({Name, {list, Type, Default}}) when
+    is_list(Default), Type == binary;
+    is_list(Default), Type == integer;
+    is_list(Default), Type == float;
+    is_list(Default), Type == boolean;
+    is_list(Default), Type == atom;
+    is_list(Default), Type == any ->
     {ok, xl_string:format("~s = ~p :: [~s()]", [Name, Default, Type])};
-generate_field({Name, {list, Type}, {optional, Default}}) when is_atom(Type) ->
-    {ok, xl_string:format("~s = ~p :: [#~s{}]", [Name, Default, Type])};
-generate_field({Name, {list, {_Mod, Type}}, {optional, Default}}) when is_atom(Type) ->
-    {ok, xl_string:format("% :: [#~s{}]\n\t~s = ~p", [Type, Name, Default])};
-generate_field({Name, {_Mod, Type}, optional}) when is_atom(Type) ->
-    {ok, xl_string:format("%:: #~s{}~n\t~s", [Type, Name])};
-generate_field({Name, Type, optional}) when is_atom(Type) ->
-    {ok, xl_string:format("~s :: #~s{}", [Name, Type])};
+generate_field({Name, {list, Type, Default}}) when is_atom(Type), is_list(Default) ->
+    {ok, xl_string:format("~p = ~p :: [#~s{}]", [Name, Default, Type])};
+generate_field({Name, {list, {Module, Type}, Default}}) when is_atom(Module), is_atom(Type), is_list(Default) ->
+    {ok, xl_string:format("~p = ~p", [Name, Default])};
+
+%options
+generate_field({Name, {option, string}}) -> generate_field({Name, {option, binary}});
+generate_field({Name, {option, Type}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == binary;
+    Type == any ->
+    {ok, xl_string:format("~s = error({required, ~p}) :: option_m:monad(~s())", [Name, Name, Type])};
+generate_field({Name, {option, Type}}) when is_atom(Type) ->
+    {ok, xl_string:format("~s = error({required, ~p}) :: option_m:monad(#~s{})", [Name, Name, Type])};
+generate_field({Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~s = error({required, ~p})", [Name, Name])};
+
+%options with defaults
+generate_field({Name, {option, string, Default}}) -> generate_field({Name, {option, binary, Default}});
+generate_field({Name, {option, Type, Default}}) when
+    is_binary(Default), Type == binary;
+    is_integer(Default), Type == integer;
+    is_float(Default), Type == float;
+    is_atom(Default), Type == atom;
+    Default == true, Type == boolean;
+    Default == false, Type == boolean;
+    is_list(Default), Type == any ->
+    {ok, xl_string:format("~s = {ok, ~p} :: option_m:monad(~s())", [Name, Default, Type])};
+
+%wtf
 generate_field(D) -> {error, {dont_understand, D}}.
 
 generate_file(Path, Generate) ->
-    erlang:display("...generating " ++ Path),
+    io:format("Generate ~s~n", [Path]),
     do([error_m ||
         filelib:ensure_dir(Path),
         Out <- file:open(Path, [write]),
@@ -87,6 +132,7 @@ generate_module(Records, Name, Out) ->
         file:write(Out, "-include(\"" ++ Name ++ ".hrl\").\n\n"),
         file:write(Out, "-export([to_json/1, from_json/2, from_json_/2]).\n\n"),
         file:write(Out, "to_json(undefined) -> \"null\";\n\n"),
+        file:write(Out, "to_json({ok, X}) -> to_json(X);\n\n"),
         file:write(Out, "to_json(L) when is_list(L) -> \"[\" ++ string:join([to_json(R) || R <- L], \",\") ++ \"]\";\n\n"),
         generate_to_json(Records, Out),
         file:write(Out, "from_json(Json, Record) when is_list(Json); is_binary(Json) ->\n"
@@ -126,38 +172,77 @@ generate_to_json(Records, Out) ->
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
-generate_to_json_field(RecordName, {Name, string, _}) ->
+generate_to_json_field(RecordName, {Name, Type}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
     {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, atom, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, integer, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, float, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, boolean, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, any, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {list, string}, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {list, atom}, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {list, integer}, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {list, float}, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {list, boolean}, _}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {list, {Mod, Rec}}, _}) when is_atom(Rec) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([~p:to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Name, Mod, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {list, Rec}, _}) when is_atom(Rec) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {Mod, Rec}, _}) when is_atom(Rec) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", ~p:to_json(R#~p.~p)", [Name, Mod, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, Rec, _}) when is_atom(Rec) ->
+generate_to_json_field(RecordName, {Name, {Type, _Default}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    generate_to_json_field(RecordName, {Name, Type});
+generate_to_json_field(RecordName, {Name, {list, Type}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    generate_to_json_field(RecordName, {Name, Type});
+generate_to_json_field(RecordName, {Name, {list, Type, _Default}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    generate_to_json_field(RecordName, {Name, Type});
+generate_to_json_field(RecordName, {Name, {option, Type}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    generate_to_json_field(RecordName, {Name, Type});
+generate_to_json_field(RecordName, {Name, {option, Type, _Default}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    generate_to_json_field(RecordName, {Name, Type});
+
+generate_to_json_field(RecordName, {Name, {option, Type}}) when is_atom(Type) ->
     {ok, xl_string:format("\"\\\"~p\\\":\", to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, Field) ->
-    {error, {dont_understand, {RecordName, Field}}}.
+generate_to_json_field(RecordName, {Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("\"\\\"~p\\\":\", ~p:to_json(R#~p.~p)", [Name, Module, RecordName, Name])};
+
+generate_to_json_field(RecordName, {Name, {list, Type}}) when is_atom(Type) ->
+    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Name, RecordName, Name])};
+generate_to_json_field(RecordName, {Name, {list, Type, _Default}}) when is_atom(Type) ->
+    generate_to_json_field(RecordName, {Name, {list, Type}});
+
+generate_to_json_field(RecordName, {Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([~p:to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Name, Module, RecordName, Name])};
+generate_to_json_field(RecordName, {Name, {list, {Module, Type}, _Default}}) when is_atom(Module), is_atom(Type) ->
+    generate_to_json_field(RecordName, {Name, {list, {Module, Type}}});
+
+generate_to_json_field(RecordName, {Name, Type}) when is_atom(Type) ->
+    {ok, xl_string:format("\"\\\"~p\\\":\", to_json(R#~p.~p)", [Name, RecordName, Name])};
+generate_to_json_field(RecordName, {Name, {Module, Type}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("\"\\\"~p\\\":\", ~p:to_json(R#~p.~p)", [Name, Module, RecordName, Name])};
+
+generate_to_json_field(_RecordName, Field) ->
+    {error, {dont_understand, Field}}.
 
 generate_from_json(Records, Out) ->
     do([error_m ||
@@ -175,26 +260,66 @@ generate_from_json(Records, Out) ->
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
-generate_from_json_field({Name, Type, {optional, Default}}) when
-    Type == string; Type == atom; Type == integer; Type == float; Type == boolean;
-    Type == {list, string}; Type == {list, integer}; Type == {list, float};
-    Type == {list, boolean}; Type == {list, atom} ->
-    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p, ~p)", [Name, Name, Default, Type])};
-generate_from_json_field({Name, Type, required}) when
-    Type == string; Type == atom; Type == integer; Type == float; Type == boolean;
-    Type == {list, string}; Type == {list, integer}; Type == {list, float};
-    Type == {list, boolean}; Type == {list, atom} ->
+generate_from_json_field({Name, Type}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
     {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Type])};
-generate_from_json_field({Name, {list, Type = {Mod, Rec}}, {optional, Default}}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Mod, Rec, Name, Default, Type])};
-generate_from_json_field({Name, Type = {list, Rec}, {optional, Default}}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Rec, Name, Default, Type])};
-generate_from_json_field({Name, Type = {list, {Mod, Rec}}, required}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p)]", [Name, Mod, Rec, Name, Type])};
-generate_from_json_field({Name, Type = {list, Rec}, required}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p)]", [Name, Rec, Name, Type])};
-generate_from_json_field({Name, Type = {Mod, Rec}, _}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = ~p:from_json_(xl_json:ktuo_find(~p, J, ~p), ~p)", [Name, Mod, Name, Type, Rec])};
-generate_from_json_field({Name, Rec, _}) when is_atom(Rec) ->
-    {ok, xl_string:format("~p = from_json_(xl_json:ktuo_find(~p, J, ~p), ~p)", [Name, Name, Rec, Rec])};
+generate_from_json_field({Name, Qualified = {list, Type}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Qualified])};
+generate_from_json_field({Name, Qualified = {option, Type}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Qualified])};
+generate_from_json_field({Name, {option, Type, Default}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p, ~p)", [Name, Name, Default, {option, Type}])};
+generate_from_json_field({Name, {Type, Default}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p, ~p)", [Name, Name, Default, Type])};
+generate_from_json_field({Name, Qualified = {list, Type, Default}}) when
+    Type == integer;
+    Type == float;
+    Type == boolean;
+    Type == atom;
+    Type == string;
+    Type == any ->
+    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p, ~p)", [Name, Name, Default, Qualified])};
+
+generate_from_json_field({Name, {list, Qualified = {Module, Type}, Default}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Module, Type, Name, Default, Qualified])};
+
+generate_from_json_field({Name, Qualified = {list, Type, Default}}) when is_atom(Type) ->
+    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Type, Name, Default, Qualified])};
+generate_from_json_field({Name, Qualified = {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p)]", [Name, Module, Type, Name, Qualified])};
+
+generate_from_json_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = ~p:from_json_(xl_json:ktuo_find(~p, J, ~p), ~p)", [Name, Module, Name, Qualified, Type])};
+generate_from_json_field({Name, Record}) when is_atom(Record) ->
+    {ok, xl_string:format("~p = from_json_(xl_json:ktuo_find(~p, J, ~p), ~p)", [Name, Name, Record, Record])};
+
 generate_from_json_field(Field) -> {error, {dont_understand, Field}}.

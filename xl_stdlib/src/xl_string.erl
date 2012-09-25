@@ -55,7 +55,7 @@ replace(S, Search, Replace, Acc) ->
 format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
 
 -spec to_float/1 :: (iostring()) -> float().
-to_float(X)  -> xl_convert:to_float(X).
+to_float(X) -> xl_convert:to_float(X).
 
 -spec substitute/2 :: (string(), xl_lists:kvlist_at()) -> string().
 substitute(Str, Map) -> substitute(Str, Map, {${, $}}).
@@ -69,7 +69,7 @@ substitute(Str, Map, {Open, Close}) ->
 replace_macro([Open | T], Map, {Open, Close}) ->
     Key = list_to_atom(string:strip(T, right, Close)),
     case lists:keyfind(Key, 1, Map) of
-        {_, V} -> to_string(V);
+        {_, V} -> xl_convert:to(string, V);
         _ -> ""
     end;
 replace_macro(X, _Map, _) -> X.
@@ -107,7 +107,7 @@ to_upper(S) when is_list(S) -> string:to_upper(S).
 -spec join/2 :: ([iostring()], iostring()) -> iostring().
 join(List, Delim) when is_binary(Delim) ->
     list_to_binary(join(List, binary_to_list(Delim)));
-join(List, Delim) -> string:join([to_string(X) || X <- List], Delim).
+join(List, Delim) -> string:join([xl_convert:to(string, X) || X <- List], Delim).
 
 -spec join/1 :: ([iostring()]) -> string().
 join(List) -> join(List, "").
