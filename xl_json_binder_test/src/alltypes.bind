@@ -16,15 +16,15 @@
     {string_def, {string, <<"a">>}},
 
     {record, primitives},
-    {record_quialified, {alltypes, primitives}},
+    {record_qualified, {alltypes, primitives}},
 
     {any, any},
-    {any_def, {any, [{a, b}]}}
+    {any_def, {any, [{a, <<"b">>}]}}
 ]}.
 
 {lists, [
     {integer, {list, integer}},
-    {integer_def, {list, integer, []}},
+    {integer_def, {list, integer, [1, 2]}},
 
     {float, {list, float}},
     {float_def, {list, float, [1.0, 1.2]}},
@@ -44,7 +44,7 @@
     {record_qualified_def, {list, {alltypes, primitives}, []}},
 
     {any, {list, any}},
-    {any_def, {list, any, [[{a, b}]]}}
+    {any_def, {list, any, [[{a, <<"b">>}]]}}
 ]}.
 
 {options, [
@@ -67,6 +67,13 @@
     {record_qualified, {option, {alltypes, primitives}}},
 
     {any, {option, any}},
-    {any_def, {option, any, [{a, b}]}}
+    {any_def, {option, any, [{a, <<"b">>}]}}
 ]}.
 
+
+{qualified, [
+    {prim_opt, {option, {alltypes, primitives}}},
+    {prim, {alltypes, primitives}},
+    {list_prim_def, {list, {alltypes, primitives}, []}},
+    {list_prim, {list, {alltypes, primitives}}}
+]}.

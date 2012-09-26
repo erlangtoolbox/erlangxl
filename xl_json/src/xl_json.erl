@@ -61,6 +61,9 @@ ktuo_find(Field, {obj, Fields}, Default, Type) when is_list(Fields) ->
         {ok, V} when Type == boolean, V == true orelse V == false -> V;
         {ok, V} when Type == {list, boolean} -> V;
         {ok, V} when Type == {option, boolean}, V == true orelse V == false -> {ok, V};
+        {ok, V} when Type == any, is_tuple(V), element(1, V) == obj -> ktuo_transform(V);
+        {ok, V} when Type == {list, any}, is_list(V) -> [ktuo_transform(E) || E <- V];
+        {ok, V} when Type == {option, any}, is_tuple(V), element(1, V) == obj -> {ok, ktuo_transform(V)};
         {ok, V} when element(1, Type) == option -> {ok, V};
         {ok, V} when is_list(V); is_tuple(V) -> V; % record or list of records
         {ok, V} -> error({illegal_value, Field, V, Type});
