@@ -79,3 +79,6 @@ list_test() ->
     L = [P, P, P],
     ?assertEqual({ok, L}, alltypes:from_json(alltypes:to_json(L), primitives)).
 
+undefined_options_test() ->
+    P = #options{},
+    ?assertEquals({ok, P}, alltypes:from_json("{}", options)).

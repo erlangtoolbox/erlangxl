@@ -268,7 +268,7 @@ generate_from_json_field({Name, Type}) when
     Type == atom;
     Type == string;
     Type == any ->
-    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Type])};
+    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p, ~p)", [Name, Name, undefined, Type])};
 generate_from_json_field({Name, Qualified = {list, Type}}) when
     Type == integer;
     Type == float;
@@ -276,7 +276,7 @@ generate_from_json_field({Name, Qualified = {list, Type}}) when
     Type == atom;
     Type == string;
     Type == any ->
-    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Qualified])};
+    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p, ~p)", [Name, Name, [], Qualified])};
 generate_from_json_field({Name, Qualified = {option, Type}}) when
     Type == integer;
     Type == float;
@@ -284,7 +284,7 @@ generate_from_json_field({Name, Qualified = {option, Type}}) when
     Type == atom;
     Type == string;
     Type == any ->
-    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p)", [Name, Name, Qualified])};
+    {ok, xl_string:format("~p = xl_json:ktuo_find(~p, J, ~p, ~p)", [Name, Name, undefined, Qualified])};
 generate_from_json_field({Name, {option, Type, Default}}) when
     Type == integer;
     Type == float;
@@ -317,21 +317,21 @@ generate_from_json_field({Name, {list, Type, Default}}) when is_atom(Type) ->
     {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Type, Name, Default, {list, Type}])};
 
 generate_from_json_field({Name, Qualified = {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p)]", [Name, Module, Type, Name, Qualified])};
+    {ok, xl_string:format("~p = [~p:from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Module, Type, Name, [], Qualified])};
 
 generate_from_json_field({Name, Qualified = {list, Type}}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p)]", [Name, Type, Name, Qualified])};
+    {ok, xl_string:format("~p = [from_json_(O, ~p) || O <- xl_json:ktuo_find(~p, J, ~p, ~p)]", [Name, Type, Name, [], Qualified])};
 
 generate_from_json_field({Name, {option, Type}}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = case from_json_(xl_json:ktuo_find(~p, J, ~p), ~p) of undefined -> undefined; X -> {ok, X} end", [Name, Name, Type, Type])};
+    {ok, xl_string:format("~p = case from_json_(xl_json:ktuo_find(~p, J, ~p, ~p), ~p) of undefined -> undefined; X -> {ok, X} end", [Name, Name, undefined, Type, Type])};
 
 generate_from_json_field({Name, {option, Qualified = {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = case ~p:from_json_(xl_json:ktuo_find(~p, J, ~p), ~p) of undefined -> undefined; X -> {ok, X} end", [Name, Module, Name, Qualified, Type])};
+    {ok, xl_string:format("~p = case ~p:from_json_(xl_json:ktuo_find(~p, J, ~p, ~p), ~p) of undefined -> undefined; X -> {ok, X} end", [Name, Module, Name, undefined, Qualified, Type])};
 
 generate_from_json_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = ~p:from_json_(xl_json:ktuo_find(~p, J, ~p), ~p)", [Name, Module, Name, Qualified, Type])};
+    {ok, xl_string:format("~p = ~p:from_json_(xl_json:ktuo_find(~p, J, ~p, ~p), ~p)", [Name, Module, Name, undefined, Qualified, Type])};
 
 generate_from_json_field({Name, Type}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = from_json_(xl_json:ktuo_find(~p, J, ~p), ~p)", [Name, Name, Type, Type])};
+    {ok, xl_string:format("~p = from_json_(xl_json:ktuo_find(~p, J, ~p, ~p), ~p)", [Name, Name, undefined, Type, Type])};
 
 generate_from_json_field(Field) -> {error, {dont_understand, Field}}.
