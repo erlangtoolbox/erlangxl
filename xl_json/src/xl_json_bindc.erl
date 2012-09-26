@@ -50,9 +50,9 @@ generate_field({Name, {list, Type, Default}}) when
     is_list(Default), Type == boolean;
     is_list(Default), Type == atom;
     is_list(Default), Type == any ->
-    {ok, xl_string:format("~s = ~p :: [~s()]", [Name, Default, Type])};
+    {ok, xl_string:format("~p = ~p :: [~p()]", [Name, Default, Type])};
 generate_field({Name, {list, Type, Default}}) when is_atom(Type), is_list(Default) ->
-    {ok, xl_string:format("~p = ~p :: [#~s{}]", [Name, Default, Type])};
+    {ok, xl_string:format("~p = ~p :: [#~p{}]", [Name, Default, Type])};
 generate_field({Name, {list, {Module, Type}, Default}}) when is_atom(Module), is_atom(Type), is_list(Default) ->
     {ok, xl_string:format("~p = ~p", [Name, Default])};
 
@@ -65,11 +65,11 @@ generate_field({Name, {option, Type}}) when
     Type == atom;
     Type == binary;
     Type == any ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: option_m:monad(~s())", [Name, Name, Type])};
+    {ok, xl_string:format("~p :: option_m:monad(~p())", [Name, Type])};
 generate_field({Name, {option, Type}}) when is_atom(Type) ->
-    {ok, xl_string:format("~s = error({required, ~p}) :: option_m:monad(#~s{})", [Name, Name, Type])};
+    {ok, xl_string:format("~p :: option_m:monad(#~p{})", [Name, Type])};
 generate_field({Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~s = error({required, ~p})", [Name, Name])};
+    {ok, xl_string:format("~p", [Name])};
 
 %options with defaults
 generate_field({Name, {option, string, Default}}) -> generate_field({Name, {option, binary, Default}});
@@ -81,7 +81,7 @@ generate_field({Name, {option, Type, Default}}) when
     Default == true, Type == boolean;
     Default == false, Type == boolean;
     is_list(Default), Type == any ->
-    {ok, xl_string:format("~s = {ok, ~p} :: option_m:monad(~s())", [Name, Default, Type])};
+    {ok, xl_string:format("~p = {ok, ~p} :: option_m:monad(~p())", [Name, Default, Type])};
 
 %primitives with defaults
 generate_field({Name, {Type, Default}}) when
