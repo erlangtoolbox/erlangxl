@@ -75,23 +75,31 @@ generate_field({Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(T
 generate_field({Name, {option, string, Default}}) -> generate_field({Name, {option, binary, Default}});
 generate_field({Name, {option, Type, Default}}) when
     is_binary(Default), Type == binary;
+    Default == undefined, Type == binary;
     is_integer(Default), Type == integer;
+    Default == undefined, Type == integer;
     is_float(Default), Type == float;
+    Default == undefined, Type == float;
     is_atom(Default), Type == atom;
     Default == true, Type == boolean;
     Default == false, Type == boolean;
-    is_list(Default), Type == any ->
+    is_list(Default), Type == any;
+    Default == undefined, Type == any ->
     {ok, xl_string:format("~p = {ok, ~p} :: option_m:monad(~p())", [Name, Default, Type])};
 
 %primitives with defaults
 generate_field({Name, {Type, Default}}) when
     is_binary(Default), Type == binary;
+    Default == undefined, Type == binary;
     is_integer(Default), Type == integer;
+    Default == undefined, Type == integer;
     is_float(Default), Type == float;
+    Default == undefined, Type == float;
     is_atom(Default), Type == atom;
     Default == true, Type == boolean;
     Default == false, Type == boolean;
-    is_list(Default), Type == any ->
+    is_list(Default), Type == any;
+    Default == undefined, Type == any ->
     {ok, xl_string:format("~p = ~p :: ~p()", [Name, Default, Type])};
 generate_field({Name, {string, Default}}) ->
     generate_field({Name, {binary, Default}});

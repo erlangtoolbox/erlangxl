@@ -1,8 +1,10 @@
 {primitives, [
     {integer, integer},
+    {integer_undef, {integer, undefined}},
     {integer_def, {integer, 1}},
 
     {float, float},
+    {float_undef, {float, undefined}},
     {float_def, {float, 1.0}},
 
     {boolean, boolean},
@@ -13,6 +15,7 @@
     {atom_def, {atom, a}},
 
     {string, string},
+    {string_undef, {string, undefined}},
     {string_def, {string, <<"a">>}},
 
     {record, primitives},
@@ -21,6 +24,7 @@
     {record_qualified_def, {{alltypes, primitives}, undefined}},
 
     {any, any},
+    {any_undef, {any, undefined}},
     {any_def, {any, [{a, <<"b">>}]}}
 ]}.
 
