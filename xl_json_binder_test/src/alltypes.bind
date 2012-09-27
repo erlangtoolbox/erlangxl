@@ -16,7 +16,9 @@
     {string_def, {string, <<"a">>}},
 
     {record, primitives},
+    {record_def, {primitives, undefined}},
     {record_qualified, {alltypes, primitives}},
+    {record_qualified_def, {{alltypes, primitives}, undefined}},
 
     {any, any},
     {any_def, {any, [{a, <<"b">>}]}}

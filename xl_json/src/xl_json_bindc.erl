@@ -108,8 +108,12 @@ generate_field({Name, Type}) when
     {ok, xl_string:format("~p = error({required, ~p}) :: ~p()", [Name, Name, Type])};
 generate_field({Name, Type}) when is_atom(Type) ->
     {ok, xl_string:format("~p = error({required, ~p}) :: #~p{}", [Name, Name, Type])};
+generate_field({Name, {Type, undefined}}) when is_atom(Type) ->
+    {ok, xl_string:format("~p :: #~p{}", [Name, Type])};
 generate_field({Name, {Module, Type}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = error({required, ~p}) ", [Name, Name])};
+generate_field({Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p", [Name])};
 
 %wtf
 generate_field(D) -> {error, {dont_understand, D}}.
@@ -239,8 +243,12 @@ generate_to_json_field(RecordName, {Name, {list, {Module, Type}, _Default}}) whe
 
 generate_to_json_field(RecordName, {Name, Type}) when is_atom(Type) ->
     {ok, xl_string:format("\"\\\"~p\\\":\", to_json(R#~p.~p)", [Name, RecordName, Name])};
+generate_to_json_field(RecordName, {Name, {Type, undefined}}) when is_atom(Type) ->
+    generate_to_json_field(RecordName, {Name, Type});
 generate_to_json_field(RecordName, {Name, {Module, Type}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("\"\\\"~p\\\":\", ~p:to_json(R#~p.~p)", [Name, Module, RecordName, Name])};
+generate_to_json_field(RecordName, {Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
+    generate_to_json_field(RecordName, {Name, {Module, Type}});
 
 generate_to_json_field(_RecordName, Field) ->
     {error, {dont_understand, Field}}.
@@ -328,10 +336,15 @@ generate_from_json_field({Name, {option, Type}}) when is_atom(Type) ->
 generate_from_json_field({Name, {option, Qualified = {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = case ~p:from_json_(xl_json:ktuo_find(~p, J, ~p, ~p), ~p) of undefined -> undefined; X -> {ok, X} end", [Name, Module, Name, undefined, Qualified, Type])};
 
+generate_from_json_field({Name, {Type, undefined}}) when is_atom(Type) ->
+    generate_from_json_field({Name, Type});
+generate_from_json_field({Name, Type}) when is_atom(Type) ->
+    {ok, xl_string:format("~p = from_json_(xl_json:ktuo_find(~p, J, ~p, ~p), ~p)", [Name, Name, undefined, Type, Type])};
+
+generate_from_json_field({Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
+    generate_from_json_field({Name, {Module, Type}});
 generate_from_json_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = ~p:from_json_(xl_json:ktuo_find(~p, J, ~p, ~p), ~p)", [Name, Module, Name, undefined, Qualified, Type])};
 
-generate_from_json_field({Name, Type}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = from_json_(xl_json:ktuo_find(~p, J, ~p, ~p), ~p)", [Name, Name, undefined, Type, Type])};
 
 generate_from_json_field(Field) -> {error, {dont_understand, Field}}.
