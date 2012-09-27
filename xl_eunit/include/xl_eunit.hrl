@@ -4,11 +4,22 @@
     ?assertEqual(xl_file:read_file(File1), xl_file:read_file(File2))
 end).
 
--define(assertOk(X), ?assertEqual(ok, element(1, X))).
+-define(assertOk(Expr),
+    ((fun(X) ->
+        case X of
+            ok -> ok;
+            _ ->
+                case element(1, X) of
+                    ok -> ok;
+                    _ -> erlang:error({assertOk_failed, X})
+                end
+        end
+    end)(Expr))
+).
 
 -define(assertEquals(Expect, Expr),
-    ((fun() ->
-        case (Expr) of
+    ((fun(X) ->
+        case X of
             Expect -> ok;
             Value ->
                 erlang:display({module, ?MODULE}),
@@ -20,5 +31,5 @@ end).
                 erlang:display(Value),
                 erlang:error(assertEqual_failed)
         end
-    end)())
+    end)(Expr))
 ).

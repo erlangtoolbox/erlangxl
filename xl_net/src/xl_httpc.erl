@@ -22,18 +22,18 @@
 %% -----------------------------------------------------------------------------
 -spec start_link/2 :: (atom(), atom()) -> {ok, pid()} | ignore | {error, term()}.
 start_link(App, Profile) ->
-    gen_server:start_link({local, Profile}, ?MODULE, {App, Profile}, []).
+    gen_server:start_link({local, server_name(Profile)}, ?MODULE, {App, Profile}, []).
 
 -spec stop/1 :: (atom()) -> ok.
-stop(Profile) -> gen_server:cast(Profile, stop).
+stop(Profile) -> gen_server:cast(server_name(Profile), stop).
 
 -spec post/4 :: (atom(), string(), string(), string() | binary()) ->
     error_m:monad({integer(), string(), string()}).
 post(Profile, Url, ContentType, Body) ->
-    gen_server:call(Profile, {post, Url, ContentType, Body}).
+    gen_server:call(server_name(Profile), {post, Url, ContentType, Body}).
 
 -spec call/2 :: (atom(), string()) -> error_m:monad(tuple()).
-call(Profile, Url) -> gen_server:call(Profile, {call, Url}).
+call(Profile, Url) -> gen_server:call(server_name(Profile), {call, Url}).
 
 %% -----------------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -93,4 +93,5 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %% Internal Function Definitions
 %% -----------------------------------------------------------------------------
 
-
+server_name(Name) ->
+    xl_convert:make_atom([Name, '_httpc']).
