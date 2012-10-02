@@ -42,12 +42,23 @@ sublistmatch_test() ->
     List3 = [{a, 1}, {x, y}, {b, "yy"}],
     ?assertNot(xl_lists:sublistmatch(Pattern, List3)).
 
+sublistmatch_perf_test() ->
+    Pattern = [{a, 1}, {b, "^$"}],
+    List = [{a, 1}, {x, y}, {b, ""}],
+    Count = 100000,
+    Times = lists:seq(0, Count),
+    {Time, _} = timer:tc(fun() ->
+        lists:foldl(fun(_, _) -> xl_lists:sublistmatch(Pattern, List) end, 0, Times)
+    end),
+    erlang:display({regex, Count/Time*1000, matches_per_sec}).
+
 substitute_test() ->
     Pattern = [a, 1, "c{b}c", "c"],
     List = [{a, "1"}, {b, "x"}, {"c", 2}],
     ?assertEqual(["1", 1, "cxc", 2],
         xl_lists:substitute(Pattern, List,
             fun xl_string:substitute/2)).
+
 
 keyfind_test() ->
     ?assertEqual({x, y}, xl_lists:keyfind(z, 1, [], {x, y})).
@@ -77,9 +88,10 @@ split_test() ->
 
 insert_before_test() ->
     ?assertEqual(
-        [1, 2, 3], 
+        [1, 2, 3],
         xl_lists:insert_before(3, 2, [1, 3])),
     ?assertEqual(
         [one, two, three, four, four],
         xl_lists:insert_before(four, three, [one, two, four, four])
     ).
+
