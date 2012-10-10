@@ -80,6 +80,8 @@ index(X, I, [_ | T]) -> index(X, I + 1, T).
 sublistmatch(Pattern, Map) ->
     lists:all(fun({Pk, Pv}) ->
         case lists:keyfind(Pk, 1, Map) of
+            {Pk, V} when Pv == empty -> V == [];
+            {Pk, V} when Pv == not_empty -> V /= [];
             {Pk, Pv} -> true;
             {Pk, V} when is_list(V) ->
                 re:run(V, Pv, [anchored, {capture, none}]) == match;
