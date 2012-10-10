@@ -12,7 +12,7 @@ from_json(Source) ->
     try
         {ok, jiffy:decode(Source)}
     catch
-        error:E -> {error, E}
+        _:E -> {error, E}
     end.
 
 -spec get_value/2 :: (atom(), xl_json_api:json_document()) -> option_m:monad(any()).
