@@ -48,9 +48,9 @@ sublistmatch_perf_test() ->
     Count = 100000,
     Times = lists:seq(0, Count),
     {Time, _} = timer:tc(fun() ->
-        lists:foldl(fun(_, _) -> xl_lists:sublistmatch(Pattern, List) end, 0, Times)
+        lists:foreach(fun(_) -> xl_lists:sublistmatch(Pattern, List) end, Times)
     end),
-    erlang:display({regex, Count/Time*1000, matches_per_sec}).
+    erlang:display({regex, Count/Time*1000000, matches_per_sec}).
 
 substitute_test() ->
     Pattern = [a, 1, "c{b}c", "c"],
