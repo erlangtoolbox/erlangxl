@@ -20,11 +20,11 @@ to_json_test() ->
 from_json_test() ->
     ?assertEqual({ok, true}, xl_json:from_json("true")),
     ?assertEqual({ok, [{a, [{b, [1, 2]}]}]},
-        xl_json:from_json("{a:{b:[1,2]}}")),
+        xl_json:from_json("{\"a\":{\"b\":[1,2]}}")),
     ?assertEqual({ok, [{a, undefined}]},
-        xl_json:from_json("{a:null}")),
+        xl_json:from_json("{\"a\":null}")),
     ?assertEqual({ok, [<<"1aa">>, 1]},
         xl_json:from_json("[\"1aa\", 1]")),
-    ?assertEqual({ok, [{data, []}, {keys, [<<"user1">>]}]},
+    ?assertEqual({ok, [{keys, [<<"user1">>]}, {data, []}]},
         xl_json:from_json(<<"{\"keys\":[\"user1\"],\"data\":[]}">>)).
 

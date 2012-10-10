@@ -26,9 +26,9 @@ end).
                 erlang:display({line, ?LINE}),
                 erlang:display({expression, ??Expr}),
                 erlang:display('expected:'),
-                erlang:display(xl_string:unquote(xl_string:format("~9000p", [Expect]))),
+                erlang:display(xl_string:format("~9000p", [Expect])),
                 erlang:display('value:'),
-                erlang:display(xl_string:unquote(xl_string:format("~9000p", [Value]))),
+                erlang:display(xl_string:format("~9000p", [Value])),
                 erlang:error(assertEqual_failed)
         end
     end)(Expr))
