@@ -1,6 +1,6 @@
 -module(xl_calendar).
 
--export([format/2, now_millis/0, add/3]).
+-export([format/2, now_millis/0, now_micros/0, add/3]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -96,8 +96,10 @@ format([$m, $m | Pattern], Dt = {_, {_, Min, _}}, Acc) -> format(Pattern, Dt, Ac
 format([$s, $s | Pattern], Dt = {_, {_, _, Sec}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Sec])));
 format([H | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ [H]).
 
--spec now_millis() -> integer().
-now_millis() ->
-    {Mega, Secs, Millis} = erlang:now(),
-    (Mega * 1000000 + Secs) * 1000 + Millis div 1000.
+-spec now_millis() -> pos_integer().
+now_millis() -> now_micros() div 1000.
 
+-spec now_micros() -> pos_integer().
+now_micros() ->
+    {Mega, Secs, Micros} = erlang:now(),
+    (Mega * 1000000 + Secs) * 1000000 + Micros.
