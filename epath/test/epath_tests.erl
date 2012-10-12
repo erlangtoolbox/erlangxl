@@ -3,7 +3,7 @@
 -author("Volodymyr Kyrychenko <volodymyr.kyrychenko@strikead.com>").
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("xl_eunit/include/xl_eunit.hrl").
+-include_lib("xl_stdlib/include/xl_eunit.hrl").
 
 -define(APP, {application, epath, [
     {description, ""},

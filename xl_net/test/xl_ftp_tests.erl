@@ -8,7 +8,7 @@
 %         test/test2.csv == <<"test2, data2, values2\n">>
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("xl_eunit/include/xl_eunit.hrl").
+-include_lib("xl_stdlib/include/xl_eunit.hrl").
 
 setup() ->
     file:make_dir("/tmp/test"),

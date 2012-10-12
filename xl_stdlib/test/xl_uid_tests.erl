@@ -5,4 +5,5 @@
 -include_lib("eunit/include/eunit.hrl").
 
 next_test() ->
-    ?assert(xl_uid:next() < xl_uid:next()).
+    ?assert(xl_uid:next() < xl_uid:next()),
+    xl_eunit:performance(uid, fun(_) -> xl_uid:next() end, 100000).

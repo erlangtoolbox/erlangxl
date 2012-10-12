@@ -2,7 +2,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--export([resource/2, explode/3]).
+-export([resource/2, explode/3, performance/3]).
 
 resource(Module, Name) -> within(Module, fun(Path) -> filename:join(Path, Name) end).
 
@@ -17,4 +17,13 @@ within(Module, Fun) ->
         non_existing -> {error, {non_existing, Module}};
         X -> Fun(filename:dirname(X))
     end.
+
+performance(Name, Fun, Count) ->
+    Times = lists:seq(0, Count),
+    {Time, _} = timer:tc(fun() ->
+        lists:foreach(Fun, Times)
+    end),
+    Xps = Count / Time * 1000000,
+    erlang:display({Name, Count / Time * 1000000, x_per_sec}),
+    Xps.
 

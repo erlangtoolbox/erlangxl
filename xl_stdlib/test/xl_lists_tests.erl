@@ -46,16 +46,9 @@ sublistmatch_perf_test() ->
     Pattern = [{a, 1}, {b, ".+"}],
     List = [{a, 1}, {x, y}, {b, "aaa"}],
     Count = 100000,
-    Times = lists:seq(0, Count),
-    {Time, _} = timer:tc(fun() ->
-        lists:foreach(fun(_) -> xl_lists:sublistmatch(Pattern, List) end, Times)
-    end),
-    erlang:display({regex, Count/Time*1000000, matches_per_sec}),
+    xl_eunit:performance(regex, fun(_) -> xl_lists:sublistmatch(Pattern, List) end, Count),
     Pattern2 = [{a, 1}, {b, not_empty}],
-    {Time2, _} = timer:tc(fun() ->
-        lists:foreach(fun(_) -> xl_lists:sublistmatch(Pattern2, List) end, Times)
-    end),
-    erlang:display({not_empty, Count/Time2*1000000, matches_per_sec}).
+    xl_eunit:performance(atom, fun(_) -> xl_lists:sublistmatch(Pattern2, List) end, Count).
 
 substitute_test() ->
     Pattern = [a, 1, "c{b}c", "c"],
