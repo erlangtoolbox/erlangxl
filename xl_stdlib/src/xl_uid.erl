@@ -5,7 +5,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([next/0]).
+-export([next/0, next_hex/0]).
 
 next() ->
     try
@@ -15,6 +15,9 @@ next() ->
             initialize(),
             next_uid()
     end.
+
+next_hex() ->
+    integer_to_list(next(), 16).
 
 next_uid() ->
     [{prefix, P}] = ets:lookup(?MODULE, prefix),
