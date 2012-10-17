@@ -122,5 +122,3 @@ to_integer(X) -> xl_conver:to_integer(X).
 -spec generate_uuid/0 :: () -> binary().
 generate_uuid() ->
     hd(flake_harness:generate(1, 62)).
-
-

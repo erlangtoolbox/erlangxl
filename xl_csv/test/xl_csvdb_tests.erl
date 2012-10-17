@@ -9,19 +9,23 @@
 index_test() ->
     Csv = xl_eunit:resource(?MODULE, "csvdb.csv"),
     os:cmd("rm " ++ xl_csvdb:cache_path(Csv)),
-    Header = ["key", "value"],
-    Tree = {3, {1, {entry, "one", 14, 10}, nil, {2, {entry, "two", 24, 10}, nil, {3, {entry, "three", 34, 12}, nil, nil}}}},
-    {Header, Tree, File} = xl_csvdb:start_index(Csv, fun([Key, Value]) -> {list_to_integer(Key), Value} end),
-    file:close(File).
+    ExpectedHeader = [<<"key">>, <<"value">>],
+    ExpectedTree = {3, {1, {entry, <<"one">>, 14, 10}, nil, {2, {entry, <<"two">>, 24, 10}, nil, {3, {entry, <<"three">>, 34, 12}, nil, nil}}}},
+    {Header, Tree, File} = xl_csvdb:start_index(Csv, fun([Key, Value]) -> {list_to_integer(binary_to_list(Key)), Value} end),
+    file:close(File),
+    ?assertEqual(ExpectedHeader, Header),
+    ?assertEqual(ExpectedTree, Tree).
+
+
 
 lookup_test() ->
     Csv = xl_eunit:resource(?MODULE, "csvdbbig.csv"),
     os:cmd("rm " ++ xl_csvdb:cache_path(Csv)),
     xl_csvdb:start_link(Csv, ?MODULE, sync),
     try
-        ?assertEqual({"1", "one"}, xl_csvdb:lookup(1)),
-        ?assertEqual({"3", "three"}, xl_csvdb:lookup(4)),
-        ?assertEqual({"33", "three"}, xl_csvdb:lookup(33)),
+        ?assertEqual({<<"1">>, <<"one">>}, xl_csvdb:lookup(1)),
+        ?assertEqual({<<"3">>, <<"three">>}, xl_csvdb:lookup(4)),
+        ?assertEqual({<<"33">>, <<"three">>}, xl_csvdb:lookup(33)),
         ?assertEqual(not_found, xl_csvdb:lookup(23))
     after
         xl_csvdb:stop()
@@ -36,14 +40,14 @@ unload_load_test() ->
         ?assertEqual(not_available, xl_csvdb:lookup(1)),
         xl_csvdb:load(Csv, ?MODULE),
         timer:sleep(100),
-        ?assertEqual({"1", "one"}, xl_csvdb:lookup(1))
+        ?assertEqual({<<"1">>, <<"one">>}, xl_csvdb:lookup(1))
     after
         xl_csvdb:stop()
     end.
 
 
-extract([Key, Value]) -> {list_to_integer(Key), Value}.
-accept_if_possible(Key, Value = #entry{value = "three"}) -> {Key, Value};
+extract([Key, Value]) -> {list_to_integer(binary_to_list(Key)), Value}.
+accept_if_possible(Key, Value = #entry{value = <<"three">>}) -> {Key, Value};
 accept_if_possible(_Key, _Value) -> not_found.
 
 find(_, nil) -> not_found;

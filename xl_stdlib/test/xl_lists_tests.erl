@@ -93,3 +93,18 @@ insert_before_test() ->
         xl_lists:insert_before(four, three, [one, two, four, four])
     ).
 
+
+random_test() ->
+    Results = [xl_lists:random([1, 2, 3]) || _ <- lists:seq(1, 100)],
+    [{_, C1}, {_, C2}, {_, C3}] = xl_lists:count_unique(Results),
+    ?assert(C1 >= 30),
+    ?assert(C2 >= 30),
+    ?assert(C3 >= 30),
+    Results2 = [xl_lists:random([1, 2]) || _ <- lists:seq(1, 100)],
+    [{_, C21}, {_, C22}] = xl_lists:count_unique(Results2),
+    ?assert(C21 >= 45),
+    ?assert(C22 >= 45).
+
+split_by_test() ->
+    ?assertEqual([[1, 2], [4, 4, 5], [5, 6]], xl_lists:split_by([1, 2, 3, 4, 4, 5, 3, 5, 6], 3)),
+    ?assertEqual([[], [4, 4, 5], []], xl_lists:split_by([3, 4, 4, 5, 3], 3)).
