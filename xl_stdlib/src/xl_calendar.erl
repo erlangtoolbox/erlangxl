@@ -58,7 +58,7 @@ day_of_week_name({Date, _}) ->
         1 -> 'Mon';
         2 -> 'Tue';
         3 -> 'Wed';
-        4 -> 'Thi';
+        4 -> 'Thu';
         5 -> 'Fri';
         6 -> 'Sat';
         7 -> 'Sun'
