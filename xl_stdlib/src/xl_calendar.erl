@@ -55,29 +55,29 @@ add(Date, N, years) -> add(Date, 12 * N, months).
 
 day_of_week_name({Date, _}) ->
     case calendar:day_of_the_week(Date) of
-        1 -> "Mon";
-        2 -> "Tue";
-        3 -> "Wed";
-        4 -> "Thi";
-        5 -> "Fri";
-        6 -> "Sat";
-        7 -> "Sun"
+        1 -> 'Mon';
+        2 -> 'Tue';
+        3 -> 'Wed';
+        4 -> 'Thi';
+        5 -> 'Fri';
+        6 -> 'Sat';
+        7 -> 'Sun'
     end.
 
 month_name({{_, Mon, _}, _}) ->
     case Mon of
-        1 -> "Jan";
-        2 -> "Feb";
-        3 -> "Mar";
-        4 -> "Apr";
-        5 -> "May";
-        6 -> "Jun";
-        7 -> "Jul";
-        8 -> "Aug";
-        9 -> "Sep";
-        10 -> "Oct";
-        11 -> "Nov";
-        12 -> "Dec"
+        1 -> 'Jan';
+        2 -> 'Feb';
+        3 -> 'Mar';
+        4 -> 'Apr';
+        5 -> 'May';
+        6 -> 'Jun';
+        7 -> 'Jul';
+        8 -> 'Aug';
+        9 -> 'Sep';
+        10 -> 'Oct';
+        11 -> 'Nov';
+        12 -> 'Dec'
     end.
 
 -spec format(Pattern, Datetime) -> string() when
@@ -86,9 +86,9 @@ month_name({{_, Mon, _}, _}) ->
 format(Pattern, Datetime) -> format(Pattern, Datetime, "").
 
 format([], _, Acc) -> Acc;
-format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ day_of_week_name(Dt));
+format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(day_of_week_name(Dt)));
 format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Date])));
-format([$M, $M, $M | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ month_name(Dt));
+format([$M, $M, $M | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(month_name(Dt)));
 format([$M, $M | Pattern], Dt = {{_, Mon, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Mon])));
 format([$y, $y, $y, $y | Pattern], Dt = {{Year, _, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ integer_to_list(Year));
 format([$H, $H | Pattern], Dt = {_, {Hour, _, _}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Hour])));
