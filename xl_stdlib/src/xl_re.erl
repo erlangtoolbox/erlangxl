@@ -8,31 +8,77 @@
 -define(re_table, 're_store').
 
 
+-spec start() -> ok.
 start() ->
     spawn(fun loop/0) ! new,
     ok.
 
-loop() ->
-    receive
-        new ->
-            catch ets:delete(?re_table),
-            ets:new(?re_table, [named_table, public, set, {read_concurrency, true}]),
-            loop();
-        stop ->
-            ets:delete(?re_table)
-    end.
 
+-type option() :: [term()].  %% refer to man 3 re
+-type mp() :: term().
+-type hash() :: integer().
 
+-spec run(Subject::iodata() | io:charlist(),
+          RE::mp() | iodata() | integer(),
+          Options::[option()]) ->
+                 {match, Captured::[term()]} | nomatch |
+                 {error, not_compiled}.
 run(Subject, RE) ->
     run(Subject, RE, []).
 run(Subject, RE, Options) ->
     apply_fun(Subject, RE, Options, fun re:run/3).
 
+-spec split(Subject::iodata() | io:charlist(),
+            RE::mp() | iodata() | integer(),
+            Options::[option()]) ->
+                   {match, Captured::[term()]} | nomatch |
+                   {error, not_compiled}.
 split(Subject, RE) ->
     split(Subject, RE, []).
 split(Subject, RE, Options) ->
     apply_fun(Subject, RE, Options, fun re:split/3).
 
+-spec compile(RE::iodata(),
+              Options::[option()]) ->
+                     {ok, Hash::hash()} |
+                     {error, {ErrString::string(), Position::non_neg_integer()}}.
+compile(RE, Options) ->
+    Key = erlang:phash2({RE, Options}),
+    case ets:lookup(?re_table, Key) of
+        [{_, _}] ->
+            {ok, Key};
+        [] ->
+            case re:compile(RE, compile_safe(Options)) of
+                {ok, MP} ->
+                    _ = ets:insert(?re_table, {Key, MP}),
+                    {ok, Key};
+                ErrorReason ->
+                    ErrorReason
+            end
+    end.
+
+
+%% supporting functions
+
+-spec loop() -> true.
+loop() ->
+    receive
+        new ->
+            catch ets:delete(?re_table),
+            ?re_table = ets:new(?re_table, [named_table, public, set, {read_concurrency, true}]),
+            loop();
+        stop ->
+            ets:delete(?re_table)
+    end.
+
+apply_fun(Subject, Key, Options, Fun)
+  when is_integer(Key) ->
+    case ets:lookup(?re_table, Key) of
+        [{_, MP}] ->
+            Fun(Subject, MP, mp_safe(Options));
+        [] ->
+            {error, not_compiled}
+    end;
 apply_fun(Subject, RE, Options, Fun) ->
     Key = erlang:phash2({RE, Options}),
     case ets:lookup(?re_table, Key) of
@@ -42,22 +88,7 @@ apply_fun(Subject, RE, Options, Fun) ->
             case re:compile(RE, compile_safe(Options)) of
                 {ok, MP} ->
                     _ = ets:insert(?re_table, {Key, MP}),
-                    Fun(Subject, MP, Options);
-                ErrorReason ->
-                    ErrorReason
-            end
-    end.
-
-compile(RE, Options) ->
-    Key = erlang:phash2({RE, Options}),
-    case ets:lookup(?re_table, Key) of
-        [{_, MP}] ->
-            {ok, MP};
-        [] ->
-            case re:compile(RE, compile_safe(Options)) of
-                {ok, MP} ->
-                    _ = ets:insert(?re_table, {Key, MP}),
-                    {ok, MP};
+                    Fun(Subject, MP, mp_safe(Options));
                 ErrorReason ->
                     ErrorReason
             end
