@@ -125,7 +125,7 @@ open(File, Mode) -> xl_io:apply_io(file, open, [File, Mode]).
 close(Fd) -> xl_io:apply_io(file, close, [Fd]).
 make_symlink(Target, Link) -> xl_io:apply_io(file, make_symlink, [Target, Link]).
 read_file_info(Path) -> xl_io:apply_io(file, read_file_info, [Path]).
-read_link_info(Path) -> ebt_xl_io:apply_io(file, read_link_info, [Path]).
+read_link_info(Path) -> xl_io:apply_io(file, read_link_info, [Path]).
 change_mode(Path, Mode) -> xl_io:apply_io(file, change_mode, [Path, Mode]).
 
 absolute(Path) ->
