@@ -20,7 +20,11 @@ select_test() ->
     ?assertEquals({ok, {ok, [kernel, stdlib]}},
         epath:select("/$3/[$1 == applications]/$2", ?APP)),
     ?assertEquals({ok, {ok, {vsn, "1"}}},
-        epath:select("/$3/[$2 == \"1\"]", ?APP)).
+        epath:select("/$3/[$2 == \"1\"]", ?APP)),
+    ?assertEquals({ok, {ok, description}},
+        epath:select("/$3/[$2 /= undefined]/$1", ?APP)),
+    ?assertEquals({ok, undefined},
+        epath:select("/$3/[$2 == \"2\"]", ?APP)).
 
 eselect_test() ->
     ?assertEquals({error, error},
