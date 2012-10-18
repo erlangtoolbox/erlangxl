@@ -1,6 +1,6 @@
 -module(xl_calendar).
 
--export([format/2, now_millis/0, now_micros/0, add/3]).
+-export([format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -58,7 +58,7 @@ day_of_week_name({Date, _}) ->
         1 -> 'Mon';
         2 -> 'Tue';
         3 -> 'Wed';
-        4 -> 'Thi';
+        4 -> 'Thu';
         5 -> 'Fri';
         6 -> 'Sat';
         7 -> 'Sun'
@@ -103,3 +103,9 @@ now_millis() -> now_micros() div 1000.
 now_micros() ->
     {Mega, Secs, Micros} = erlang:now(),
     (Mega * 1000000 + Secs) * 1000000 + Micros.
+
+-spec ms_to_datetime/1 :: (integer()) -> calendar:datetime().
+ms_to_datetime(Milliseconds) ->
+    BaseDate      = calendar:datetime_to_gregorian_seconds({{1970,1,1},{0,0,0}}),
+    Seconds       = BaseDate + (Milliseconds div 1000),
+    calendar:gregorian_seconds_to_datetime(Seconds).
