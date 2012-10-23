@@ -20,7 +20,7 @@ next_hex() ->
     integer_to_list(next(), 16).
 
 next_uid() ->
-    {ok, P} = xl_state:get(?MODULE, prefix),
+    {ok, [P]} = xl_state:get(?MODULE, prefix),
     P + xl_calendar:now_micros().
 
 initialize() ->

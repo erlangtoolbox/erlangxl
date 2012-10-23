@@ -22,7 +22,7 @@ loop() ->
         {init, Name, Options, Sender} ->
             try
                     catch ets:delete(Name),
-                ets:new(Name, [named_table, set, public | Options]),
+                ets:new(Name, [named_table, public | Options]),
                 Sender ! {ok, self()},
                 loop()
             catch
@@ -36,8 +36,8 @@ loop() ->
 -spec get/2 :: (atom(), term()) -> option_m:monad(term()).
 get(Name, Key) ->
     case ets:lookup(Name, Key) of
-        [{Key, V}] -> {ok, V};
-        [] -> undefined
+        [] -> undefined;
+        List -> {ok, lists:map(fun({_Key, Value}) -> Value end, List)}
     end.
 
 -spec set/3 :: (atom(), term(), term()) -> ok.

@@ -67,7 +67,7 @@ apply_fun(Subject, Key, Options, Fun) when is_integer(Key) ->
 apply_fun(Subject, RE, Options, Fun) ->
     Key = erlang:phash2({RE, Options}),
     case xl_state:get(?MODULE, Key) of
-        {ok, MP} ->
+        {ok, [MP]} ->
             Fun(Subject, MP, mp_safe(Options));
         [] ->
             case re:compile(RE, compile_safe(Options)) of
