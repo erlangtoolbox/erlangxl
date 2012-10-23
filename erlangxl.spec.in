@@ -8,7 +8,7 @@ License:        Erlang Public License
 Release:        1
 Requires:       erlang yaws erlang-flake erlang-erleveldb strikead-erlang-ktuo strikead-erlang-erlandox
 Conflicts:	strikead-erlang-commons
-BuildRequires:  erlang make yaws strikead-erlang-erlandox
+BuildRequires:  erlang make yaws yaws-devel pkg-config strikead-erlang-erlandox
 Group:          StrikeAd/Software
 Source:         %{realname}-%{version}.tar.gz
 URL:            https://github.com/strikead/erlangxl/tarball/%{revision}
@@ -20,7 +20,7 @@ BuildArch:      x86_64
 ErlangXL Library
 
 %prep
-%setup -n %{realname}-%{revision}
+%setup -n strikead-%{realname}-%{revision}
 
 %build
 make $MAKEOPTS
