@@ -20,11 +20,11 @@ next_hex() ->
     integer_to_list(next(), 16).
 
 next_uid() ->
-    [{prefix, P}] = ets:lookup(?MODULE, prefix),
+    {ok, P} = xl_state:get(?MODULE, prefix),
     P + xl_calendar:now_micros().
 
 initialize() ->
-    ets:new(?MODULE, [named_table, protected, {read_concurrency, true}]),
+    xl_state:new(?MODULE, [{read_concurrency, true}]),
     case inet:getifaddrs() of
         {ok, Ifs} ->
             case xl_lists:find(fun({_, Opts}) ->
@@ -36,9 +36,10 @@ initialize() ->
                 {ok, {_, Opts}} ->
                     {ok, HWAddr} = xl_lists:kvfind(hwaddr, Opts),
                     <<P:48>> = list_to_binary(HWAddr),
-                    ets:insert(?MODULE, {prefix, P bsl 64});
+                    xl_state:set(?MODULE, prefix, P bsl 64);
                 undefined ->
-                    ets:insert(?MODULE, {prefix, 0})
+                    xl_state:set(?MODULE, prefix, 0)
             end;
-        _ -> ets:insert(?MODULE, {prefix, 0})
+        _ ->
+            xl_state:set(?MODULE, prefix, 0)
     end.
