@@ -33,14 +33,14 @@ loop() ->
             ok
     end.
 
--spec get/2 :: (atom(), atom()) -> option_m:monad(term()).
+-spec get/2 :: (atom(), term()) -> option_m:monad(term()).
 get(Name, Key) ->
     case ets:lookup(Name, Key) of
         [{Key, V}] -> {ok, V};
         [] -> undefined
     end.
 
--spec set/3 :: (atom(), atom(), term()) -> ok.
+-spec set/3 :: (atom(), term(), term()) -> ok.
 set(Name, Key, Value) ->
     ets:insert(Name, {Key, Value}),
     ok.
