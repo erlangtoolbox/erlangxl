@@ -36,7 +36,6 @@
 -type time()     :: {hour(),minute(),second()}.
 -type datetime() :: {date(),time()}.
 -type now()      :: {integer(),integer(),integer()}.
--type tz()       :: string().
 %%
 %% EXPORTS
 %%
