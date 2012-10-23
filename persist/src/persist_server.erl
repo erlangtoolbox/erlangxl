@@ -40,8 +40,8 @@ init({Name, Identify, StoreModule, Options}) ->
         })
     ]).
 
-handle_call(stop, _From, State = #state{persister = P}) ->
-    {stop, normal, persist:close(P), State};
+handle_call(stop, _From, State) ->
+    {stop, normal, State};
 handle_call({store, X}, _From, State = #state{persister = P}) ->
     {reply, persist:store(P, X), State};
 handle_call({delete, Id}, _From, State = #state{persister = P}) ->
@@ -57,7 +57,8 @@ handle_cast(_Msg, State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, #state{persister = P}) ->
+    persist:close(P),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

@@ -1,7 +1,7 @@
 -module(xl_file_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("xl_eunit/include/xl_eunit.hrl").
+-include_lib("xl_stdlib/include/xl_eunit.hrl").
 
 copy_file_test() ->
     ok = xl_file:delete("/tmp/test"),

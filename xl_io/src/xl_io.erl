@@ -11,7 +11,7 @@ parse_lines(IoDevice) ->
         {ok, Pos} = file:position(IoDevice, {cur, 0}),
         case io:get_line(IoDevice, '') of
             eof -> empty;
-            L -> {{L, Pos}, IoDevice}
+            L -> {{list_to_binary(L), Pos}, IoDevice}
         end
     end).
 

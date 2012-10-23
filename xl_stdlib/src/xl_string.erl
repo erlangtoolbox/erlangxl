@@ -1,12 +1,19 @@
 -module(xl_string).
 
 -export([empty/1, not_empty/1, strip/1, quote/1, unquote/1, stripthru/1, format/2,
-    to_float/1, substitute/2, to_string/1, mk_atom/1, to_upper/1, to_lower/1,
-    equal_ignore_case/2, join/2, join/1, to_atom/1, to_binary/1, to_integer/1,
-    generate_uuid/0, replace/3]).
+    to_float/1, substitute/2, substitute/3, to_string/1, mk_atom/1, to_upper/1,
+    to_lower/1, equal_ignore_case/2, join/2, join/1, to_atom/1, to_binary/1,
+    to_integer/1, generate_uuid/0, replace/3]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
+
+-deprecated({to_float, 1}).
+-deprecated({to_string, 1}).
+-deprecated({mk_atom, 1}).
+-deprecated({to_atom, 1}).
+-deprecated({to_binary, 1}).
+-deprecated({to_integer, 1}).
 
 -spec empty/1 :: (string()) -> boolean().
 empty(S) -> S == "".
@@ -47,40 +54,37 @@ replace(S, Search, Replace, Acc) ->
 -spec format/2 :: (io:format(), [term()]) -> string().
 format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
 
--spec to_float/1 :: (string()) -> float().
-to_float(X) ->
-    try
-        list_to_float(X)
-    catch
-        _:_ -> float(list_to_integer(X))
-    end.
+-spec to_float/1 :: (iostring()) -> float().
+to_float(X) -> xl_convert:to_float(X).
 
 -spec substitute/2 :: (string(), xl_lists:kvlist_at()) -> string().
-substitute(Str, Map) ->
-    Parts = re:split(Str, "({[a-zA-Z0-9_\\.:-]+})", [{return, list}, trim]),
-    lists:flatten([replace_macro(X, Map) || X <- Parts]).
+substitute(Str, Map) -> substitute(Str, Map, {${, $}}).
 
--spec replace_macro/2 :: (string(), xl_lists:kvlist_at()) -> string().
-replace_macro([${ | T], Map) ->
-    Key = list_to_atom(string:strip(T, right, $})),
+-spec substitute/3 :: (string(), ebt_xl_lists:kvlist_at(), {char(), char()}) -> string().
+substitute(Str, Map, {Open, Close}) ->
+    Parts = re:split(Str, format("(\\\~s[a-zA-Z\\\-_\\\.]+\\\~s)", [[Open], [Close]]), [{return, list}, trim]),
+    lists:flatten([replace_macro(X, Map, {Open, Close}) || X <- Parts]).
+
+-spec replace_macro/3 :: (string(), ebt_xl_lists:kvlist_at(), {char(), char()}) -> string().
+replace_macro([Open | T], Map, {Open, Close}) ->
+    Key = list_to_atom(string:strip(T, right, Close)),
     case lists:keyfind(Key, 1, Map) of
-        {_, V} -> to_string(V);
+        {_, V} -> xl_convert:to(string, V);
         _ -> ""
     end;
-replace_macro(X, _Map) -> X.
+replace_macro(X, _Map, _) -> X.
 
--spec to_string/1 :: (atom() | binary() | string() | float() | integer())
-        -> string().
-to_string(V) when is_binary(V) -> binary_to_list(V);
-to_string(V) when is_atom(V) -> atom_to_list(V);
-to_string(V) when is_list(V) -> V;
-to_string(V) when is_float(V); is_integer(V) -> format("~p", [V]);
-to_string(V) -> format("~p", [V]).
 
--spec mk_atom/1 :: ([atom() | binary() | string() | float() | integer()]) ->
-    atom().
-mk_atom(L) when is_list(L) ->
-    list_to_atom(string:join([to_string(X) || X <- L], "")).
+-spec to_string/1 :: (atom() | binary() | string() | float() | integer()) -> string().
+to_string(X) -> xl_convert:to_string(X).
+
+-spec mk_atom/1 :: ([atom() | binary() | string() | float() | integer()]) -> atom().
+mk_atom(L) -> xl_convert:make_atom(L).
+
+-spec to_atom/1 :: (iostring() | atom()) -> atom().
+to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
+to_atom(X) when is_list(X) -> list_to_atom(X);
+to_atom(X) when is_atom(X) -> X.
 
 -spec equal_ignore_case/2 :: (iostring(), iostring()) -> boolean().
 equal_ignore_case(A, B) when is_list(A), is_list(B);
@@ -103,28 +107,18 @@ to_upper(S) when is_list(S) -> string:to_upper(S).
 -spec join/2 :: ([iostring()], iostring()) -> iostring().
 join(List, Delim) when is_binary(Delim) ->
     list_to_binary(join(List, binary_to_list(Delim)));
-join(List, Delim) -> string:join([to_string(X) || X <- List], Delim).
+join(List, Delim) -> string:join([xl_convert:to(string, X) || X <- List], Delim).
 
 -spec join/1 :: ([iostring()]) -> string().
 join(List) -> join(List, "").
 
--spec to_atom/1 :: (iostring() | atom()) -> atom().
-to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
-to_atom(X) when is_list(X) -> list_to_atom(X);
-to_atom(X) when is_atom(X) -> X.
 
--spec to_binary/1 :: (iostring() | atom()) -> binary().
-to_binary(X) when is_atom(X) -> atom_to_binary(X, utf8);
-to_binary(X) when is_list(X) -> list_to_binary(X);
-to_binary(X) when is_binary(X) -> X.
+-spec to_binary/1 :: (integer() | iostring() | atom()) -> binary().
+to_binary(X) -> xl_convert:to_binary(X).
 
 -spec to_integer/1 :: (iostring() | atom() | binary()) -> integer().
-to_integer(X) when is_list(X) -> list_to_integer(X);
-to_integer(X) when is_atom(X) -> list_to_integer(atom_to_list(X));
-to_integer(X) when is_binary(X) -> list_to_integer(binary_to_list(X)).
+to_integer(X) -> xl_conver:to_integer(X).
 
 -spec generate_uuid/0 :: () -> binary().
 generate_uuid() ->
     hd(flake_harness:generate(1, 62)).
-
-

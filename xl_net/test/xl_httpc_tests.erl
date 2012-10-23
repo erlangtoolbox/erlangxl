@@ -1,7 +1,7 @@
 -module(xl_httpc_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("xl_eunit/include/xl_eunit.hrl").
+-include_lib("xl_stdlib/include/xl_eunit.hrl").
 -include("xl_httpc.hrl").
 
 call_test() ->

@@ -11,7 +11,6 @@ SUBDIRS := \
 	xl_leveldb \
 	xl_yaws \
 	xl_csv \
-	xl_eunit \
 	xl_io \
 	xl_net \
 	persist

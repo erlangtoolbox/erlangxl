@@ -2,6 +2,7 @@
 
 -export([parse_line/1, lines/1, parse_file/1]).
 
+parse_line(L) when is_binary(L) -> [list_to_binary(X) || X <- parse_line(binary_to_list(L))];
 parse_line("") -> [];
 parse_line(L) ->
     {Item, Rest} = parse_item_start(xl_string:strip(L)),
@@ -21,5 +22,5 @@ lines(S) -> xl_stream:map(fun(L) -> parse_line(L) end, S).
 -spec parse_file/1 :: (file:name()) -> error_m:monad([[string()]]).
 parse_file(Path) ->
     xl_file:using(Path, [read], fun(File) ->
-        xl_stream:to_list(xl_csv:lines(xl_io:lines(File)))
+        xl_stream:to_list(lines(xl_io:lines(File)))
     end).

@@ -1,0 +1,85 @@
+{primitives, [
+    {integer, integer},
+    {integer_undef, {integer, undefined}},
+    {integer_def, {integer, 1}},
+
+    {float, float},
+    {float_undef, {float, undefined}},
+    {float_def, {float, 1.0}},
+
+    {boolean, boolean},
+    {boolean_def_true, {boolean, true}},
+    {boolean_def_false, {boolean, false}},
+
+    {atom, atom},
+    {atom_def, {atom, a}},
+
+    {string, string},
+    {string_undef, {string, undefined}},
+    {string_def, {string, <<"a">>}},
+
+    {record, primitives},
+    {record_def, {primitives, undefined}},
+    {record_qualified, {alltypes, primitives}},
+    {record_qualified_def, {{alltypes, primitives}, undefined}},
+
+    {any, any},
+    {any_undef, {any, undefined}},
+    {any_def, {any, [{a, <<"b">>}]}}
+]}.
+
+{lists, [
+    {integer, {list, integer}},
+    {integer_def, {list, integer, [1, 2]}},
+
+    {float, {list, float}},
+    {float_def, {list, float, [1.0, 1.2]}},
+
+    {boolean, {list, boolean}},
+    {boolean_def, {list, boolean, [true]}},
+
+    {atom, {list, atom}},
+    {atom_def, {list, atom, [a, b]}},
+
+    {string, {list, string}},
+    {string_def, {list, string, [<<"a">>]}},
+
+    {record, {list, primitives}},
+    {record_def, {list, primitives, []}},
+    {record_qualified, {list, {alltypes, primitives}}},
+    {record_qualified_def, {list, {alltypes, primitives}, []}},
+
+    {any, {list, any}},
+    {any_def, {list, any, [[{a, <<"b">>}]]}}
+]}.
+
+{options, [
+    {integer, {option, integer}},
+    {integer_def, {option, integer, 1}},
+
+    {float, {option, float}},
+    {float_def, {option, float, 1.0}},
+
+    {boolean, {option, boolean}},
+    {boolean_def, {option, boolean, true}},
+
+    {atom, {option, atom}},
+    {atom_def, {option, atom, a}},
+
+    {string, {option, string}},
+    {string_def, {option, string, <<"a">>}},
+
+    {record, {option, primitives}},
+    {record_qualified, {option, {alltypes, primitives}}},
+
+    {any, {option, any}},
+    {any_def, {option, any, [{a, <<"b">>}]}}
+]}.
+
+
+{qualified, [
+    {prim_opt, {option, {alltypes, primitives}}},
+    {prim, {alltypes, primitives}},
+    {list_prim_def, {list, {alltypes, primitives}, []}},
+    {list_prim, {list, {alltypes, primitives}}}
+]}.

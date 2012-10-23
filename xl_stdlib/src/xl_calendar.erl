@@ -1,6 +1,7 @@
 -module(xl_calendar).
 
--export([format/2, now_millis/0, add/3]).
+-export([format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
+    day_of_week/1]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -53,31 +54,31 @@ add(Date, N, years) -> add(Date, 12 * N, months).
 
 % end of Jonas Enlund
 
-day_of_week_name({Date, _}) ->
+day_of_week({Date, _}) ->
     case calendar:day_of_the_week(Date) of
-        1 -> "Mon";
-        2 -> "Tue";
-        3 -> "Wed";
-        4 -> "Thi";
-        5 -> "Fri";
-        6 -> "Sat";
-        7 -> "Sun"
+        1 -> 'Mon';
+        2 -> 'Tue';
+        3 -> 'Wed';
+        4 -> 'Thu';
+        5 -> 'Fri';
+        6 -> 'Sat';
+        7 -> 'Sun'
     end.
 
 month_name({{_, Mon, _}, _}) ->
     case Mon of
-        1 -> "Jan";
-        2 -> "Feb";
-        3 -> "Mar";
-        4 -> "Apr";
-        5 -> "May";
-        6 -> "Jun";
-        7 -> "Jul";
-        8 -> "Aug";
-        9 -> "Sep";
-        10 -> "Oct";
-        11 -> "Nov";
-        12 -> "Dec"
+        1 -> 'Jan';
+        2 -> 'Feb';
+        3 -> 'Mar';
+        4 -> 'Apr';
+        5 -> 'May';
+        6 -> 'Jun';
+        7 -> 'Jul';
+        8 -> 'Aug';
+        9 -> 'Sep';
+        10 -> 'Oct';
+        11 -> 'Nov';
+        12 -> 'Dec'
     end.
 
 -spec format(Pattern, Datetime) -> string() when
@@ -86,9 +87,9 @@ month_name({{_, Mon, _}, _}) ->
 format(Pattern, Datetime) -> format(Pattern, Datetime, "").
 
 format([], _, Acc) -> Acc;
-format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ day_of_week_name(Dt));
+format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(day_of_week(Dt)));
 format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Date])));
-format([$M, $M, $M | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ month_name(Dt));
+format([$M, $M, $M | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(month_name(Dt)));
 format([$M, $M | Pattern], Dt = {{_, Mon, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Mon])));
 format([$y, $y, $y, $y | Pattern], Dt = {{Year, _, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ integer_to_list(Year));
 format([$H, $H | Pattern], Dt = {_, {Hour, _, _}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Hour])));
@@ -96,8 +97,16 @@ format([$m, $m | Pattern], Dt = {_, {_, Min, _}}, Acc) -> format(Pattern, Dt, Ac
 format([$s, $s | Pattern], Dt = {_, {_, _, Sec}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Sec])));
 format([H | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ [H]).
 
--spec now_millis() -> integer().
-now_millis() ->
-    {Mega, Secs, Millis} = erlang:now(),
-    (Mega * 1000000 + Secs) * 1000 + Millis div 1000.
+-spec now_millis() -> pos_integer().
+now_millis() -> now_micros() div 1000.
 
+-spec now_micros() -> pos_integer().
+now_micros() ->
+    {Mega, Secs, Micros} = erlang:now(),
+    (Mega * 1000000 + Secs) * 1000000 + Micros.
+
+-spec ms_to_datetime/1 ::(integer()) -> calendar:datetime().
+ms_to_datetime(Milliseconds) ->
+    BaseDate = calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
+    Seconds = BaseDate + (Milliseconds div 1000),
+    calendar:gregorian_seconds_to_datetime(Seconds).

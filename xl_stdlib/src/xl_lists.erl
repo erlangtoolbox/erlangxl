@@ -2,7 +2,8 @@
 
 -export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
     sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
-    kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3]).
+    kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
+    count_unique/1, keyincrement/3, split_by/2]).
 
 -type kvlist(A, B) :: [{A, B}].
 -type kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float()).
@@ -154,11 +155,39 @@ eflatten(E) -> E.
 -spec insert_before/3 :: (any(), any(), list()) -> list().
 insert_before(BeforeElem, Elem, List) ->
     {Head, Tail} = lists:splitwith(fun(E) ->
-                case  E of
-                    BeforeElem ->
-                        false;
-                    _ ->
-                        true
-                end
-        end, List),
+        case  E of
+            BeforeElem ->
+                false;
+            _ ->
+                true
+        end
+    end, List),
     Head ++ [Elem] ++ Tail.
+
+-spec random/1 :: ([term()]) -> option_m:monad(term()).
+random(List) ->
+    case length(List) of
+        0 -> undefined;
+        L -> {ok, lists:nth(random:uniform(L), List)}
+    end.
+
+-spec count_unique/1 :: ([term()]) -> [{term(), integer()}].
+count_unique(List) -> count_unique(List, []).
+count_unique([], Counter) -> Counter;
+count_unique([H | T], Counter) -> count_unique(T, keyincrement(H, 1, Counter)).
+
+-spec keyincrement/3 :: (term(), integer(), [{term(), integer()}]) -> [{term(), integer()}].
+keyincrement(Key, Inc, List) ->
+    case kvfind(Key, List) of
+        {ok, Count} -> keyreplace(1, List, [{Key, Count + Inc}]);
+        undefined -> [{Key, Inc} | List]
+    end.
+
+-spec split_by/2 :: ([term()], term()) -> [[term()]].
+split_by([], _Sep) -> [[]];
+split_by(List, Sep) ->
+    {H, T} = lists:splitwith(fun(X) -> X =/= Sep end, List),
+    case T of
+        [Sep | Rest] -> [H | split_by(Rest, Sep)];
+        [] -> [H]
+    end.

@@ -69,7 +69,7 @@ index(ExtractF, Path, IndexPath) ->
                 T = xl_stream:ifoldl(fun({Line, Offset}, Tree, I) ->
                     progress(I),
                     {Key, Value} = ExtractF(xl_csv:parse_line(Line)),
-                    gb_trees:insert(Key, #entry{value = Value, offset = Offset, length = length(Line)}, Tree)
+                    gb_trees:insert(Key, #entry{value = Value, offset = Offset, length = size(Line)}, Tree)
                 end, gb_trees:empty(), Lines),
                 save_cache(IndexPath, H, T),
                 {H, T}
@@ -80,14 +80,13 @@ index(ExtractF, Path, IndexPath) ->
 progress(I) when I rem 10000 == 0 -> error_logger:info_report(io_lib:format("progress: ~p", [I]));
 progress(_) -> none.
 
-
 find(Key, Db) ->
     {_, T} = Db#db.tree,
     H = Db#db.handler,
     case H:find(Key, T) of
         {_, #entry{offset = Offset, length = Length}} ->
             {ok, Line} = file:pread(Db#db.file, Offset, Length),
-            H:format(Db#db.header, xl_csv:parse_line(binary_to_list(Line)));
+            H:format(Db#db.header, xl_csv:parse_line(Line));
         not_found -> not_found
     end.
 
