@@ -62,7 +62,7 @@ substitute(Str, Map) -> substitute(Str, Map, {${, $}}).
 
 -spec substitute/3 :: (string(), ebt_xl_lists:kvlist_at(), {char(), char()}) -> string().
 substitute(Str, Map, {Open, Close}) ->
-    Parts = re:split(Str, format("(\\\~s[a-zA-Z\\\-_\\\.]+\\\~s)", [[Open], [Close]]), [{return, list}, trim]),
+    Parts = re:split(Str, format("(\\\~s[a-zA-Z0-9_\\.:-]+\\\~s)", [[Open], [Close]]), [{return, list}, trim]),
     lists:flatten([replace_macro(X, Map, {Open, Close}) || X <- Parts]).
 
 -spec replace_macro/3 :: (string(), ebt_xl_lists:kvlist_at(), {char(), char()}) -> string().
