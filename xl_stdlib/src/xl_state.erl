@@ -3,7 +3,10 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([new/2, get/2, set/3]).
+-export([new/1, new/2, get/2, set/3, keys/1]).
+
+-spec new/1 :: (atom()) -> atom().
+new(Name) -> new(Name, []).
 
 -spec new/2 :: (atom(), [term()]) -> atom().
 new(Name, Options) ->
@@ -32,6 +35,9 @@ loop() ->
         stop ->
             ok
     end.
+
+-spec keys/1 :: (atom()) -> [term()].
+keys(Name) -> lists:flatten(ets:match(Name, {'$1', '_'})).
 
 -spec get/2 :: (atom(), term()) -> option_m:monad(term()).
 get(Name, Key) ->
