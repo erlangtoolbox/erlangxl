@@ -6,7 +6,7 @@
 
 -define(BACKEND_JSON_API, xl_json_jiffy).
 
--spec to_json(xl_json_api:json_document()) -> binary().
+-spec(to_json(xl_json_api:json_document()) -> binary()).
 to_json(<<>>) -> "\"\"";
 to_json(X) when is_binary(X) -> xl_string:format("~p", [binary_to_list(X)]);
 to_json(X) when is_number(X) -> xl_string:format("~p", [X]);
@@ -20,16 +20,16 @@ to_json(X = [H | _]) when is_tuple(H) andalso size(H) == 2 ->
         || {K, V} <- X], ",") ++ "}";
 to_json(X) when is_list(X) -> "[" ++ string:join([to_json(E) || E <- X], ",") ++ "]".
 
--spec from_json/1 :: (iolist()) -> error_m:monad(xl_json_api:json_document()).
+-spec(from_json(iolist()) -> error_m:monad(xl_json_api:json_document())).
 from_json(Source) ->
     case ?BACKEND_JSON_API:from_json(Source) of
         {ok, Doc} -> {ok, ?BACKEND_JSON_API:to_abstract(Doc)};
         E -> E
     end.
 
--spec get_value/2 :: (atom(), xl_json_api:json_document()) -> option_m:monad(any()).
+-spec(get_value(atom(), xl_json_api:json_document()) -> option_m:monad(any())).
 get_value(Field, Doc) ->
     xl_lists:kvfind(Field, Doc).
 
--spec to_abstract/1 :: (xl_json_api:json_document()) -> xl_json_api:abstract_json_document().
+-spec(to_abstract(xl_json_api:json_document()) -> xl_json_api:abstract_json_document()).
 to_abstract(Doc) -> Doc.

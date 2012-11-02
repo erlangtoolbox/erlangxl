@@ -82,3 +82,32 @@ list_test() ->
 undefined_options_test() ->
     P = #options{},
     ?assertEquals({ok, P}, alltypes:from_json("{}", options)).
+
+required_test() ->
+    Asserts = [
+        {integer, "{}"},
+        {float, "{\"integer\":1}"},
+        {boolean, "{\"integer\":1,\"float\":1.1}"},
+        {atom, "{\"integer\":1,\"float\":1.1,\"boolean\":true}"},
+        {string, "{\"integer\":1,\"float\":1.1,\"boolean\":true,\"atom\":\"atom\"}"},
+        {record, "{\"integer\":1,\"float\":1.1,\"boolean\":true,\"atom\":\"atom\",\"string\":\"1\"}"},
+        {record_qualified, "{\"integer\":1,\"float\":1.1,\"boolean\":true,\"atom\":\"atom\",\"string\":\"1\",\"record\":null}"},
+        {any, "{\"integer\":1,\"float\":1.1,\"boolean\":true,\"atom\":\"atom\",\"string\":\"1\",\"record\":null,\"record_qualified\":null}"}
+    ],
+    lists:foreach(fun({Name, Json}) ->
+        ?assertEquals({error, {required, Name}}, alltypes:from_json(Json, primitives))
+    end, Asserts),
+    ListAsserts = [
+        {integer, "{}"},
+        {float, "{\"integer\":[]}"},
+        {boolean, "{\"integer\":[],\"float\":[]}"},
+        {atom, "{\"integer\":[],\"float\":[],\"boolean\":[]}"},
+        {string, "{\"integer\":[],\"float\":[],\"boolean\":[],\"atom\":[]}"},
+        {record, "{\"integer\":[],\"float\":[],\"boolean\":[],\"atom\":[],\"string\":[]}"},
+        {record_qualified, "{\"integer\":[],\"float\":[],\"boolean\":[],\"atom\":[],\"string\":[],\"record\":[]}"},
+        {any, "{\"integer\":[],\"float\":[],\"boolean\":[],\"atom\":[],\"string\":[],\"record\":[],\"record_qualified\":[]}"}
+    ],
+    lists:foreach(fun({Name, Json}) ->
+        ?assertEquals({error, {required, Name}}, alltypes:from_json(Json, lists))
+    end, ListAsserts).
+

@@ -288,7 +288,7 @@ generate_from_json_field({Name, Type}) when
     Type == atom;
     Type == string;
     Type == any ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Type, undefined])};
+    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Type, {required, Name}])};
 generate_from_json_field({Name, Qualified = {list, Type}}) when
     Type == integer;
     Type == float;
@@ -296,7 +296,7 @@ generate_from_json_field({Name, Qualified = {list, Type}}) when
     Type == atom;
     Type == string;
     Type == any ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, []])};
+    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
 generate_from_json_field({Name, Qualified = {option, Type}}) when
     Type == integer;
     Type == float;
@@ -337,10 +337,10 @@ generate_from_json_field({Name, {list, Type, Default}}) when is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), {list, {?MODULE, ~p}}, ~p)", [Name, Name, Type, Default])};
 
 generate_from_json_field({Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    generate_from_json_field({Name, {list, {Module, Type}, []}});
+    generate_from_json_field({Name, {list, {Module, Type}, {required, Name}}});
 
 generate_from_json_field({Name, {list, Type}}) when is_atom(Type) ->
-    generate_from_json_field({Name, {list, Type, []}});
+    generate_from_json_field({Name, {list, Type, {required, Name}}});
 
 generate_from_json_field({Name, Qualified = {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
@@ -349,23 +349,22 @@ generate_from_json_field({Name, {option, Type}}) when is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), {option, {?MODULE, ~p}}, ~p)", [Name, Name, Type, undefined])};
 
 generate_from_json_field({Name, {Type, undefined}}) when is_atom(Type) ->
-    generate_from_json_field({Name, Type});
-
-generate_from_json_field({Name, Type}) when is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), {?MODULE, ~p}, ~p)", [Name, Name, Type, undefined])};
 
-generate_from_json_field({Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
-    generate_from_json_field({Name, {Module, Type}});
+generate_from_json_field({Name, Type}) when is_atom(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), {?MODULE, ~p}, ~p)", [Name, Name, Type, {required, Name}])};
 
-generate_from_json_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
+generate_from_json_field({Name, {Qualified = {Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
 
+generate_from_json_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
 
 generate_from_json_field(Field) -> {error, {dont_understand, Field}}.
 
 % runtime functions
 
--spec cast/4 :: (module(), option_m:monad(any()), term(), any()) -> any().
+-spec(cast(module(), option_m:monad(any()), term(), any()) -> any()).
 cast(_JsonApi, {ok, null}, _Type, _Default) -> undefined;
 
 cast(_JsonApi, {ok, V}, atom, _Default) -> xl_convert:to(atom, V);
@@ -395,6 +394,8 @@ cast(JsonApi, {ok, V}, {option, any}, _Default) -> {ok, JsonApi:to_abstract(V)};
 cast(_JsonApi, {ok, V}, {list, {Module, Record}}, _Default) when is_list(V) -> [Module:from_json_(O, Record) || O <- V];
 cast(_JsonApi, {ok, V}, {option, {Module, Record}}, _Default) -> {ok, Module:from_json_(V, Record)};
 cast(_JsonApi, {ok, V}, {Module, Record}, _Default) -> Module:from_json_(V, Record);
+
+cast(_JsonApi, undefined, _Type, E = {required, _}) -> error(E);
 
 cast(_JsonApi, undefined, {option, _}, undefined) -> undefined;
 cast(_JsonApi, undefined, {option, _}, Default) -> {ok, Default};
