@@ -41,7 +41,7 @@ eforeach(F, [H | T]) ->
         X -> X
     end.
 
--spec(f((term(), term())-> error_m:monad(term())) -> )
+-spec(efoldl(fun((term(), term())-> error_m:monad(term())), term(), [term()]) -> error_m:monad(term())).
 efoldl(_F, Acc, []) -> {ok, Acc};
 efoldl(F, Acc, [H | T]) ->
     case F(H, Acc) of
