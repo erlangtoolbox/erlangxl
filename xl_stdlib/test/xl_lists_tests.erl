@@ -85,13 +85,8 @@ split_test() ->
 
 
 insert_before_test() ->
-    ?assertEqual(
-        [1, 2, 3],
-        xl_lists:insert_before(3, 2, [1, 3])),
-    ?assertEqual(
-        [one, two, three, four, four],
-        xl_lists:insert_before(four, three, [one, two, four, four])
-    ).
+    ?assertEqual([1, 2, 3], xl_lists:insert_before(3, 2, [1, 3])),
+    ?assertEqual([one, two, three, four, four], xl_lists:insert_before(four, three, [one, two, four, four])).
 
 
 random_test() ->
@@ -108,3 +103,8 @@ random_test() ->
 split_by_test() ->
     ?assertEqual([[1, 2], [4, 4, 5], [5, 6]], xl_lists:split_by([1, 2, 3, 4, 4, 5, 3, 5, 6], 3)),
     ?assertEqual([[], [4, 4, 5], []], xl_lists:split_by([3, 4, 4, 5, 3], 3)).
+
+efoldl_test() ->
+    F = fun(3, _) -> {error, 3}; (X, A) -> {ok, X + A} end,
+    ?assertEqual({ok, 3}, xl_lists:efoldl(F, 0, [1, 1, 1])),
+    ?assertEqual({error, 3}, xl_lists:efoldl(F, 0, [1, 3, 1])).
