@@ -109,5 +109,11 @@ required_test() ->
     ],
     lists:foreach(fun({Name, Json}) ->
         ?assertEquals({error, {required, Name}}, alltypes:from_json(Json, lists))
-    end, ListAsserts).
+    end, ListAsserts),
+    NullListAsserts = [
+        {any, "{\"integer\":null,\"float\":[],\"boolean\":[],\"atom\":[],\"string\":[],\"record\":[],\"record_qualified\":[]}"}
+    ],
+    lists:foreach(fun({Name, Json}) ->
+        ?assertEquals({error, {required, Name}}, alltypes:from_json(Json, lists))
+    end, NullListAsserts).
 
