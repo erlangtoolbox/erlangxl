@@ -3,7 +3,7 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([eget_env/2, get_env/3]).
+-export([eget_env/2, get_env/3, is_started/1]).
 
 -spec(eget_env(atom(), atom()) -> error_m:monad(any())).
 eget_env(Application, Env) ->
@@ -15,3 +15,6 @@ get_env(Application, Env, Default) ->
         {ok, Val} -> Val;
         _ -> Default
     end.
+
+-spec(is_started(atom()) -> boolean()).
+is_started(App) -> lists:keymember(App, 1, application:loaded_applications()).
