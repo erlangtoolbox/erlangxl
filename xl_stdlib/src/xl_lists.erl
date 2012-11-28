@@ -3,7 +3,7 @@
 -export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
     sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
-    count_unique/1, keyincrement/3, split_by/2, efoldl/3]).
+    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -93,6 +93,9 @@ sublistmatch(Pattern, Map) ->
             _ -> false
         end
     end, Pattern).
+
+-spec(substitute([term()], kvlist_at()) -> [term()]).
+substitute(Pattern, Map) -> substitute(Pattern, Map, fun xl_string:substitute/2).
 
 -spec(substitute([term()], kvlist_at(), fun((string(), kvlist_at()) -> string())) -> [term()]).
 substitute(Pattern, Map, StringHandler) ->
