@@ -87,13 +87,10 @@ to_atom(X) when is_list(X) -> list_to_atom(X);
 to_atom(X) when is_atom(X) -> X.
 
 -spec equal_ignore_case/2 :: (iostring(), iostring()) -> boolean().
-equal_ignore_case(A, B) when is_list(A), is_list(B);
-    is_binary(A), is_binary(B) ->
-    string:equal(to_lower(A), to_lower(B));
-equal_ignore_case(A, B) when is_list(A) ->
-    string:equal(to_lower(list_to_binary(A)), to_lower(B));
-equal_ignore_case(A, B) when is_list(B) ->
-    string:equal(to_lower(A), to_lower(list_to_binary(B))).
+equal_ignore_case(A, B) ->
+    string:equal(to_lower(xl_convert:to(string, A)), to_lower(xl_convert:to(string, B))).
+
+    
 
 -spec to_lower/1 :: (iostring()) -> iostring().
 to_lower(S) when is_binary(S) -> list_to_binary(to_lower(binary_to_list(S)));
