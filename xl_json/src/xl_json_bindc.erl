@@ -27,17 +27,26 @@ generate_records(Records, Out) ->
         ])
     end, Records).
 
-
+-define(is_primitive_type(Type), Type == integer; Type == float; Type == boolean; Type == atom; Type == binary; Type == string; Type == any).
+-define(is_primitive_type(Type, Default),
+is_binary(Default), Type == string;
+Default == undefined, Type == string;
+is_binary(Default), Type == binary;
+Default == undefined, Type == binary;
+is_integer(Default), Type == integer;
+Default == undefined, Type == integer;
+is_float(Default), Type == float;
+Default == undefined, Type == float;
+is_atom(Default), Type == atom;
+Default == true, Type == boolean;
+Default == false, Type == boolean;
+is_list(Default), Type == any;
+Default == undefined, Type == any
+).
 
 %lists
-generate_field({Name, {list, string}}) -> generate_field({Name, {list, binary}});
-generate_field({Name, {list, Type}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == binary;
-    Type == any ->
+%% generate_field({Name, {list, string}}) -> generate_field({Name, {list, binary}});
+generate_field({Name, {list, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = error({required, ~p}) :: [~p()]", [Name, Name, Type])};
 generate_field({Name, {list, Type}}) when is_atom(Type) ->
     {ok, xl_string:format("~p = error({required, ~p}) :: [#~p{}]", [Name, Name, Type])};
@@ -45,14 +54,8 @@ generate_field({Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Typ
     {ok, xl_string:format("~p = error({required, ~p})", [Name, Name])};
 
 %lists with defaults
-generate_field({Name, {list, string, Default}}) -> generate_field({Name, {list, binary, Default}});
-generate_field({Name, {list, Type, Default}}) when
-    is_list(Default), Type == binary;
-    is_list(Default), Type == integer;
-    is_list(Default), Type == float;
-    is_list(Default), Type == boolean;
-    is_list(Default), Type == atom;
-    is_list(Default), Type == any ->
+%% generate_field({Name, {list, string, Default}}) -> generate_field({Name, {list, binary, Default}});
+generate_field({Name, {list, Type, Default}}) when is_list(Default), ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = ~p :: [~p()]", [Name, Default, Type])};
 generate_field({Name, {list, Type, Default}}) when is_atom(Type), is_list(Default) ->
     {ok, xl_string:format("~p = ~p :: [#~p{}]", [Name, Default, Type])};
@@ -60,14 +63,8 @@ generate_field({Name, {list, {Module, Type}, Default}}) when is_atom(Module), is
     {ok, xl_string:format("~p = ~p", [Name, Default])};
 
 %options
-generate_field({Name, {option, string}}) -> generate_field({Name, {option, binary}});
-generate_field({Name, {option, Type}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == binary;
-    Type == any ->
+%% generate_field({Name, {option, string}}) -> generate_field({Name, {option, binary}});
+generate_field({Name, {option, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p :: option_m:monad(~p())", [Name, Type])};
 generate_field({Name, {option, Type}}) when is_atom(Type) ->
     {ok, xl_string:format("~p :: option_m:monad(#~p{})", [Name, Type])};
@@ -75,47 +72,19 @@ generate_field({Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(T
     {ok, xl_string:format("~p", [Name])};
 
 %options with defaults
-generate_field({Name, {option, string, Default}}) -> generate_field({Name, {option, binary, Default}});
-generate_field({Name, {option, Type, Default}}) when
-    is_binary(Default), Type == binary;
-    Default == undefined, Type == binary;
-    is_integer(Default), Type == integer;
-    Default == undefined, Type == integer;
-    is_float(Default), Type == float;
-    Default == undefined, Type == float;
-    is_atom(Default), Type == atom;
-    Default == true, Type == boolean;
-    Default == false, Type == boolean;
-    is_list(Default), Type == any;
-    Default == undefined, Type == any ->
+%% generate_field({Name, {option, string, Default}}) -> generate_field({Name, {option, binary, Default}});
+generate_field({Name, {option, Type, Default}}) when ?is_primitive_type(Type, Default) ->
     {ok, xl_string:format("~p = {ok, ~p} :: option_m:monad(~p())", [Name, Default, Type])};
 
 %primitives with defaults
-generate_field({Name, {Type, Default}}) when
-    is_binary(Default), Type == binary;
-    Default == undefined, Type == binary;
-    is_integer(Default), Type == integer;
-    Default == undefined, Type == integer;
-    is_float(Default), Type == float;
-    Default == undefined, Type == float;
-    is_atom(Default), Type == atom;
-    Default == true, Type == boolean;
-    Default == false, Type == boolean;
-    is_list(Default), Type == any;
-    Default == undefined, Type == any ->
+generate_field({Name, {Type, Default}}) when ?is_primitive_type(Type, Default) ->
     {ok, xl_string:format("~p = ~p :: ~p()", [Name, Default, Type])};
 generate_field({Name, {string, Default}}) ->
     generate_field({Name, {binary, Default}});
 
 %primitives
-generate_field({Name, string}) -> generate_field({Name, binary});
-generate_field({Name, Type}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == binary;
-    Type == any ->
+%% generate_field({Name, string}) -> generate_field({Name, binary});
+generate_field({Name, Type}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = error({required, ~p}) :: ~p()", [Name, Name, Type])};
 generate_field({Name, Type}) when is_atom(Type) ->
     {ok, xl_string:format("~p = error({required, ~p}) :: #~p{}", [Name, Name, Type])};
@@ -189,53 +158,17 @@ generate_to_json(Records, Out) ->
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
-generate_to_json_field(RecordName, {Name, Type}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_to_json_field(RecordName, {Name, Type}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
-generate_to_json_field(RecordName, {Name, {Type, _Default}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_to_json_field(RecordName, {Name, {Type, _Default}}) when ?is_primitive_type(Type) ->
     generate_to_json_field(RecordName, {Name, Type});
-generate_to_json_field(RecordName, {Name, {list, Type}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_to_json_field(RecordName, {Name, {list, Type}}) when ?is_primitive_type(Type) ->
     generate_to_json_field(RecordName, {Name, Type});
-generate_to_json_field(RecordName, {Name, {list, Type, _Default}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_to_json_field(RecordName, {Name, {list, Type, _Default}}) when ?is_primitive_type(Type) ->
     generate_to_json_field(RecordName, {Name, Type});
-generate_to_json_field(RecordName, {Name, {option, Type}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_to_json_field(RecordName, {Name, {option, Type}}) when ?is_primitive_type(Type) ->
     generate_to_json_field(RecordName, {Name, Type});
-generate_to_json_field(RecordName, {Name, {option, Type, _Default}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_to_json_field(RecordName, {Name, {option, Type, _Default}}) when ?is_primitive_type(Type) ->
     generate_to_json_field(RecordName, {Name, Type});
 
 generate_to_json_field(RecordName, {Name, {option, Type}}) when is_atom(Type) ->
@@ -281,53 +214,17 @@ generate_from_json(Records, Out) ->
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
-generate_from_json_field({Name, Type}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_from_json_field({Name, Type}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Type, {required, Name}])};
-generate_from_json_field({Name, Qualified = {list, Type}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_from_json_field({Name, Qualified = {list, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
-generate_from_json_field({Name, Qualified = {option, Type}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_from_json_field({Name, Qualified = {option, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
-generate_from_json_field({Name, {option, Type, Default}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_from_json_field({Name, {option, Type, Default}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {option, Type}, Default])};
-generate_from_json_field({Name, {Type, Default}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_from_json_field({Name, {Type, Default}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Type, Default])};
-generate_from_json_field({Name, {list, Type, Default}}) when
-    Type == integer;
-    Type == float;
-    Type == boolean;
-    Type == atom;
-    Type == string;
-    Type == any ->
+generate_from_json_field({Name, {list, Type, Default}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {list, Type}, Default])};
 
 generate_from_json_field({Name, {list, {Module, Type}, Default}}) when is_atom(Module), is_atom(Type) ->
@@ -374,6 +271,10 @@ cast(_JsonApi, {ok, V}, {option, atom}, _Default) -> {ok, xl_convert:to(atom, V)
 cast(_JsonApi, {ok, V}, string, _Default) when is_binary(V) -> V;
 cast(_JsonApi, {ok, V}, {list, string}, _Default) when is_list(V) -> V;
 cast(_JsonApi, {ok, V}, {option, string}, _Default) when is_binary(V) -> {ok, V};
+
+cast(_JsonApi, {ok, V}, binary, _Default) when is_binary(V) -> V;
+cast(_JsonApi, {ok, V}, {list, binary}, _Default) when is_list(V) -> V;
+cast(_JsonApi, {ok, V}, {option, binary}, _Default) when is_binary(V) -> {ok, V};
 
 cast(_JsonApi, {ok, V}, integer, _Default) when is_integer(V) -> V;
 cast(_JsonApi, {ok, V}, {list, integer}, _Default) when is_list(V) -> V;
