@@ -90,8 +90,6 @@ to_atom(X) when is_atom(X) -> X.
 equal_ignore_case(A, B) ->
     string:equal(to_lower(xl_convert:to(string, A)), to_lower(xl_convert:to(string, B))).
 
-    
-
 -spec to_lower/1 :: (iostring()) -> iostring().
 to_lower(S) when is_binary(S) -> list_to_binary(to_lower(binary_to_list(S)));
 to_lower(S) when is_list(S) -> string:to_lower(S).
