@@ -15,7 +15,7 @@
     LastAction :: pos_integer(), State :: term()) -> term().
 
 %% API
--export([start_link/5, start_link/4, stop/1]).
+-export([start_link/5, start_link/4, stop/1, status/1]).
 
 %% gen_server
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -41,6 +41,10 @@ start_link(Mod, Args, Interval, Options) ->
 -spec stop/1 :: (Name) -> term() when
     Name :: {local, atom()} | {global, atom()} | {via, atom(), term()}.
 stop(Name) -> gen_server:call(Name, stop).
+
+-spec status/1 :: (Name) -> term() when
+    Name :: {local, atom()} | {global, atom()} | {via, atom(), term()}.
+status(Name) -> gen_server:call(Name, status).
 
 %% gen_server callbacks
 -record(internal_state, {
@@ -78,6 +82,8 @@ new_internal_state(LastAction, Mod, Interval, State) ->
         {error, E} -> {stop, E}
     end.
 
+handle_call(status, _From, InternalState) ->
+    {reply, InternalState, InternalState};
 handle_call(stop, _From, InternalState) ->
     {stop, normal, ok, InternalState}.
 
