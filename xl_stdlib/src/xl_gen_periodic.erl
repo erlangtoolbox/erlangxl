@@ -9,10 +9,10 @@
     {stop, Reason :: term()} | ignore.
 
 -callback handle_action/2 :: (LastAction :: pos_integer(), State :: term()) ->
-    {ok, NewState :: term()} | {ok, NewState :: term(), hibernate}.
+    {ok, NewState :: term()} | {ok, NewState :: term(), hibernate} | {error, term()}.
 
 -callback terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
-    LastAction :: pos_integer(), State :: term()) -> term().
+        LastAction :: pos_integer(), State :: term()) -> term().
 
 %% API
 -export([start_link/5, start_link/4, stop/1, status/1]).
@@ -96,7 +96,10 @@ handle_info(action, InternalState = #internal_state{module = Mod, interval = Int
         {ok, NewState} ->
             handle_info_result(new_internal_state(Now, Mod, Interval, NewState), InternalState);
         {ok, NewState, Hibernate} ->
-            handle_info_result(new_internal_state(Now, Mod, Interval, NewState, Hibernate), InternalState)
+            handle_info_result(new_internal_state(Now, Mod, Interval, NewState, Hibernate), InternalState);
+        {error, Error} ->
+            error_logger:report_error(Error),
+            {noreply, InternalState}
     end;
 handle_info(_Info, InternalState) ->
     {noreply, InternalState}.
