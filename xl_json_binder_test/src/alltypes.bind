@@ -83,3 +83,34 @@
     {list_prim_def, {list, {alltypes, primitives}, []}},
     {list_prim, {list, {alltypes, primitives}}}
 ]}.
+
+{primitive_enums, [
+    {integer, {enum, integer, [1, 2, 3]}},
+    {integer_undef, {enum, {integer, undefined}, [1, 2, 3]}},
+    {integer_def, {enum, {integer, 1}, [1, 2, 3]}},
+
+    {float, {enum, float, [1.1, 2.2]}},
+    {float_undef, {enum, {float, undefined}, [1.1, 2.2]}},
+    {float_def, {enum, {float, 1.1}, [1.1, 2.2]}},
+
+    {atom, {enum, atom, [a, b]}},
+    {atom_def, {enum, {atom, a}, [a, b]}},
+
+    {string, {enum, string, [<<"a">>, <<"b">>]}},
+    {string_undef, {enum, {string, undefined}, [<<"a">>, <<"b">>]}},
+    {string_def, {enum, {string, <<"a">>}, [<<"a">>, <<"b">>]}}
+]}.
+
+{list_enums, [
+    {integer, {enum, {list, integer}, [1, 2, 3]}},
+    {integer_def, {enum, {list, integer, [1]}, [1, 2, 3]}},
+
+    {float, {enum, {list, float}, [1.1, 2.2]}},
+    {float_def, {enum, {list, float, [1.1]}, [1.1, 2.2]}},
+
+    {atom, {enum, {list, atom}, [a, b]}},
+    {atom_def, {enum, {list, atom, [a]}, [a, b]}},
+
+    {string, {enum, {list, string}, [<<"a">>, <<"b">>]}},
+    {string_def, {enum, {list, string, [<<"a">>]}, [<<"a">>, <<"b">>]}}
+]}.

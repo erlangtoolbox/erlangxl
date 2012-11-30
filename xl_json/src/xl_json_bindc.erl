@@ -45,7 +45,6 @@ Default == undefined, Type == any
 ).
 
 %lists
-%% generate_field({Name, {list, string}}) -> generate_field({Name, {list, binary}});
 generate_field({Name, {list, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = error({required, ~p}) :: [~p()]", [Name, Name, Type])};
 generate_field({Name, {list, Type}}) when is_atom(Type) ->
@@ -54,7 +53,6 @@ generate_field({Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Typ
     {ok, xl_string:format("~p = error({required, ~p})", [Name, Name])};
 
 %lists with defaults
-%% generate_field({Name, {list, string, Default}}) -> generate_field({Name, {list, binary, Default}});
 generate_field({Name, {list, Type, Default}}) when is_list(Default), ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = ~p :: [~p()]", [Name, Default, Type])};
 generate_field({Name, {list, Type, Default}}) when is_atom(Type), is_list(Default) ->
@@ -63,7 +61,6 @@ generate_field({Name, {list, {Module, Type}, Default}}) when is_atom(Module), is
     {ok, xl_string:format("~p = ~p", [Name, Default])};
 
 %options
-%% generate_field({Name, {option, string}}) -> generate_field({Name, {option, binary}});
 generate_field({Name, {option, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p :: option_m:monad(~p())", [Name, Type])};
 generate_field({Name, {option, Type}}) when is_atom(Type) ->
@@ -72,9 +69,11 @@ generate_field({Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(T
     {ok, xl_string:format("~p", [Name])};
 
 %options with defaults
-%% generate_field({Name, {option, string, Default}}) -> generate_field({Name, {option, binary, Default}});
 generate_field({Name, {option, Type, Default}}) when ?is_primitive_type(Type, Default) ->
     {ok, xl_string:format("~p = {ok, ~p} :: option_m:monad(~p())", [Name, Default, Type])};
+
+%enums
+generate_field({Name, {enum, Type, _Enum}}) -> generate_field({Name, Type});
 
 %primitives with defaults
 generate_field({Name, {Type, Default}}) when ?is_primitive_type(Type, Default) ->
@@ -158,6 +157,7 @@ generate_to_json(Records, Out) ->
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
+generate_to_json_field(RecordName, {Name, {enum, Type, _Enumeration}}) -> generate_to_json_field(RecordName, {Name, Type});
 generate_to_json_field(RecordName, {Name, Type}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
 generate_to_json_field(RecordName, {Name, {Type, _Default}}) when ?is_primitive_type(Type) ->
@@ -214,8 +214,14 @@ generate_from_json(Records, Out) ->
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
+generate_from_json_field({Name, Qualified = {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
+generate_from_json_field({Name, {enum, {Type, Default}, Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {enum, Type, Enumeration}, Default])};
 generate_from_json_field({Name, Type}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Type, {required, Name}])};
+generate_from_json_field({Name, Qualified = {enum, {list, Type}, _Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
 generate_from_json_field({Name, Qualified = {list, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
 generate_from_json_field({Name, Qualified = {option, Type}}) when ?is_primitive_type(Type) ->
@@ -226,6 +232,8 @@ generate_from_json_field({Name, {Type, Default}}) when ?is_primitive_type(Type) 
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Type, Default])};
 generate_from_json_field({Name, {list, Type, Default}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {list, Type}, Default])};
+generate_from_json_field({Name, {enum, {list, Type, Default}, Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {enum, {list, Type}, Enumeration}, Default])};
 
 generate_from_json_field({Name, {list, {Module, Type}, Default}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(?JSON_API, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {list, {Module, Type}}, Default])};
@@ -261,25 +269,46 @@ generate_from_json_field(Field) -> {error, {dont_understand, Field}}.
 
 % runtime functions
 
+check_enumeration(Value, Enumeration) ->
+    case lists:member(Value, Enumeration) of
+        true -> Value;
+        false -> error({illegal_enum_value, Value})
+    end.
+
 -spec(cast(module(), option_m:monad(any()), term(), any()) -> any()).
 cast(_JsonApi, {ok, null}, _Type, _Default) -> undefined;
 
+cast(_JsonApi, {ok, V}, {enum, atom, Enumeration}, _Default) -> check_enumeration(xl_convert:to(atom, V), Enumeration);
+cast(_JsonApi, {ok, V}, {enum, {list, atom}, Enumeration}, _Default) when is_list(V) ->
+    lists:map(fun(X) -> check_enumeration(xl_convert:to(atom, X), Enumeration) end, V);
 cast(_JsonApi, {ok, V}, atom, _Default) -> xl_convert:to(atom, V);
 cast(_JsonApi, {ok, V}, {list, atom}, _Default) -> lists:map(fun(X) -> xl_convert:to(atom, X) end, V);
 cast(_JsonApi, {ok, V}, {option, atom}, _Default) -> {ok, xl_convert:to(atom, V)};
 
+cast(_JsonApi, {ok, V}, {enum, string, Enumeration}, _Default) -> check_enumeration(V, Enumeration);
+cast(_JsonApi, {ok, V}, {enum, {list, string}, Enumeration}, _Default) when is_list(V) ->
+    lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
 cast(_JsonApi, {ok, V}, string, _Default) when is_binary(V) -> V;
 cast(_JsonApi, {ok, V}, {list, string}, _Default) when is_list(V) -> V;
 cast(_JsonApi, {ok, V}, {option, string}, _Default) when is_binary(V) -> {ok, V};
 
+cast(_JsonApi, {ok, V}, {enum, binary, Enumeration}, _Default) -> check_enumeration(V, Enumeration);
+cast(_JsonApi, {ok, V}, {enum, {list, binary}, Enumeration}, _Default) when is_list(V) ->
+    lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
 cast(_JsonApi, {ok, V}, binary, _Default) when is_binary(V) -> V;
 cast(_JsonApi, {ok, V}, {list, binary}, _Default) when is_list(V) -> V;
 cast(_JsonApi, {ok, V}, {option, binary}, _Default) when is_binary(V) -> {ok, V};
 
+cast(_JsonApi, {ok, V}, {enum, integer, Enumeration}, _Default) -> check_enumeration(V, Enumeration);
+cast(_JsonApi, {ok, V}, {enum, {list, integer}, Enumeration}, _Default) when is_list(V) ->
+    lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
 cast(_JsonApi, {ok, V}, integer, _Default) when is_integer(V) -> V;
 cast(_JsonApi, {ok, V}, {list, integer}, _Default) when is_list(V) -> V;
 cast(_JsonApi, {ok, V}, {option, integer}, _Default) when is_integer(V) -> {ok, V};
 
+cast(_JsonApi, {ok, V}, {enum, float, Enumeration}, _Default) -> check_enumeration(V, Enumeration);
+cast(_JsonApi, {ok, V}, {enum, {list, float}, Enumeration}, _Default) when is_list(V) ->
+    lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
 cast(_JsonApi, {ok, V}, float, _Default) when is_float(V) -> V;
 cast(_JsonApi, {ok, V}, {list, float}, _Default) when is_list(V) -> V;
 cast(_JsonApi, {ok, V}, {option, float}, _Default) when is_float(V) -> {ok, V};

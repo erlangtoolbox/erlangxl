@@ -117,3 +117,48 @@ required_test() ->
         ?assertEquals({error, {required, Name}}, alltypes:from_json(Json, lists))
     end, NullListAsserts).
 
+primitive_enums_test() ->
+    P = #primitive_enums{
+        integer = 1,
+        float = 1.1,
+        string = <<"a">>,
+        atom = a
+    },
+    Json = "{\"integer\":1,\"integer_undef\":null,\"integer_def\":1,\"float\":1.1,\"float_undef\":null,\"float_def\":1.1,\"atom\":\"a\",\"atom_def\":\"a\",\"string\":\"a\",\"string_undef\":null,\"string_def\":\"a\"}",
+    ?assertEquals(Json, alltypes:to_json(P)),
+    ?assertEquals({ok, P}, alltypes:from_json(alltypes:to_json(P), primitive_enums)).
+
+
+primitive_enum_validation_test() ->
+    Asserts = [
+        {0, "{\"integer\":0}"},
+        {1.0, "{\"integer\":1,\"float\":1.0}"},
+        {x, "{\"integer\":1,\"float\":1.1,\"atom\":\"x\"}"},
+        {<<"x">>, "{\"integer\":1,\"float\":1.1,\"atom\":\"a\",\"string\":\"x\"}"}
+    ],
+    lists:foreach(fun({Value, Json}) ->
+        ?assertEquals({error, {illegal_enum_value, Value}}, alltypes:from_json(Json, primitive_enums))
+    end, Asserts).
+
+list_enums_test() ->
+    P = #list_enums{
+        integer = [1],
+        float = [1.1],
+        string = [<<"a">>],
+        atom = [a]
+    },
+    Json = "{\"integer\":[1],\"integer_def\":[1],\"float\":[1.1],\"float_def\":[1.1],\"atom\":[\"a\"],\"atom_def\":[\"a\"],\"string\":[\"a\"],\"string_def\":[\"a\"]}",
+    ?assertEquals(Json, alltypes:to_json(P)),
+    ?assertEquals({ok, P}, alltypes:from_json(alltypes:to_json(P), list_enums)).
+
+list_enum_validation_test() ->
+    Asserts = [
+        {0, "{\"integer\":[0]}"},
+        {1.0, "{\"integer\":[1],\"float\":[1.0]}"},
+        {x, "{\"integer\":[1],\"float\":[1.1],\"atom\":[\"x\"]}"},
+        {<<"x">>, "{\"integer\":[1],\"float\":[1.1],\"atom\":[\"a\"],\"string\":[\"x\"]}"}
+    ],
+    lists:foreach(fun({Value, Json}) ->
+        ?assertEquals({error, {illegal_enum_value, Value}}, alltypes:from_json(Json, list_enums))
+    end, Asserts).
+
