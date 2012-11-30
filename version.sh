@@ -1,1 +1,1 @@
-echo -n 1.0.0.`printf "%04d\n" $BUILD_NUMBER`
+echo -n 1.1.0.`printf "%d\n" $BUILD_NUMBER`
