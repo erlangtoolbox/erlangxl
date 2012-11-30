@@ -269,7 +269,8 @@ generate_from_json_field(Field) -> {error, {dont_understand, Field}}.
 
 % runtime functions
 
-check_enumeration(Value, Enumeration) ->
+check_enumeration(Value, {seq, F, T}) -> check_enumeration(Value, lists:seq(F, T));
+check_enumeration(Value, Enumeration) when is_list(Enumeration) ->
     case lists:member(Value, Enumeration) of
         true -> Value;
         false -> error({illegal_enum_value, Value})

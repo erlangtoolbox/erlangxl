@@ -86,7 +86,7 @@
 
 {primitive_enums, [
     {integer, {enum, integer, [1, 2, 3]}},
-    {integer_undef, {enum, {integer, undefined}, [1, 2, 3]}},
+    {integer_undef, {enum, {integer, undefined}, {seq, 1, 3}}},
     {integer_def, {enum, {integer, 1}, [1, 2, 3]}},
 
     {float, {enum, float, [1.1, 2.2]}},
@@ -102,7 +102,7 @@
 ]}.
 
 {list_enums, [
-    {integer, {enum, {list, integer}, [1, 2, 3]}},
+    {integer, {enum, {list, integer}, {seq, 1, 3}}},
     {integer_def, {enum, {list, integer, [1]}, [1, 2, 3]}},
 
     {float, {enum, {list, float}, [1.1, 2.2]}},
