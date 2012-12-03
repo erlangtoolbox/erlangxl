@@ -99,7 +99,7 @@ handle_info(action, InternalState = #internal_state{module = Mod, interval = Int
             handle_info_result(new_internal_state(Now, Mod, Interval, NewState, Hibernate), InternalState);
         {error, Error} ->
             error_logger:error_report(Error),
-            handle_info_result(new_internal_state(Now, Mod, Interval, InternalState), InternalState)
+            handle_info_result(new_internal_state(LA, Mod, Interval, State), InternalState)
     end;
 handle_info(_Info, InternalState) ->
     {noreply, InternalState}.
