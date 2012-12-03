@@ -13,12 +13,15 @@
         kernel,
         stdlib
     ]},
-    {env, []}
+    {env, []},
+    {'env@1.1.1.1', [a]}
 ]}).
 
 select_test() ->
     ?assertEquals({ok, {ok, [kernel, stdlib]}},
         epath:select("/$3/[$1 == applications]/$2", ?APP)),
+    ?assertEquals({ok, {ok, [a]}},
+        epath:select("/$3/[$1 == ~p]/$2", ['env@1.1.1.1'], ?APP)),
     ?assertEquals({ok, {ok, {vsn, "1"}}},
         epath:select("/$3/[$2 == \"1\"]", ?APP)),
     ?assertEquals({ok, {ok, description}},
@@ -50,7 +53,8 @@ concat_test() ->
         {vsn, "1"},
         {registered, []},
         {applications, [epath, kernel, stdlib]},
-        {env, []}
+        {env, []},
+        {'env@1.1.1.1', [a]}
     ]}}, epath:concat("/$3/[$1 == applications]/$2", [epath], ?APP)).
 
 select_list_test() ->
