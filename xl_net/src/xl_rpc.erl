@@ -13,6 +13,7 @@ call(Node, Module, Function, Args) ->
 call(Node, Module, Function, Args, Timeout) ->
     case rpc:call(Node, Module, Function, Args, Timeout) of
         {ok, R} -> {ok, R};
-        {badrpc, R} -> {error, R};
+        {error, E} -> {error, E};
+        {badrpc, E} -> {error, E};
         R -> {ok, R}
     end.
