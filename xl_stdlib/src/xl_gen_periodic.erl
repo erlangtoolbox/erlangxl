@@ -39,11 +39,19 @@ start_link(Mod, Args, Interval, Options) ->
     gen_server:start_link(xl_gen_periodic, {Mod, Args, Interval}, Options).
 
 -spec stop/1 :: (Name) -> term() when
-    Name :: {local, atom()} | {global, atom()} | {via, atom(), term()}.
+    Name :: atom() |
+    {Name :: atom(), Node :: node()} |
+    {global, GlobalName :: atom()} |
+    {via, Module :: module(), ViaName :: atom()} |
+    pid().
 stop(Name) -> gen_server:call(Name, stop).
 
 -spec status/1 :: (Name) -> term() when
-    Name :: {local, atom()} | {global, atom()} | {via, atom(), term()}.
+    Name :: atom() |
+    {Name :: atom(), Node :: node()} |
+    {global, GlobalName :: atom()} |
+    {via, Module :: module(), ViaName :: atom()} |
+    pid().
 status(Name) -> gen_server:call(Name, status).
 
 %% gen_server callbacks
