@@ -84,7 +84,7 @@ month_name({{_, Mon, _}, _}) ->
 
 -spec(format_type(string(), string(), atom()) -> string()).
 format_type(Pattern, Datetime, binary) -> xl_convert:to(binary, format(Pattern, Datetime));
-format_type(Pattern, Datetime, Type) -> format(Pattern, Datetime).
+format_type(Pattern, Datetime, _) -> format(Pattern, Datetime).
 
 -spec format(Pattern, Datetime) -> string() when
     Pattern :: string(),
