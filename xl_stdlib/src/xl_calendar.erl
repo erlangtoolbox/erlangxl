@@ -1,6 +1,6 @@
 -module(xl_calendar).
 
--export([format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
+-export([format_type/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
     day_of_week/1]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
@@ -80,6 +80,11 @@ month_name({{_, Mon, _}, _}) ->
         11 -> 'Nov';
         12 -> 'Dec'
     end.
+
+
+-spec(format_type(string(), string(), atom()) -> string()).
+format_type(Pattern, Datetime, binary) -> xl_convert:to(binary, format(Pattern, Datetime));
+format_type(Pattern, Datetime, _) -> format(Pattern, Datetime).
 
 -spec format(Pattern, Datetime) -> string() when
     Pattern :: string(),

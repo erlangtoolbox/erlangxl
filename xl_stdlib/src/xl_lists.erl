@@ -174,7 +174,7 @@ insert_before(BeforeElem, Elem, List) ->
 random(List) ->
     case length(List) of
         0 -> undefined;
-        L -> {ok, lists:nth(random:uniform(L), List)}
+        L -> {ok, lists:nth(xl_random:uniform(L), List)}
     end.
 
 -spec(count_unique([term()]) -> [{term(), integer()}]).
