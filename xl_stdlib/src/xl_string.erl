@@ -63,18 +63,19 @@ to_float(X) -> xl_convert:to_float(X).
 substitute(Str, Map) -> substitute(Str, Map, {${, $}}).
 
 -spec(substitute(string(), ebt_xl_lists:kvlist_at(), {char(), char()}) -> string()).
+substitute(Str, Map, Braces) when is_list(Str) -> binary_to_list(substitute(list_to_binary(Str), Map, Braces));
 substitute(Str, Map, {Open, Close}) ->
-    Parts = re:split(Str, format("(\\\~s[a-zA-Z0-9_\\.:-]+\\\~s)", [[Open], [Close]]), [{return, list}, trim]),
-    lists:flatten([replace_macro(X, Map, {Open, Close}) || X <- Parts]).
+    Parts = re:split(Str, format("(\\\~s[a-zA-Z0-9_\\.:-]+\\\~s)", [[Open], [Close]]), [{return, binary}, trim]),
+    join([replace_macro(X, Map, {Open, Close}) || X <- Parts], <<>>).
 
 -spec(replace_macro(string(), ebt_xl_lists:kvlist_at(), {char(), char()}) -> string()).
-replace_macro([Open | T], Map, {Open, Close}) ->
-    Key = list_to_atom(string:strip(T, right, Close)),
-    case lists:keyfind(Key, 1, Map) of
-        {_, V} -> xl_convert:to(string, V);
-        _ -> ""
+replace_macro(<<Open:8, T/binary>>, Map, {Open, _Close}) ->
+    Key = binary:part(T, 0, byte_size(T) - 1),
+    case xl_lists:kvfind(xl_convert:to(atom, Key), Map) of
+        {ok, V} -> V;
+        undefined -> ""
     end;
-replace_macro(X, _Map, _) -> X.
+replace_macro(X, _Map, _Braces) -> X.
 
 
 -spec(to_string(atom() | binary() | string() | float() | integer()) -> string()).
@@ -102,12 +103,27 @@ to_upper(S) when is_list(S) -> string:to_upper(S).
 
 %todo test performance of concatenating lists and binaries
 -spec(join([iostring()], iostring()) -> iostring()).
-join(List, Delim) when is_binary(Delim) ->
-    list_to_binary(join(List, binary_to_list(Delim)));
-join(List, Delim) -> string:join([xl_convert:to(string, X) || X <- List], Delim).
+
+join([], Delim) when is_binary(Delim) -> <<>>;
+join([], Delim) when is_list(Delim) -> "";
+join([H | T], Delim) when is_binary(Delim) -> join(T, xl_convert:to(binary, H), Delim);
+join([H | T], Delim) -> join(T, xl_convert:to(string, H), Delim).
 
 -spec(join([iostring()]) -> string()).
 join(List) -> join(List, "").
+
+join([], Acc, Delim) when is_binary(Delim) -> Acc;
+join([H | T], Acc, <<>>) ->
+    Value = xl_convert:to(binary, H),
+    join(T, <<Acc/binary, Value/binary>>, <<>>);
+join([H | T], Acc, Delim) when is_binary(Delim) ->
+    Value = xl_convert:to(binary, H),
+    join(T, <<Acc/binary, Delim/binary, Value/binary>>, Delim);
+
+join([], Acc, Delim) when is_list(Delim) -> Acc;
+join([H | T], Acc, "") -> join(T, Acc ++ xl_convert:to(string, H), "");
+join([H | T], Acc, Delim) when is_list(Delim) ->
+    join(T, Acc ++ Delim ++ xl_convert:to(string, H), Delim).
 
 
 -spec(to_binary(integer() | iostring() | atom()) -> binary()).

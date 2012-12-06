@@ -27,6 +27,12 @@ to_integer(X) -> to(integer, X).
 make_atom(L) -> list_to_atom(string:join([to_string(X) || X <- L], "")).
 
 -spec to/2 :: (atom(), term()) -> term().
+to(binary, X) when is_binary(X) -> X;
+to(binary, X) when is_float(X) -> to(binary, io_lib:format("~p", [X]));
+to(binary, X) when is_integer(X) -> to(binary, integer_to_list(X));
+to(binary, X) when is_atom(X) -> atom_to_binary(X, utf8);
+to(binary, X) when is_list(X) -> list_to_binary(X);
+
 to(string, X) when is_binary(X) -> binary_to_list(X);
 to(string, X) when is_atom(X) -> atom_to_list(X);
 to(string, X) when is_list(X) -> X;
@@ -44,11 +50,6 @@ to(float, X) ->
         _:_ -> float(list_to_integer(X))
     end;
 
-to(binary, X) when is_float(X) -> to(binary, io_lib:format("~p", X));
-to(binary, X) when is_integer(X) -> to(binary, integer_to_list(X));
-to(binary, X) when is_atom(X) -> atom_to_binary(X, utf8);
-to(binary, X) when is_list(X) -> list_to_binary(X);
-to(binary, X) when is_binary(X) -> X;
 
 to(integer, X) when is_list(X) -> list_to_integer(X);
 to(integer, X) when is_atom(X) -> list_to_integer(atom_to_list(X));
