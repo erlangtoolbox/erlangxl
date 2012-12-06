@@ -101,9 +101,7 @@ to_lower(S) when is_list(S) -> string:to_lower(S).
 to_upper(S) when is_binary(S) -> list_to_binary(to_upper(binary_to_list(S)));
 to_upper(S) when is_list(S) -> string:to_upper(S).
 
-%todo test performance of concatenating lists and binaries
 -spec(join([iostring()], iostring()) -> iostring()).
-
 join([], Delim) when is_binary(Delim) -> <<>>;
 join([], Delim) when is_list(Delim) -> "";
 join([H | T], Delim) when is_binary(Delim) -> join(T, xl_convert:to(binary, H), Delim);
