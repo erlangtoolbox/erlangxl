@@ -276,6 +276,15 @@ check_enumeration(Value, Enumeration) when is_list(Enumeration) ->
         false -> error({illegal_enum_value, Value})
     end.
 
+check_array_content(string, List) ->
+    check_array_content(binary, List);
+check_array_content(binary, List) ->
+    case lists:all(fun is_binary/1, List) of
+        true -> List;
+        false -> error({illegal_array_value, List})
+    end;
+check_array_content(_,Value) -> Value.
+
 -spec(cast(module(), option_m:monad(any()), term(), any()) -> any()).
 cast(_JsonApi, {ok, null}, _Type, _Default) -> undefined;
 
@@ -290,14 +299,14 @@ cast(_JsonApi, {ok, V}, {enum, string, Enumeration}, _Default) -> check_enumerat
 cast(_JsonApi, {ok, V}, {enum, {list, string}, Enumeration}, _Default) when is_list(V) ->
     lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
 cast(_JsonApi, {ok, V}, string, _Default) when is_binary(V) -> V;
-cast(_JsonApi, {ok, V}, {list, string}, _Default) when is_list(V) -> V;
+cast(_JsonApi, {ok, V}, {list, string}, _Default) when is_list(V) -> check_array_content(string, V);
 cast(_JsonApi, {ok, V}, {option, string}, _Default) when is_binary(V) -> {ok, V};
 
 cast(_JsonApi, {ok, V}, {enum, binary, Enumeration}, _Default) -> check_enumeration(V, Enumeration);
 cast(_JsonApi, {ok, V}, {enum, {list, binary}, Enumeration}, _Default) when is_list(V) ->
     lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
 cast(_JsonApi, {ok, V}, binary, _Default) when is_binary(V) -> V;
-cast(_JsonApi, {ok, V}, {list, binary}, _Default) when is_list(V) -> V;
+cast(_JsonApi, {ok, V}, {list, binary}, _Default) when is_list(V) -> check_array_content(binary, V);
 cast(_JsonApi, {ok, V}, {option, binary}, _Default) when is_binary(V) -> {ok, V};
 
 cast(_JsonApi, {ok, V}, {enum, integer, Enumeration}, _Default) -> check_enumeration(V, Enumeration);

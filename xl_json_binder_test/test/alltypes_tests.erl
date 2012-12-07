@@ -162,3 +162,11 @@ list_enum_validation_test() ->
         ?assertEquals({error, {illegal_enum_value, Value}}, alltypes:from_json(Json, list_enums))
     end, Asserts).
 
+list_content_validation_test() ->
+    Asserts = [
+        {[1], "{\"integer\":[],\"float\":[],\"boolean\":[],\"atom\":[],\"string\":[1],\"record\":[],\"record_qualified\":[]}"}
+    ],
+    lists:foreach(fun({Value, Json}) ->
+        ?assertEquals({error, {illegal_array_value, Value}}, alltypes:from_json(Json, lists))
+    end, Asserts).
+
