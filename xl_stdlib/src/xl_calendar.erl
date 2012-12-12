@@ -83,6 +83,7 @@ month_name({{_, Mon, _}, _}) ->
 
 
 -spec(format_type(string(), string(), atom()) -> string()).
+format_type(_, undefined, _) -> undefined;
 format_type(Pattern, Datetime, binary) -> xl_convert:to(binary, format(Pattern, Datetime));
 format_type(Pattern, Datetime, _) -> format(Pattern, Datetime).
 
@@ -91,6 +92,7 @@ format_type(Pattern, Datetime, _) -> format(Pattern, Datetime).
     Datetime :: calendar:datetime().
 format(Pattern, Datetime) -> format(Pattern, Datetime, "").
 
+format(_, undefined, _) -> undefined;
 format([], _, Acc) -> Acc;
 format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(day_of_week(Dt)));
 format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Date])));
