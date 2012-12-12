@@ -90,9 +90,10 @@ format_type(Pattern, Datetime, _) -> format(Pattern, Datetime).
 -spec format(Pattern, Datetime) -> string() when
     Pattern :: string(),
     Datetime :: calendar:datetime().
-format(Pattern, Datetime) -> format(Pattern, Datetime, "").
+format(Pattern, Datetime = {{_,_,_}, {_,_,_}}) -> format(Pattern, Datetime, "");
+format(_, _) -> undefined.
 
-format(_, undefined, _) -> undefined;
+
 format([], _, Acc) -> Acc;
 format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(day_of_week(Dt)));
 format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Date])));
