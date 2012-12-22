@@ -42,8 +42,10 @@ to(atom, X) when is_binary(X) -> binary_to_atom(X, utf8);
 to(atom, X) when is_list(X) -> list_to_atom(X);
 to(atom, X) when is_atom(X) -> X;
 
+to(float, X) when is_float(X) -> X;
+to(float, X) when is_integer(X) -> X + 0.0;
 to(float, X) when is_binary(X) -> to(float, binary_to_list(X));
-to(float, X) ->
+to(float, X) when is_list(X) ->
     try
         list_to_float(X)
     catch

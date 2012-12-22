@@ -108,3 +108,6 @@ efoldl_test() ->
     F = fun(3, _) -> {error, 3}; (X, A) -> {ok, X + A} end,
     ?assertEqual({ok, 3}, xl_lists:efoldl(F, 0, [1, 1, 1])),
     ?assertEqual({error, 3}, xl_lists:efoldl(F, 0, [1, 3, 1])).
+
+imap_test() ->
+    ?assertEqual([{a, 1}, {b, 2}, {c, 3}], xl_lists:imap(fun(X, I) -> {X, I} end, [a, b, c])).
