@@ -5,16 +5,20 @@
 
 -include("alltypes.hrl").
 
-primitives_proplist_test() ->
-    P = #primitives{
+proplist_test() ->
+    P = #proplists{
         integer = 1,
         float = 1.1,
         string = <<"1">>,
         atom = atom,
         boolean = true,
-        record = undefined,
-        record_qualified = undefined,
-        any = [{a, 1}]
+        child = #proplists_child{
+            child_integer = 2,
+            child_float = 1.2,
+            child_string = <<"2">>,
+            child_atom = atom2,
+            child_boolean = false
+        }
     },
     Proplist = [
         {integer, 1},
@@ -22,22 +26,28 @@ primitives_proplist_test() ->
         {string, <<"1">>},
         {atom, atom},
         {boolean, true},
-        {record, undefined},
-        {record_qualified, undefined},
-        {any, [{a, 1}]}
+        {child_integer, 2},
+        {child_float, 1.2},
+        {child_string, <<"2">>},
+        {child_atom, atom2},
+        {child_boolean, false}
     ],
-    ?assertEquals({ok, P}, alltypes:from_proplist(Proplist, primitives)).
+    ?assertEquals({ok, P}, alltypes:from_proplist(Proplist, proplists)).
 
 primitives_proplist_binaries_cast_test() ->
-    P = #primitives{
+    P = #proplists{
         integer = 1,
         float = 1.1,
         string = <<"1">>,
         atom = atom,
         boolean = true,
-        record = undefined,
-        record_qualified = undefined,
-        any = [{a, 1}]
+        child = #proplists_child{
+            child_integer = 2,
+            child_float = 1.2,
+            child_string = <<"2">>,
+            child_atom = atom2,
+            child_boolean = false
+        }
     },
     Proplist = [
         {integer, <<"1">>},
@@ -45,14 +55,43 @@ primitives_proplist_binaries_cast_test() ->
         {string, <<"1">>},
         {atom, <<"atom">>},
         {boolean, <<"true">>},
-        {record, undefined},
-        {record_qualified, undefined},
-        {any, [{a, 1}]}
+        {child_integer, <<"2">>},
+        {child_float, <<"1.2">>},
+        {child_string, <<"2">>},
+        {child_atom, <<"atom2">>},
+        {child_boolean, <<"false">>}
     ],
-    ?assertEquals({ok, P}, alltypes:from_proplist(Proplist, primitives)).
+    ?assertEquals({ok, P}, alltypes:from_proplist(Proplist, proplists)).
 
 integer_to_float_cast_test() ->
-    P = #primitives{
+    P = #proplists{
+        integer = 1,
+        float = 1.0,
+        string = <<"1">>,
+        atom = atom,
+        boolean = true,
+        child = #proplists_child{
+            child_integer = 2,
+            child_float = 2.0,
+            child_string = <<"2">>,
+            child_atom = atom2,
+            child_boolean = false
+        }
+    },
+    Proplist = [
+        {integer, <<"1">>},
+        {float, <<"1">>},
+        {string, <<"1">>},
+        {atom, <<"atom">>},
+        {boolean, <<"true">>},
+        {child_integer, <<"2">>},
+        {child_float, <<"2">>},
+        {child_string, <<"2">>},
+        {child_atom, <<"atom2">>},
+        {child_boolean, <<"false">>}
+    ],
+    ?assertEquals({ok, P}, alltypes:from_proplist(Proplist, proplists)),
+    P2 = #primitives{
         integer = 1,
         float = 1.0,
         string = <<"1">>,
@@ -62,19 +101,8 @@ integer_to_float_cast_test() ->
         record_qualified = undefined,
         any = [{a, 1}]
     },
-    Proplist = [
-        {integer, <<"1">>},
-        {float, <<"1">>},
-        {string, <<"1">>},
-        {atom, <<"atom">>},
-        {boolean, <<"true">>},
-        {record, undefined},
-        {record_qualified, undefined},
-        {any, [{a, 1}]}
-    ],
-    ?assertEquals({ok, P}, alltypes:from_proplist(Proplist, primitives)),
     Json = "{\"integer\":1,\"integer_undef\":null,\"integer_def\":1,\"float\":1,\"float_undef\":null,\"float_def\":1.0,\"boolean\":true,\"boolean_def_true\":true,\"boolean_def_false\":false,\"atom\":\"atom\",\"atom_def\":\"a\",\"string\":\"1\",\"string_undef\":null,\"string_def\":\"a\",\"record\":null,\"record_def\":null,\"record_qualified\":null,\"record_qualified_def\":null,\"any\":{\"a\":1},\"any_undef\":null,\"any_def\":{\"a\":\"b\"}}",
-    ?assertEquals({ok, P}, alltypes:from_json(Json, primitives)).
+    ?assertEquals({ok, P2}, alltypes:from_json(Json, primitives)).
 
 primitives_test() ->
     P = #primitives{
@@ -92,26 +120,21 @@ primitives_test() ->
     ?assertEquals({ok, P}, alltypes:from_json(alltypes:to_json(P), primitives)).
 
 options_proplist_test() ->
-    P = #options{
+    P = #options_proplists{
         integer = {ok, 1},
         float = {ok, 1.1},
         string = {ok, <<"1">>},
         atom = {ok, atom},
-        boolean = {ok, true},
-        record = undefined,
-        record_qualified = undefined,
-        any = {ok, [{a, 1}]}
+        boolean = {ok, true}
     },
     Proplist = [
         {integer, 1},
         {float, 1.1},
         {string, <<"1">>},
         {atom, atom},
-        {boolean, true},
-        {any, [{a, 1}]}
+        {boolean, true}
     ],
-
-    ?assertEquals({ok, P}, alltypes:from_proplist(Proplist, options)).
+    ?assertEquals({ok, P}, alltypes:from_proplist(Proplist, options_proplists)).
 
 options_test() ->
     P = #options{

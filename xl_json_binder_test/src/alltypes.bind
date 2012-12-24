@@ -114,3 +114,65 @@
     {string, {enum, {list, string}, [<<"a">>, <<"b">>]}},
     {string_def, {enum, {list, string, [<<"a">>]}, [<<"a">>, <<"b">>]}}
 ]}.
+
+{proplists_child, [
+    {child_integer, integer},
+    {child_integer_undef, {integer, undefined}},
+    {child_integer_def, {integer, 1}},
+
+    {child_float, float},
+    {child_float_undef, {float, undefined}},
+    {child_float_def, {float, 1.0}},
+
+    {child_boolean, boolean},
+    {child_boolean_def_true, {boolean, true}},
+    {child_boolean_def_false, {boolean, false}},
+
+    {child_atom, atom},
+    {child_atom_def, {atom, a}},
+
+    {child_string, string},
+    {child_string_undef, {string, undefined}},
+    {child_string_def, {string, <<"a">>}}
+]}.
+
+{proplists, [
+    {integer, integer},
+    {integer_undef, {integer, undefined}},
+    {integer_def, {integer, 1}},
+
+    {float, float},
+    {float_undef, {float, undefined}},
+    {float_def, {float, 1.0}},
+
+    {boolean, boolean},
+    {boolean_def_true, {boolean, true}},
+    {boolean_def_false, {boolean, false}},
+
+    {atom, atom},
+    {atom_def, {atom, a}},
+
+    {string, string},
+    {string_undef, {string, undefined}},
+    {string_def, {string, <<"a">>}},
+
+    {child, proplists_child}
+]}.
+
+{options_proplists, [
+    {integer, {option, integer}},
+    {integer_def, {option, integer, 1}},
+
+    {float, {option, float}},
+    {float_def, {option, float, 1.0}},
+
+    {boolean, {option, boolean}},
+    {boolean_def, {option, boolean, true}},
+
+    {atom, {option, atom}},
+    {atom_def, {option, atom, a}},
+
+    {string, {option, string}},
+    {string_def, {option, string, <<"a">>}}
+]}.
+

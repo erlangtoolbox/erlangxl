@@ -330,7 +330,7 @@ cast({json, _JsonApi}, {ok, V}, {list, {Module, Record}}, _Default) when is_list
 cast({json, _JsonApi}, {ok, V}, {option, {Module, Record}}, _Default) -> {ok, Module:from_json_(V, Record)};
 cast({json, _JsonApi}, {ok, V}, {Module, Record}, _Default) -> Module:from_json_(V, Record);
 
-cast(proplist, {ok, V}, {list, {Module, Record}}, _Default) when is_list(V) -> [Module:from_proplist_(O, Record) || O <- V];
+%% cast(proplist, {ok, V}, {list, {Module, Record}}, _Default) when is_list(V) -> [Module:from_proplist_(O, Record) || O <- V];
 cast(proplist, {ok, V}, {option, {Module, Record}}, _Default) -> {ok, Module:from_proplist_(V, Record)};
 cast(proplist, {ok, V}, {Module, Record}, _Default) -> Module:from_proplist_(V, Record);
 
@@ -387,15 +387,15 @@ generate_from_proplist_field({Name, {list, {Module, Type}}}) when is_atom(Module
 generate_from_proplist_field({Name, {list, Type}}) when is_atom(Type) ->
     generate_from_proplist_field({Name, {list, Type, {required, Name}}});
 generate_from_proplist_field({Name, Qualified = {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, undefined])};
 generate_from_proplist_field({Name, {option, Type}}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), {option, {?MODULE, ~p}}, ~p)", [Name, Name, Type, undefined])};
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, {option, {?MODULE, ~p}}, ~p)", [Name, Type, undefined])};
 generate_from_proplist_field({Name, {Type, undefined}}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), {?MODULE, ~p}, ~p)", [Name, Name, Type, undefined])};
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, {?MODULE, ~p}, ~p)", [Name, Type, undefined])};
 generate_from_proplist_field({Name, Type}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), {?MODULE, ~p}, ~p)", [Name, Name, Type, {required, Name}])};
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, {?MODULE, ~p}, ~p)", [Name, Type, {required, Name}])};
 generate_from_proplist_field({Name, {Qualified = {Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, undefined])};
 generate_from_proplist_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, {required, Name}])};
 generate_from_proplist_field(Field) -> {error, {dont_understand, Field}}.
