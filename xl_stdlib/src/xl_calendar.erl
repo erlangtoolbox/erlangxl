@@ -1,7 +1,7 @@
 -module(xl_calendar).
 
 -export([format_type/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
-    day_of_week/1]).
+    day_of_week/1, datetime_to_ms/1]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -90,7 +90,7 @@ format_type(Pattern, Datetime, _) -> format(Pattern, Datetime).
 -spec format(Pattern, Datetime) -> string() when
     Pattern :: string(),
     Datetime :: calendar:datetime().
-format(Pattern, Datetime = {{_,_,_}, {_,_,_}}) -> format(Pattern, Datetime, "");
+format(Pattern, Datetime = {{_, _, _}, {_, _, _}}) -> format(Pattern, Datetime, "");
 format(_, _) -> undefined.
 
 
@@ -113,8 +113,13 @@ now_micros() ->
     {Mega, Secs, Micros} = erlang:now(),
     (Mega * 1000000 + Secs) * 1000000 + Micros.
 
--spec ms_to_datetime/1 ::(integer()) -> calendar:datetime().
+-spec ms_to_datetime/1 :: (integer()) -> calendar:datetime().
 ms_to_datetime(Milliseconds) ->
     BaseDate = calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
     Seconds = BaseDate + (Milliseconds div 1000),
     calendar:gregorian_seconds_to_datetime(Seconds).
+
+-spec datetime_to_ms/1 :: (calendar:datetime()) -> integer().
+datetime_to_ms(DateTime) ->
+    BaseDate = calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
+    (calendar:datetime_to_gregorian_seconds(DateTime) - BaseDate) * 1000.
