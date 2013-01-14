@@ -5,7 +5,19 @@ sha1(L) -> binary_to_hex(crypto:sha(L)).
 
 md5(L) -> binary_to_hex(crypto:md5(L)).
 
-binary_to_hex(B) -> list_to_hex(binary_to_list(B)).
+binary_to_hex(B) -> 
+	xl_convert:to(binary, binary_to_hex_(B)).
 
-list_to_hex(L) -> lists:flatten([io_lib:format("~2.16.0b", [X]) || X <- L]).
+list_to_hex(L) -> 
+	binary_to_hex_(L).
+
+binary_to_hex_(<<>>) ->
+    [];
+binary_to_hex_(<< N1:4, N2:4, Bin/binary >>) ->
+    [num_to_hex(N1), num_to_hex(N2) | binary_to_hex_(Bin)].
+
+num_to_hex(N) when N < 10 ->
+    N + $0;
+num_to_hex(N) when N > 9 -> 
+    N - 10 + $a.
 
