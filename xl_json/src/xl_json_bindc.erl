@@ -75,11 +75,14 @@ generate_field({Name, {option, Type, Default}}) when ?is_primitive_type(Type, De
 %enums
 generate_field({Name, {enum, Type, _Enum}}) -> generate_field({Name, Type});
 
+%either
+generate_field({Name, {either, _Types}}) ->
+    {ok, xl_string:format("~p = error({required, ~p})", [Name, Name])};
+
 %primitives with defaults
 generate_field({Name, {Type, Default}}) when ?is_primitive_type(Type, Default) ->
     {ok, xl_string:format("~p = ~p :: ~p()", [Name, Default, Type])};
-generate_field({Name, {string, Default}}) ->
-    generate_field({Name, {binary, Default}});
+generate_field({Name, {string, Default}}) -> generate_field({Name, {binary, Default}});
 
 %primitives
 %% generate_field({Name, string}) -> generate_field({Name, binary});
@@ -95,7 +98,7 @@ generate_field({Name, {{Module, Type}, undefined}}) when is_atom(Module), is_ato
     {ok, xl_string:format("~p", [Name])};
 
 %wtf
-generate_field(D) -> {error, {dont_understand, D}}.
+generate_field(D) -> {error, {record, dont_understand, D}}.
 
 generate_file(Path, Generate) ->
     io:format("Generate ~s~n", [Path]),
@@ -161,6 +164,8 @@ generate_to_json(Records, Out) ->
     ]).
 
 generate_to_json_field(RecordName, {Name, {enum, Type, _Enumeration}}) -> generate_to_json_field(RecordName, {Name, Type});
+generate_to_json_field(RecordName, {Name, {either, _Types}}) ->
+    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
 generate_to_json_field(RecordName, {Name, Type}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
 generate_to_json_field(RecordName, {Name, {Type, _Default}}) when ?is_primitive_type(Type) ->
@@ -193,7 +198,7 @@ generate_to_json_field(RecordName, {Name, {Module, Type}}) when is_atom(Module),
     {ok, xl_string:format("\"\\\"~p\\\":\", ~p:to_json(R#~p.~p)", [Name, Module, RecordName, Name])};
 generate_to_json_field(RecordName, {Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
     generate_to_json_field(RecordName, {Name, {Module, Type}});
-generate_to_json_field(_RecordName, Field) -> {error, {dont_understand, Field}}.
+generate_to_json_field(_RecordName, Field) -> {error, {to_json, dont_understand, Field}}.
 
 generate_from_json(Records, Out) ->
     do([error_m ||
@@ -212,6 +217,8 @@ generate_from_json(Records, Out) ->
     ]).
 
 generate_from_json_field({Name, Qualified = {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
+generate_from_json_field({Name, Qualified = {either, _Types}}) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
 generate_from_json_field({Name, {enum, {Type, Default}, Enumeration}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {enum, Type, Enumeration}, Default])};
@@ -251,7 +258,7 @@ generate_from_json_field({Name, {Qualified = {Module, Type}, undefined}}) when i
     {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
 generate_from_json_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
-generate_from_json_field(Field) -> {error, {dont_understand, Field}}.
+generate_from_json_field(Field) -> {error, {from_json, dont_understand, Field}}.
 
 % runtime functions
 
@@ -270,8 +277,19 @@ check_array_content(binary, List) ->
     end;
 check_array_content(_, Value) -> Value.
 
+is_type(V, integer) when is_integer(V) -> true;
+is_type(V, float) when is_float(V) -> true;
+is_type(V, atom) when is_binary(V) -> true;
+is_type(_V, _Type) -> false.
+
 -spec(cast(module(), option_m:monad(any()), term(), any()) -> any()).
 cast(_Source, {ok, null}, _Type, _Default) -> undefined;
+
+cast(Source, {ok, V}, EitherType = {either, Types}, Default) ->
+    case xl_lists:find(fun(Type) -> is_type(V, Type) end, Types) of
+        {ok, Type} -> cast(Source, {ok, V}, Type, Default);
+        undefined -> error({cannot_cast, V, EitherType})
+    end;
 
 cast(_Source, {ok, V}, {enum, atom, Enumeration}, _Default) -> check_enumeration(xl_convert:to(atom, V), Enumeration);
 cast(_Source, {ok, V}, {enum, {list, atom}, Enumeration}, _Default) when is_list(V) ->
@@ -360,6 +378,8 @@ generate_from_proplist(Records, Out) ->
 
 generate_from_proplist_field({Name, Qualified = {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
+generate_from_proplist_field({Name, Qualified = {either, _Types}}) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
 generate_from_proplist_field({Name, {enum, {Type, Default}, Enumeration}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), ~p, ~p)", [Name, Name, {enum, Type, Enumeration}, Default])};
 generate_from_proplist_field({Name, Type}) when ?is_primitive_type(Type) ->
@@ -398,4 +418,4 @@ generate_from_proplist_field({Name, {Qualified = {Module, Type}, undefined}}) wh
     {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, undefined])};
 generate_from_proplist_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, {required, Name}])};
-generate_from_proplist_field(Field) -> {error, {dont_understand, Field}}.
+generate_from_proplist_field(Field) -> {error, {from_proplist, dont_understand, Field}}.

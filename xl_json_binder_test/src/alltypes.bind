@@ -176,3 +176,8 @@
     {string_def, {option, string, <<"a">>}}
 ]}.
 
+
+{primitive_either, [
+    {integer_or_float, {either, [integer, float]}},
+    {float_or_atom, {either, [float, atom]}}
+]}.

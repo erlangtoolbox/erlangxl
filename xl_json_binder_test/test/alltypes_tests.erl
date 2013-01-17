@@ -300,3 +300,14 @@ list_content_validation_test() ->
         ?assertEquals({error, {illegal_array_value, Value}}, alltypes:from_json(Json, lists))
     end, Asserts).
 
+either_primitives_test() ->
+    PE1 = #primitive_either{
+        float_or_atom = a,
+        integer_or_float = 1.2
+    },
+    PE2 = #primitive_either{
+        float_or_atom = 1.3,
+        integer_or_float = 1
+    },
+    ?assertEquals({ok, PE1}, alltypes:from_json(alltypes:to_json(PE1), primitive_either)),
+    ?assertEquals({ok, PE2}, alltypes:from_json(alltypes:to_json(PE2), primitive_either)).
