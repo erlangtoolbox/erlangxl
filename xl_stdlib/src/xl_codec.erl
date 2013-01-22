@@ -1,9 +1,15 @@
 -module(xl_codec).
 -export([md5/1, sha1/1, list_to_hex/1, binary_to_hex/1]).
 
-sha1(L) -> binary_to_hex(crypto:sha(L)).
+sha1(undefined) ->
+	undefined;
+sha1(L) ->
+	binary_to_hex(crypto:sha(L)).
 
-md5(L) -> binary_to_hex(crypto:md5(L)).
+md5(undefined) ->
+	undefined;
+md5(L) ->
+	binary_to_hex(crypto:md5(L)).
 
 binary_to_hex(B) -> 
 	xl_convert:to(binary, binary_to_hex_(B)).
