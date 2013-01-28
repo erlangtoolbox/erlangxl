@@ -302,8 +302,10 @@ cast(_Source, {ok, V}, {enum, string, Enumeration}, _Default) -> check_enumerati
 cast(_Source, {ok, V}, {enum, {list, string}, Enumeration}, _Default) when is_list(V) ->
     [check_enumeration(X, Enumeration) || X <- V];
 cast(_Source, {ok, V}, string, _Default) when is_binary(V) -> V;
+cast(_Source, {ok, V}, string, _Default) when is_integer(V) -> xl_convert:to(binary, V);
 cast(_Source, {ok, V}, {list, string}, _Default) when is_list(V) -> check_array_content(string, V);
 cast(_Source, {ok, V}, {option, string}, _Default) when is_binary(V) -> {ok, V};
+cast(_Source, {ok, V}, {option, string}, _Default) when is_integer(V) -> {ok, xl_convert:to(binary, V)};
 
 cast(_Source, {ok, V}, {enum, binary, Enumeration}, _Default) -> check_enumeration(V, Enumeration);
 cast(_Source, {ok, V}, {enum, {list, binary}, Enumeration}, _Default) when is_list(V) ->
