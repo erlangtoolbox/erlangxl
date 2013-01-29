@@ -25,8 +25,7 @@
 % THE SOFTWARE.
 
 
--spec add(calendar:datetime(), integer(), Item) -> calendar:datetime() when
-    Item :: seconds | minutes | hours | days | weeks | months | years.
+-spec(add(calendar:datetime(), integer(), seconds | minutes | hours | days | weeks | months | years) -> calendar:datetime()).
 
 add(DateTime, N, seconds) ->
     T1 = calendar:datetime_to_gregorian_seconds(DateTime),
@@ -87,39 +86,34 @@ format_type(_, undefined, _) -> undefined;
 format_type(Pattern, Datetime, binary) -> xl_convert:to(binary, format(Pattern, Datetime));
 format_type(Pattern, Datetime, _) -> format(Pattern, Datetime).
 
--spec format(Pattern, Datetime) -> string() when
-    Pattern :: string(),
-    Datetime :: calendar:datetime().
+-spec(format(string(), calendar:datetime()) -> string()).
 format(Pattern, Datetime = {{_, _, _}, {_, _, _}}) -> format(Pattern, Datetime, "");
 format(_, _) -> undefined.
 
 
 format([], _, Acc) -> Acc;
 format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(day_of_week(Dt)));
-format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Date])));
+format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Date));
 format([$M, $M, $M | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(month_name(Dt)));
-format([$M, $M | Pattern], Dt = {{_, Mon, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Mon])));
+format([$M, $M | Pattern], Dt = {{_, Mon, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Mon));
 format([$y, $y, $y, $y | Pattern], Dt = {{Year, _, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ integer_to_list(Year));
-format([$H, $H | Pattern], Dt = {_, {Hour, _, _}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Hour])));
-format([$m, $m | Pattern], Dt = {_, {_, Min, _}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Min])));
-format([$s, $s | Pattern], Dt = {_, {_, _, Sec}}, Acc) -> format(Pattern, Dt, Acc ++ lists:flatten(io_lib:format("~2.10.0B", [Sec])));
+format([$H, $H | Pattern], Dt = {_, {Hour, _, _}}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Hour));
+format([$m, $m | Pattern], Dt = {_, {_, Min, _}}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Min));
+format([$s, $s | Pattern], Dt = {_, {_, _, Sec}}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Sec));
 format([H | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ [H]).
 
--spec now_millis() -> pos_integer().
+-spec(now_millis() -> pos_integer()).
 now_millis() -> now_micros() div 1000.
 
--spec now_micros() -> pos_integer().
+-spec(now_micros() -> pos_integer()).
 now_micros() ->
     {Mega, Secs, Micros} = erlang:now(),
     (Mega * 1000000 + Secs) * 1000000 + Micros.
 
--spec ms_to_datetime/1 :: (integer()) -> calendar:datetime().
-ms_to_datetime(Milliseconds) ->
-    BaseDate = calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
-    Seconds = BaseDate + (Milliseconds div 1000),
-    calendar:gregorian_seconds_to_datetime(Seconds).
+-define(BASE_DATE, 62167219200).
 
--spec datetime_to_ms/1 :: (calendar:datetime()) -> integer().
-datetime_to_ms(DateTime) ->
-    BaseDate = calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
-    (calendar:datetime_to_gregorian_seconds(DateTime) - BaseDate) * 1000.
+-spec(ms_to_datetime(integer()) -> calendar:datetime()).
+ms_to_datetime(Milliseconds) -> calendar:gregorian_seconds_to_datetime(?BASE_DATE + (Milliseconds div 1000)).
+
+-spec(datetime_to_ms(calendar:datetime()) -> integer()).
+datetime_to_ms(DateTime) -> (calendar:datetime_to_gregorian_seconds(DateTime) - ?BASE_DATE) * 1000.

@@ -14,6 +14,10 @@ format_type_test() ->
     ?assertEqual(<<"1970-02-01 00-00-01">>, xl_calendar:format_type("yyyy-MM-dd HH-mm-ss", {{1970, 2, 1}, {0, 0, 1}}, binary)),
     ?assertEqual(undefined, xl_calendar:format_type("yyyy-MM-dd HH-mm-ss", undefined, binary)).
 
+format_perf_test() ->
+    xl_eunit:performance(format, fun(_) ->
+        xl_calendar:format("EEE, dd-MMM-yyyy HH:mm:ss GMT", {{1970, 2, 1}, {0, 0, 1}})
+    end, 100000).
 
 ms_to_datetime_test() ->
     ?assertEqual({{2012, 10, 17}, {12, 3, 48}}, xl_calendar:ms_to_datetime(1350475428378)).

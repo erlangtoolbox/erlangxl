@@ -3,7 +3,7 @@
 -export([empty/1, not_empty/1, strip/1, quote/1, unquote/1, stripthru/1, format/2,
     to_float/1, substitute/2, substitute/3, to_string/1, mk_atom/1, to_upper/1,
     to_lower/1, equal_ignore_case/2, join/2, join/1, to_atom/1, to_binary/1,
-    to_integer/1, generate_uuid/0, replace/3, unquote/2]).
+    to_integer/1, generate_uuid/0, replace/3, unquote/2, format_number/2]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
@@ -133,3 +133,7 @@ to_integer(X) -> xl_conver:to_integer(X).
 -spec(generate_uuid() -> binary()).
 generate_uuid() ->
     hd(flake_harness:generate(1, 62)).
+
+format_number(1, Num) when is_integer(Num) -> integer_to_list(Num);
+format_number(2, Num) when is_integer(Num), Num < 10 -> [$0, Num + $0];
+format_number(2, Num) when is_integer(Num), Num > 10 -> integer_to_list(Num).
