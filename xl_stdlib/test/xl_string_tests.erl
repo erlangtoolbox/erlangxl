@@ -1,6 +1,7 @@
 -module(xl_string_tests).
 
 -include_lib("eunit/include/eunit.hrl").
+-include("xl_lang.hrl").
 
 strip_test() ->
     ?assertEqual("a b\tc", xl_string:strip(" \ta b\tc \r\n")).
@@ -68,3 +69,8 @@ unquote_test() ->
 
 replace_test() ->
     ?assertEqual("abeabe", xl_string:replace("abcdeabcde", "cd", "")).
+
+-record(r, {a, b, c}).
+format_record_test() ->
+    R = #r{a = 1, b = 2, c = c},
+    ?assertEqual("#r{a = 1, b = 2, c = c}", ?FORMAT_RECORD(R, r)).

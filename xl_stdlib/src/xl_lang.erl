@@ -9,14 +9,11 @@ record_to_proplist(Record, Fields) ->
     xl_lists:imap(fun(Field, I) -> {Field, element(I + 1, Record)} end, Fields).
 
 safe_call(F, R) when is_function(F, 0) ->
-    try 
+    try
         F()
     catch
-        _:_ ->
-            result(R)
+        _:_ -> result(R)
     end.
 
- result(R) when is_function(R, 0) ->
- 	R();
- result(R) ->
- 	R.
+result(R) when is_function(R, 0) -> R();
+result(R) -> R.
