@@ -136,4 +136,4 @@ generate_uuid() ->
 
 format_number(1, Num) when is_integer(Num) -> integer_to_list(Num);
 format_number(2, Num) when is_integer(Num), Num < 10 -> [$0, Num + $0];
-format_number(2, Num) when is_integer(Num), Num > 10 -> integer_to_list(Num).
+format_number(2, Num) when is_integer(Num), Num > 9 -> integer_to_list(Num).
