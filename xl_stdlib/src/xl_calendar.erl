@@ -1,6 +1,6 @@
 -module(xl_calendar).
 
--export([format_type/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
+-export([format/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
     day_of_week/1, datetime_to_ms/1]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
@@ -81,16 +81,12 @@ month_name({{_, Mon, _}, _}) ->
     end.
 
 
--spec(format_type(string(), string(), atom()) -> string()).
-format_type(_, undefined, _) -> undefined;
-format_type(Pattern, Datetime, binary) -> xl_convert:to(binary, format(Pattern, Datetime));
-format_type(Pattern, Datetime, _) -> format(Pattern, Datetime).
-
 -spec(format(string(), calendar:datetime()) -> string()).
 format(Pattern, Datetime = {{_, _, _}, {_, _, _}}) -> format(Pattern, Datetime, "");
-format(_, _) -> undefined.
+format(_Pattern, undefined) -> undefined.
 
-
+format(_Pattern, undefined, binary) -> undefined;
+format(Pattern, Datetime, binary) -> xl_convert:to(binary, format(Pattern, Datetime));
 format([], _, Acc) -> Acc;
 format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(day_of_week(Dt)));
 format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Date));

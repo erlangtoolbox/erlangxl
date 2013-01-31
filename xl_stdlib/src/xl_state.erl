@@ -24,7 +24,7 @@ loop() ->
     receive
         {init, Name, Options, Sender} ->
             try
-                    catch ets:delete(Name),
+                catch ets:delete(Name),
                 ets:new(Name, [named_table, public | Options]),
                 Sender ! {ok, self()},
                 loop()

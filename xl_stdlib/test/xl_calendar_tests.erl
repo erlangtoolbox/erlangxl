@@ -8,11 +8,9 @@ add_test() ->
 format_test() ->
     ?assertEqual("Sun, 01-Feb-1970 00:00:01 GMT", xl_calendar:format("EEE, dd-MMM-yyyy HH:mm:ss GMT", {{1970, 2, 1}, {0, 0, 1}})),
     ?assertEqual("1970-02-01 00:00:01", xl_calendar:format("yyyy-MM-dd HH:mm:ss", {{1970, 2, 1}, {0, 0, 1}})),
-    ?assertEqual(undefined, xl_calendar:format("yyyy-MM-dd HH:mm:ss", undefined)).
-
-format_type_test() ->
-    ?assertEqual(<<"1970-02-01 00-00-01">>, xl_calendar:format_type("yyyy-MM-dd HH-mm-ss", {{1970, 2, 1}, {0, 0, 1}}, binary)),
-    ?assertEqual(undefined, xl_calendar:format_type("yyyy-MM-dd HH-mm-ss", undefined, binary)).
+    ?assertEqual(undefined, xl_calendar:format("yyyy-MM-dd HH:mm:ss", undefined)),
+    ?assertEqual(<<"1970-02-01 00-00-01">>, xl_calendar:format("yyyy-MM-dd HH-mm-ss", {{1970, 2, 1}, {0, 0, 1}}, binary)),
+    ?assertEqual(undefined, xl_calendar:format("yyyy-MM-dd HH-mm-ss", undefined, binary)).
 
 format_perf_test() ->
     xl_eunit:performance(format, fun(_) ->
