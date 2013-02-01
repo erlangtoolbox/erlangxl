@@ -58,7 +58,7 @@ compile(RE, Options) ->
 %% supporting functions
 
 apply_fun(Subject, Key, Options, Fun) when is_integer(Key) ->
-    case xl_state:gey(?MODULE, Key) of
+    case xl_state:get(?MODULE, Key) of
         {ok, MP} ->
             Fun(Subject, MP, mp_safe(Options));
         undefined ->
