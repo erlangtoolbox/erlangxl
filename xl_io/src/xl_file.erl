@@ -58,19 +58,18 @@ mkdirs(Path) -> ensure_dir(filename:join(Path, "X")).
 -spec read_terms/1 :: (file:name()) -> {ok, [term()]} | xl_io:posix_error().
 read_terms(Filename) -> xl_io:apply_io(file, consult, [Filename]).
 
-write_terms(File, L) when is_list(L) ->
+write_terms(File, L) ->
     R = do([error_m ||
         ensure_dir(File),
         using(File, [write], fun(F) ->
-            lists:foreach(fun(X) -> io:format(F, "~p.~n", [X]) end, L)
+            io:format(F, "~p.~n", [L])
         end)
     ]),
     case R of
         {ok, ok} -> ok;
         X -> X
-    end;
+    end.
 
-write_terms(File, L) -> write_terms(File, [L]).
 
 -spec copy(file:filename(), file:filename()) -> error_m:monad(ok).
 copy(Src, Dst) ->
