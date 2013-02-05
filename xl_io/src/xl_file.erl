@@ -5,7 +5,7 @@
 -compile({parse_transform, do}).
 
 -behaviour(xl_autoresource).
--export([auto_open/1, auto_close/1, using/3]).
+-export([auto_open/1, auto_close/1, using/3, rename/2]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
     read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3,
     absolute/1]).
@@ -133,6 +133,7 @@ make_symlink(Target, Link) -> xl_io:apply_io(file, make_symlink, [Target, Link])
 read_file_info(Path) -> xl_io:apply_io(file, read_file_info, [Path]).
 read_link_info(Path) -> xl_io:apply_io(file, read_link_info, [Path]).
 change_mode(Path, Mode) -> xl_io:apply_io(file, change_mode, [Path, Mode]).
+rename(From, To) -> xl_io:apply_io(file, rename, [From, To]).
 
 absolute(Path) ->
     Abs = lists:reverse(lists:filter(fun(X) -> X /= "." end,
