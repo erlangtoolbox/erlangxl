@@ -137,7 +137,7 @@ generate_module(Records, Name, Out) ->
         "\t\t\ttry\n"
         "\t\t\t\t{ok, from_json_(Document, Type)}\n"
         "\t\t\tcatch\n"
-        "\t\t\t\terror:X -> {error, X}\n"
+        "\t\t\t\terror:X -> erlang:display(erlang:get_stacktrace()), {error, X}\n"
         "\t\t\tend;\n"
         "\t\tError -> Error\n"
         "end.\n\n"),
@@ -208,7 +208,7 @@ generate_from_json(Records, Out) ->
             do([error_m ||
                 Generated <- xl_lists:emap(fun(Field) -> generate_from_json_field(RecordName, Field) end, Fields),
                 return(
-                    xl_string:format("from_json_(J, ~p) ->\n\tR = ?JSON_API:bind(fun\n\t\t~s\n\tend, ~p, J),\n\txl_json_bindc:check_required(R),\n\tR", [
+                    xl_string:format("from_json_(J, ~p) ->\n\tR = ?JSON_API:bind(fun\n\t\t~s\n\t;(_, _, T)-> T end, ~p, J),\n\txl_json_bindc:check_required(R),\n\tR", [
                         RecordName,
                         xl_string:join([xl_string:format("\t\t~s", [F]) || F <- Generated], ";\n"),
                         list_to_tuple([RecordName | lists:map(fun default_or_required/1, Fields)])
