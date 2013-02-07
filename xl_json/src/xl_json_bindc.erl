@@ -137,7 +137,7 @@ generate_module(Records, Name, Out) ->
         "\t\t\ttry\n"
         "\t\t\t\t{ok, from_json_(Document, Type)}\n"
         "\t\t\tcatch\n"
-        "\t\t\t\terror:X -> erlang:display(erlang:get_stacktrace()), {error, X}\n"
+        "\t\t\t\terror:X -> {error, X}\n"
         "\t\t\tend;\n"
         "\t\tError -> Error\n"
         "end.\n\n"),
