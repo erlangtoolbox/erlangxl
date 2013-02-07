@@ -2,7 +2,7 @@
 
 -behaviour(xl_json_api).
 
--export([to_json/1, from_json/1, to_abstract/1, get_value/2]).
+-export([to_json/1, from_json/1, to_abstract/1, get_value/2, bind/3, field_name_presentation/1]).
 
 -define(BACKEND_JSON_API, xl_json_jiffy).
 
@@ -28,8 +28,15 @@ from_json(Source) ->
     end.
 
 -spec(get_value(atom(), xl_json_api:json_document()) -> option_m:monad(any())).
-get_value(Field, Doc) ->
-    xl_lists:kvfind(Field, Doc).
+get_value(Field, Doc) -> xl_lists:kvfind(Field, Doc).
+
+-spec(bind(fun((atom(), term(), tuple()) -> tuple()), tuple(), xl_json_api:json_document()) -> tuple()).
+bind(Callback, Seed, Doc) ->
+    lists:foldl(fun({Name, Value}, T) -> Callback(Name, Value, T) end, Seed, Doc).
+
 
 -spec(to_abstract(xl_json_api:json_document()) -> xl_json_api:abstract_json_document()).
 to_abstract(Doc) -> Doc.
+
+-spec(field_name_presentation(atom()) -> term()).
+field_name_presentation(Name) -> Name.

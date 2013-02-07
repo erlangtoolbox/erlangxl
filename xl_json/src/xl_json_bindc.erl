@@ -2,10 +2,12 @@
 
 -compile({parse_transform, do}).
 
--export([compile/2]).
+-export([compile/2, cast/3, check_required/1]).
 
 %runtime
 -export([cast/4]).
+
+-define(JSON_API, xl_json_jiffy).
 
 compile(Path, Dest) ->
     Module = filename:basename(Path, filename:extension(Path)),
@@ -29,19 +31,19 @@ generate_records(Records, Out) ->
 
 -define(is_primitive_type(Type), Type == integer; Type == float; Type == boolean; Type == atom; Type == binary; Type == string; Type == any).
 -define(is_primitive_type(Type, Default),
-is_binary(Default), Type == string;
-Default == undefined, Type == string;
-is_binary(Default), Type == binary;
-Default == undefined, Type == binary;
-is_integer(Default), Type == integer;
-Default == undefined, Type == integer;
-is_float(Default), Type == float;
-Default == undefined, Type == float;
-is_atom(Default), Type == atom;
-Default == true, Type == boolean;
-Default == false, Type == boolean;
-is_list(Default), Type == any;
-Default == undefined, Type == any
+    is_binary(Default), Type == string;
+    Default == undefined, Type == string;
+    is_binary(Default), Type == binary;
+    Default == undefined, Type == binary;
+    is_integer(Default), Type == integer;
+    Default == undefined, Type == integer;
+    is_float(Default), Type == float;
+    Default == undefined, Type == float;
+    is_atom(Default), Type == atom;
+    Default == true, Type == boolean;
+    Default == false, Type == boolean;
+    is_list(Default), Type == any;
+    Default == undefined, Type == any
 ).
 
 %lists
@@ -117,7 +119,7 @@ generate_module(Records, Name, Out) ->
     do([error_m ||
         file:write(Out, "-module(" ++ Name ++ ").\n\n"),
         file:write(Out, "-include(\"" ++ Name ++ ".hrl\").\n\n"),
-        file:write(Out, "-define(JSON_API, xl_json_jiffy).\n\n"),
+        io:format(Out, "-define(JSON_API, ~s).\n\n", [?JSON_API]),
         file:write(Out, "-export([to_json/1, from_json/2, from_json_/2, from_proplist/2, from_proplist_/2]).\n\n"),
         file:write(Out, "to_json(undefined) -> \"null\";\n\n"),
         file:write(Out, "to_json({ok, X}) -> to_json(X);\n\n"),
@@ -204,63 +206,89 @@ generate_from_json(Records, Out) ->
     do([error_m ||
         Functions <- xl_lists:emap(fun({RecordName, Fields}) ->
             do([error_m ||
-                Generated <- xl_lists:emap(fun(Field) -> generate_from_json_field(Field) end, Fields),
+                Generated <- xl_lists:emap(fun(Field) -> generate_from_json_field(RecordName, Field) end, Fields),
                 return(
-                    xl_string:format(
-                        "from_json_(J, ~p) ->\n\t#~p{\n~s\n\t}",
-                        [RecordName, RecordName, xl_string:join([xl_string:format("\t\t~s", [F]) || F <- Generated], ",\n")]
-                    )
+                    xl_string:format("from_json_(J, ~p) ->\n\tR = ?JSON_API:bind(fun\n\t\t~s\n\tend, ~p, J),\n\txl_json_bindc:check_required(R),\n\tR", [
+                        RecordName,
+                        xl_string:join([xl_string:format("\t\t~s", [F]) || F <- Generated], ";\n"),
+                        list_to_tuple([RecordName | lists:map(fun default_or_required/1, Fields)])
+                    ])
                 )
             ])
         end, Records),
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
-generate_from_json_field({Name, Qualified = {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
-generate_from_json_field({Name, Qualified = {either, _Types}}) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
-generate_from_json_field({Name, {enum, {Type, Default}, Enumeration}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {enum, Type, Enumeration}, Default])};
-generate_from_json_field({Name, Type}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Type, {required, Name}])};
-generate_from_json_field({Name, Qualified = {enum, {list, Type}, _Enumeration}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
-generate_from_json_field({Name, Qualified = {list, Type}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
-generate_from_json_field({Name, Qualified = {option, Type}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
-generate_from_json_field({Name, {option, Type, Default}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {option, Type}, Default])};
-generate_from_json_field({Name, {Type, Default}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Type, Default])};
-generate_from_json_field({Name, {list, Type, Default}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {list, Type}, Default])};
-generate_from_json_field({Name, {enum, {list, Type, Default}, Enumeration}}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {enum, {list, Type}, Enumeration}, Default])};
-generate_from_json_field({Name, {list, {Module, Type}, Default}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, {list, {Module, Type}}, Default])};
-generate_from_json_field({Name, {list, Type, Default}}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), {list, {?MODULE, ~p}}, ~p)", [Name, Name, Type, Default])};
-generate_from_json_field({Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    generate_from_json_field({Name, {list, {Module, Type}, {required, Name}}});
-generate_from_json_field({Name, {list, Type}}) when is_atom(Type) ->
-    generate_from_json_field({Name, {list, Type, {required, Name}}});
-generate_from_json_field({Name, Qualified = {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
-generate_from_json_field({Name, {option, Type}}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), {option, {?MODULE, ~p}}, ~p)", [Name, Name, Type, undefined])};
-generate_from_json_field({Name, {Type, undefined}}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), {?MODULE, ~p}, ~p)", [Name, Name, Type, undefined])};
-generate_from_json_field({Name, Type}) when is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), {?MODULE, ~p}, ~p)", [Name, Name, Type, {required, Name}])};
-generate_from_json_field({Name, {Qualified = {Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, undefined])};
-generate_from_json_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("~p = xl_json_bindc:cast({json, ?JSON_API}, ?JSON_API:get_value(~p, J), ~p, ~p)", [Name, Name, Qualified, {required, Name}])};
-generate_from_json_field(Field) -> {error, {from_json, dont_understand, Field}}.
+default_or_required({Name, {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) -> {required, Name};
+default_or_required({Name, {either, _Types}}) -> {required, Name};
+default_or_required({_Name, {enum, {Type, Default}, _Enumeration}}) when ?is_primitive_type(Type) -> Default;
+default_or_required({Name, Type}) when ?is_primitive_type(Type) -> {required, Name};
+default_or_required({Name, {enum, {list, Type}, _Enumeration}}) when ?is_primitive_type(Type) -> {required, Name};
+default_or_required({Name, {list, Type}}) when ?is_primitive_type(Type) -> {required, Name};
+default_or_required({_Name, {option, Type}}) when ?is_primitive_type(Type) -> undefined;
+default_or_required({_Name, {option, Type, Default}}) when ?is_primitive_type(Type) -> {ok, Default};
+default_or_required({_Name, {Type, Default}}) when ?is_primitive_type(Type) -> Default;
+default_or_required({_Name, {list, Type, Default}}) when ?is_primitive_type(Type) -> Default;
+default_or_required({_Name, {enum, {list, Type, Default}, _Enumeration}}) when ?is_primitive_type(Type) -> Default;
+default_or_required({_Name, {list, {Module, Type}, Default}}) when is_atom(Module), is_atom(Type) -> Default;
+default_or_required({_Name, {list, Type, Default}}) when is_atom(Type) -> Default;
+default_or_required({Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) -> {required, Name};
+default_or_required({Name, {list, Type}}) when is_atom(Type) -> {required, Name};
+default_or_required({_Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) -> undefined;
+default_or_required({_Name, {option, Type}}) when is_atom(Type) -> undefined;
+default_or_required({_Name, {Type, undefined}}) when is_atom(Type) -> undefined;
+default_or_required({Name, Type}) when is_atom(Type) -> {required, Name};
+default_or_required({_Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) -> undefined;
+default_or_required({Name, {Module, Type}}) when is_atom(Module), is_atom(Type) -> {required, Name};
+default_or_required(Field) -> {error, {default_or_required, dont_understand, Field}}.
+
+generate_from_json_field(RecordName, {Name, Qualified = {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, {Name, Qualified = {either, _Types}}) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, {Name, {enum, {Type, _Default}, Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, {enum, Type, Enumeration}])};
+generate_from_json_field(RecordName, {Name, Type}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Type])};
+generate_from_json_field(RecordName, {Name, Qualified = {enum, {list, Type}, _Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, {Name, Qualified = {list, Type}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, {Name, Qualified = {option, Type}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, {Name, {option, Type, _Default}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, {option, Type}])};
+generate_from_json_field(RecordName, {Name, {Type, _Default}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Type])};
+generate_from_json_field(RecordName, {Name, {list, Type, _Default}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, {list, Type}])};
+generate_from_json_field(RecordName, {Name, {enum, {list, Type, _Default}, Enumeration}}) when ?is_primitive_type(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, {enum, {list, Type}, Enumeration}])};
+generate_from_json_field(RecordName, {Name, {list, {Module, Type}, _Default}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, {list, {Module, Type}}])};
+generate_from_json_field(RecordName, {Name, {list, Type, _Default}}) when is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, {list, {?MODULE, ~p}})}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Type])};
+generate_from_json_field(RecordName, {Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
+    generate_from_json_field(RecordName, {Name, {list, {Module, Type}, {required, Name}}});
+generate_from_json_field(RecordName, {Name, {list, Type}}) when is_atom(Type) ->
+    generate_from_json_field(RecordName, {Name, {list, Type, {required, Name}}});
+generate_from_json_field(RecordName, {Name, Qualified = {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, {Name, {option, Type}}) when is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, {option, {?MODULE, ~p}})}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Type])};
+generate_from_json_field(RecordName, {Name, {Type, undefined}}) when is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, {?MODULE, ~p})}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Type])};
+generate_from_json_field(RecordName, {Name, Type}) when is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, {?MODULE, ~p})}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Type])};
+generate_from_json_field(RecordName, {Name, {Qualified = {Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, {Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, Field) -> {error, {from_json, dont_understand, RecordName, Field}}.
 
 % runtime functions
+
+check_required(Tuple) -> lists:foreach(fun(R = {required, _}) -> error(R); (_) -> ok end, tuple_to_list(Tuple)).
 
 check_enumeration(Value, {seq, F, T}) -> check_enumeration(Value, lists:seq(F, T));
 check_enumeration(Value, Enumeration) when is_list(Enumeration) ->
@@ -281,6 +309,80 @@ is_type(V, integer) when is_integer(V) -> true;
 is_type(V, float) when is_float(V) -> true;
 is_type(V, atom) when is_binary(V) -> true;
 is_type(_V, _Type) -> false.
+
+-spec(cast(module(), any(), term()) -> any()).
+cast(_Source, null, _Type) -> undefined;
+
+cast(Source, V, EitherType = {either, Types}) ->
+    case xl_lists:find(fun(Type) -> is_type(V, Type) end, Types) of
+        {ok, Type} -> cast(Source, V, Type);
+        undefined -> error({cannot_cast, V, EitherType})
+    end;
+
+cast(_Source, V, {enum, atom, Enumeration}) -> check_enumeration(xl_convert:to(atom, V), Enumeration);
+cast(_Source, V, {enum, {list, atom}, Enumeration}) when is_list(V) ->
+    [check_enumeration(xl_convert:to(atom, X), Enumeration) || X <- V];
+cast(_Source, V, atom) -> xl_convert:to(atom, V);
+cast(_Source, V, {list, atom}) -> lists:map(fun(X) -> xl_convert:to(atom, X) end, V);
+cast(_Source, V, {option, atom}) -> {ok, xl_convert:to(atom, V)};
+
+cast(_Source, V, {enum, string, Enumeration}) -> check_enumeration(V, Enumeration);
+cast(_Source, V, {enum, {list, string}, Enumeration}) when is_list(V) ->
+    [check_enumeration(X, Enumeration) || X <- V];
+cast(_Source, V, string) when is_binary(V) -> V;
+cast(_Source, V, string) when is_integer(V) -> xl_convert:to(binary, V);
+cast(_Source, V, {list, string}) when is_list(V) -> check_array_content(string, V);
+cast(_Source, V, {option, string}) when is_binary(V) -> {ok, V};
+cast(_Source, V, {option, string}) when is_integer(V) -> {ok, xl_convert:to(binary, V)};
+
+cast(_Source, V, {enum, binary, Enumeration}) -> check_enumeration(V, Enumeration);
+cast(_Source, V, {enum, {list, binary}, Enumeration}) when is_list(V) ->
+    lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
+cast(_Source, V, binary) when is_binary(V) -> V;
+cast(_Source, V, {list, binary}) when is_list(V) -> check_array_content(binary, V);
+cast(_Source, V, {option, binary}) when is_binary(V) -> {ok, V};
+
+cast(_Source, V, {enum, integer, Enumeration}) -> check_enumeration(V, Enumeration);
+cast(_Source, V, {enum, {list, integer}, Enumeration}) when is_list(V) ->
+    [check_enumeration(X, Enumeration) || X <- V];
+cast(_Source, V, integer) when is_integer(V) -> V;
+cast(_Source, V, integer) when is_binary(V) -> xl_convert:to(integer, V);
+cast(_Source, V, {list, integer}) when is_list(V) -> V;
+cast(_Source, V, {option, integer}) when is_integer(V) -> {ok, V};
+
+cast(_Source, V, {enum, float, Enumeration}) -> check_enumeration(xl_convert:to(float, V), Enumeration);
+cast(_Source, V, {enum, {list, float}, Enumeration}) when is_list(V) ->
+    [check_enumeration(xl_convert:to(float, X), Enumeration) || X <- V];
+cast(_Source, V, float) when is_float(V) -> V;
+cast(_Source, V, float) when is_integer(V); is_binary(V) -> xl_convert:to(float, V);
+cast(_Source, V, {list, float}) when is_list(V) -> [xl_convert:to(float, X) || X <- V];
+cast(_Source, V, {option, float}) when is_float(V) -> {ok, V};
+cast(_Source, V, {option, float}) when is_integer(V); is_binary(V) -> {ok, xl_convert:to(float, V)};
+
+cast(_Source, true, boolean) -> true;
+cast(_Source, false, boolean) -> false;
+cast(_Source, <<"true">>, boolean) -> true;
+cast(_Source, <<"false">>, boolean) -> false;
+cast(_Source, V, {list, boolean}) when is_list(V) -> V;
+cast(_Source, V, {option, boolean}) when V == true; V == false -> {ok, V};
+
+cast({json, JsonApi}, V, any) -> JsonApi:to_abstract(V);
+cast({json, JsonApi}, V, {list, any}) when is_list(V) -> [JsonApi:to_abstract(X) || X <- V];
+cast({json, JsonApi}, V, {option, any}) -> {ok, JsonApi:to_abstract(V)};
+
+cast(proplist, V, any) -> V;
+cast(proplist, V, {list, any}) when is_list(V) -> V;
+cast(proplist, V, {option, any}) -> {ok, V};
+
+cast({json, _JsonApi}, V, {list, {Module, Record}}) when is_list(V) -> [Module:from_json_(O, Record) || O <- V];
+cast({json, _JsonApi}, V, {option, {Module, Record}}) -> {ok, Module:from_json_(V, Record)};
+cast({json, _JsonApi}, V, {Module, Record}) -> Module:from_json_(V, Record);
+
+%% cast(proplist, V, {list, {Module, Record}}) when is_list(V) -> [Module:from_proplist_(O, Record) || O <- V];
+cast(proplist, V, {option, {Module, Record}}) -> {ok, Module:from_proplist_(V, Record)};
+cast(proplist, V, {Module, Record}) -> Module:from_proplist_(V, Record);
+
+cast(_Source, Value, Type) -> error({cannot_cast, Value, Type}).
 
 -spec(cast(module(), option_m:monad(any()), term(), any()) -> any()).
 cast(_Source, {ok, null}, _Type, _Default) -> undefined;
