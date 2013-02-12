@@ -25,9 +25,11 @@ eforeach_test() ->
 
 mapfilter_test() ->
     L = [1, 2, 3, 4, 5],
-    ?assertEqual([4, 16],
-        xl_lists:mapfilter(
-            fun(X) when X rem 2 == 0 -> {ok, X * X}; (_) -> undefined end, L)).
+    ?assertEqual([4, 16], xl_lists:mapfilter(fun(X) when X rem 2 == 0 -> {ok, X * X}; (_) -> undefined end, L)).
+
+mapfind_test() ->
+    L = [1, 2, 3, 4, 5],
+    ?assertEqual({ok, 4}, xl_lists:mapfind(fun(X) when X rem 2 == 0 -> {ok, X * X}; (_) -> undefined end, L)).
 
 keypsort_test() ->
     ?assertEqual([{z, 1}, {x, 2}, {y, 3}],
