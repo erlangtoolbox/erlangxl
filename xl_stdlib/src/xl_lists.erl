@@ -17,7 +17,7 @@ find(Pred, [H | T]) ->
         _ -> find(Pred, T)
     end.
 
--spec(mapfind(fun((term()) -> boolean()), [term()]) -> option_m:monad(term())).
+-spec(mapfind(fun((term()) -> option_m:monad(term())), [term()]) -> option_m:monad(term())).
 mapfind(_Pred, []) -> undefined;
 mapfind(Pred, [H | T]) ->
     case Pred(H) of
