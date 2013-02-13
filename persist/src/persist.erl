@@ -3,7 +3,7 @@
 -compile({parse_transform, do}).
 
 -export([open/4, open/3, close/1, store/2, select/1, delete/2, get/2, by_index/1,
-    changes/2, identify/2]).
+    changes/2, identify/2, cursor/1, cursor/2]).
 
 % Internal
 -export([ets_changes/2]).
@@ -38,10 +38,10 @@ open(Name, Identify, StoreModule, Options) ->
             StoreModule
         ),
         return(#persister{
-            name = Name,
-            identify = Identify,
-            ets = ETS,
-            fsync = Fsync
+                    name = Name,
+                    identify = Identify,
+                    ets = ETS,
+                    fsync = Fsync
         })
     ]).
 
@@ -91,3 +91,35 @@ ets_changes(ETS, Since) ->
         [{'=<', Since, '$3'}],
         ['$_']
     }]).
+
+-spec(cursor(persister()) -> xl_stream:stream()).
+cursor(P) -> cursor(P, []).
+
+-spec(cursor(persister(), [term()]) -> xl_stream:stream()).
+cursor(#persister{ets = ETS, identify = Id}, Options) ->
+    case ets:info(ETS, size) of
+        0 -> xl_stream:empty();
+        Size ->
+            Pos = case lists:member(random, Options) of
+                true -> xl_random:uniform(Size) - 1;
+                _ -> 0
+            end,
+            case ets:slot(ETS, Pos) of
+                '$end_of_table' -> xl_stream:empty();
+                [{_, Object, _, _}] ->
+                    MiddleKey = Id(Object),
+                    xl_stream:map(fun([{_, X, _, _}]) -> X end,
+                        xl_stream:filter(fun([{_, _, _, Deleted}]) -> not(Deleted) end,
+                            xl_stream:stream({MiddleKey, MiddleKey}, fun
+                                ({'$end_of_table', '$end_of_table'}) -> empty;
+                                ({Key1, '$end_of_table'}) ->
+                                    case ets:prev(ETS, Key1) of
+                                        '$end_of_table' -> empty;
+                                        X -> {ets:lookup(ETS, X), {X, '$end_of_table'}}
+                                    end;
+                                ({Key1, Key2}) -> {ets:lookup(ETS, Key2), {Key1, ets:next(ETS, Key2)}}
+                            end)
+                        )
+                    )
+            end
+    end.

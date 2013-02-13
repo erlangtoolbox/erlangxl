@@ -4,5 +4,4 @@
 
 -export([uniform/1]).
 
-uniform(N) when is_integer(N) ->
-    (xl_calendar:now_micros() rem N)+1.
+uniform(N) when is_integer(N) -> (xl_calendar:now_micros() rem N) + 1.

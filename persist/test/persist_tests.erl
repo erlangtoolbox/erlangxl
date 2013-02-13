@@ -1,6 +1,7 @@
 -module(persist_tests).
 
 -include_lib("eunit/include/eunit.hrl").
+-include_lib("xl_stdlib/include/xl_eunit.hrl").
 
 -record(testobj, {
     id,
@@ -44,3 +45,24 @@ open() ->
         persist_storage_bin:new("/tmp/test/test"), [
             {fsync_interval, 100}
         ]).
+
+cursor_test() ->
+    {ok, P} = open(),
+    L = [_ | T] = lists:map(fun(I) -> #testobj{id = integer_to_list(I), name = "n1"} end, lists:seq(1, 9)),
+
+    [persist:store(P, X) || X <- L],
+
+    lists:foreach(fun(_) ->
+        ?assertEqual(length(L), length(xl_stream:to_list(persist:cursor(P, [random]))))
+    end, lists:seq(1, 100)),
+
+    ?assertNotEqual(L, xl_stream:to_list(persist:cursor(P, [random]))),
+
+    Compare = fun(#testobj{id = Id1}, #testobj{id = Id2}) -> Id1 < Id2 end,
+    ?assertEqual(L, lists:sort(Compare, xl_stream:to_list(persist:cursor(P, [random])))),
+
+    persist:delete(P, "1"),
+    ?assertEquals(T, xl_stream:to_list(persist:cursor(P))),
+
+    ?assertEqual(ok, persist:close(P)).
+
