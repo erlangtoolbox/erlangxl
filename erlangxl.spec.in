@@ -5,7 +5,7 @@ Summary:        ErlangXL
 Name:           strikead-erlangxl
 Version:        {{VERSION}}
 License:        Erlang Public License
-Release:        4
+Release:        5
 Requires:       erlang yaws erlang-flake strikead-erlang-erleveldb strikead-erlang-erlandox
 Conflicts:	strikead-erlang-commons
 BuildRequires:  erlang make yaws yaws-devel pkg-config strikead-erlang-erlandox
