@@ -62,13 +62,13 @@ to_float(X) -> xl_convert:to_float(X).
 -spec(substitute(string(), xl_lists:kvlist_at()) -> string()).
 substitute(Str, Map) -> substitute(Str, Map, {${, $}}).
 
--spec(substitute(string(), ebt_xl_lists:kvlist_at(), {char(), char()}) -> string()).
+-spec(substitute(string(), xl_lists:kvlist_at(), {char(), char()}) -> string()).
 substitute(Str, Map, Braces) when is_list(Str) -> binary_to_list(substitute(list_to_binary(Str), Map, Braces));
 substitute(Str, Map, {Open, Close}) ->
     Parts = re:split(Str, format("(\\\~s[a-zA-Z0-9_\\.:-]+\\\~s)", [[Open], [Close]]), [{return, binary}, trim]),
     join([replace_macro(X, Map, {Open, Close}) || X <- Parts], <<>>).
 
--spec(replace_macro(string(), ebt_xl_lists:kvlist_at(), {char(), char()}) -> string()).
+-spec(replace_macro(string(), xl_lists:kvlist_at(), {char(), char()}) -> string()).
 replace_macro(<<Open:8, T/binary>>, Map, {Open, _Close}) ->
     Key = binary:part(T, 0, byte_size(T) - 1),
     case xl_lists:kvfind(xl_convert:to(atom, Key), Map) of

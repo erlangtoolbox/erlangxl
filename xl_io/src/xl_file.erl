@@ -94,7 +94,7 @@ copy(Src, Dst) ->
             DestinationFile = filename:join(Dst, filename:basename(Src)),
             do([error_m ||
                 ensure_dir(DestinationFile),
-                ebt_xl_io:apply_io(file, copy, [Src, DestinationFile]),
+                xl_io:apply_io(file, copy, [Src, DestinationFile]),
                 ok
             ]);
         {ok, T} -> {error, {cannot_copy, T, [Src, Dst]}};
@@ -180,7 +180,7 @@ delete(Path) ->
         {ok, regular} ->
             xl_io:apply_io(file, delete, [Path]);
         {ok, symlink} ->
-            ebt_xl_io:apply_io(file, delete, [Path]);
+            xl_io:apply_io(file, delete, [Path]);
         {ok, directory} ->
             do([error_m ||
                 Files <- list_dir(Path),
