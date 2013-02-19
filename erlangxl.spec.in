@@ -5,14 +5,14 @@ Summary:        ErlangXL
 Name:           strikead-erlangxl
 Version:        {{VERSION}}
 License:        Erlang Public License
-Release:        2
-Requires:       erlang yaws erlang-flake strikead-erlang-erleveldb strikead-erlang-ktuo strikead-erlang-erlandox
+Release:        5
+Requires:       erlang yaws erlang-flake strikead-erlang-erleveldb strikead-erlang-erlandox
 Conflicts:	strikead-erlang-commons
 BuildRequires:  erlang make yaws yaws-devel pkg-config strikead-erlang-erlandox
 Group:          StrikeAd/Software
 Source:         %{realname}-%{version}.tar.gz
 URL:            https://github.com/strikead/erlangxl/tarball/%{revision}
-BuildArch:      x86_64
+BuildArch:      noarch
 
 %define erl_lib_root /usr/%{_lib}/erlang/lib
 
@@ -70,6 +70,9 @@ done
 %{erl_lib_root}
 
 %changelog
+* Thu Feb 14 2013 Aleksey Morarash <aleksey.morarash@strikead.com>
+- change package arch;
+- remove obsolete deps.
 * Tue Nov 27 2012 andrei.zavada@strikead.com
 - Rename erlang-erleveldb -> strikead-erlang-erleveldb in deps
 * Tue Oct 16 2012 andrei.zavada@strikead.com
