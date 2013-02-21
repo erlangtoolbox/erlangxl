@@ -3,7 +3,7 @@
 -export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
     sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
-    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2, mapfind/2]).
+    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2, mapfind/2, set/1, union/2]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -212,4 +212,15 @@ imap(_F, Acc, _Index, []) -> lists:reverse(Acc);
 imap(F, Acc, Index, [H | T]) -> imap(F, [F(H, Index) | Acc], Index + 1, T).
 
 intersect(List1, List2) ->
-    lists:filter(fun(E) -> lists:member(E, List2) end, List1).
+    L1 = set(List1),
+    L2 = set(List2),
+    lists:filter(fun(E) -> lists:member(E, L2) end, L1).
+
+union(List1, List2) -> set(List1 ++ List2).
+
+set(List) -> lists:reverse(set(lists:sort(List), [])).
+
+set([], Acc) -> Acc;
+set([H], Acc) -> [H | Acc];
+set([H, H | T], Acc) -> set([H | T], Acc);
+set([X, Y | T], Acc) -> set([Y | T], [X | Acc]).
