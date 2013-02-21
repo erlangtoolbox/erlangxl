@@ -1,7 +1,7 @@
 -module(xl_calendar).
 
 -export([format/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
-    day_of_week/1, datetime_to_ms/1]).
+    day_of_week/1, datetime_to_ms/1, weekdays/0]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -113,3 +113,5 @@ ms_to_datetime(Milliseconds) -> calendar:gregorian_seconds_to_datetime(?BASE_DAT
 
 -spec(datetime_to_ms(calendar:datetime()) -> integer()).
 datetime_to_ms(DateTime) -> (calendar:datetime_to_gregorian_seconds(DateTime) - ?BASE_DATE) * 1000.
+
+weekdays() -> ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].
