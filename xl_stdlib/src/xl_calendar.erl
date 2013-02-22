@@ -1,7 +1,7 @@
 -module(xl_calendar).
 
 -export([format/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
-    day_of_week/1, datetime_to_ms/1, weekdays/0]).
+    day_of_week/1, datetime_to_ms/1, weekdays/0, weekdays_order/0]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -26,6 +26,9 @@
 
 
 -spec(add(calendar:datetime(), integer(), seconds | minutes | hours | days | weeks | months | years) -> calendar:datetime()).
+
+-type(weekday() :: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun').
+-export_type([weekday/0]).
 
 add(DateTime, N, seconds) ->
     T1 = calendar:datetime_to_gregorian_seconds(DateTime),
@@ -114,4 +117,14 @@ ms_to_datetime(Milliseconds) -> calendar:gregorian_seconds_to_datetime(?BASE_DAT
 -spec(datetime_to_ms(calendar:datetime()) -> integer()).
 datetime_to_ms(DateTime) -> (calendar:datetime_to_gregorian_seconds(DateTime) - ?BASE_DATE) * 1000.
 
+-spec(weekdays() -> [weekday()]).
 weekdays() -> ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].
+
+-spec(weekdays_order() -> fun((weekday(), weekday()) -> boolean())).
+weekdays_order() ->
+    Week = weekdays(),
+    fun(A, B) ->
+        case {xl_lists:index(A, Week), xl_lists:index(B, Week)} of
+            {{ok, X}, {ok, Y}} -> X =< Y
+        end
+    end.

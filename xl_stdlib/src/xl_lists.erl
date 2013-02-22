@@ -83,8 +83,7 @@ keypsort(Keys, N, L) ->
 -spec(index(term(), [term()]) -> option_m:monad(integer())).
 index(X, L) -> index(X, 1, L).
 
--spec(index(term(), integer(), [term()])
-            -> option_m:monad(integer())).
+-spec(index(term(), integer(), [term()]) -> option_m:monad(integer())).
 index(_X, _I, []) -> undefined;
 index(X, I, [X | _]) -> {ok, I};
 index(X, I, [_ | T]) -> index(X, I + 1, T).

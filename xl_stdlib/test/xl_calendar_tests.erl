@@ -22,3 +22,6 @@ ms_to_datetime_test() ->
 
 datetime_to_ms_test() ->
     ?assertEqual(1350475428000, xl_calendar:datetime_to_ms({{2012, 10, 17}, {12, 3, 48}})).
+
+weekdays_order_test() ->
+    ?assertEqual(['Mon', 'Wed', 'Sun'], lists:sort(xl_calendar:weekdays_order(), ['Wed', 'Sun', 'Mon'])).
