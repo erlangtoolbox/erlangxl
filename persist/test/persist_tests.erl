@@ -56,7 +56,7 @@ cursor_test() ->
         ?assertEqual(length(L), length(xl_stream:to_list(persist:cursor(P, [random]))))
     end, lists:seq(1, 100)),
 
-    ?assertNotEqual(L, xl_stream:to_list(persist:cursor(P, [random]))),
+    ?assertNotEqual(xl_stream:to_list(persist:cursor(P, [random])), xl_stream:to_list(persist:cursor(P, [random]))),
 
     Compare = fun(#testobj{id = Id1}, #testobj{id = Id2}) -> Id1 < Id2 end,
     ?assertEqual(L, lists:sort(Compare, xl_stream:to_list(persist:cursor(P, [random])))),
