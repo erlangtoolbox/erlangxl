@@ -1,12 +1,11 @@
-PACKAGE := erlangxl
-VERSION := \
-	`./version.sh`
-REVISION := \
-	`git --no-pager log --max-count=1 --format=format:%H`
-PV := $(PACKAGE)-$(VERSION)
+PROJECT=erlangxl
+VERSION=`cat version`
+RELEASE=`cat release`
+REVISION=`git --no-pager log --max-count=1 --format=format:%H`
 
-SUBDIRS := \
-	xl_stdlib \
+.PHONY: all compile install doc doc-install eunit clean dialyze all-tests spec
+
+APPS =	xl_stdlib \
 	xl_json \
 	xl_leveldb \
 	xl_yaws \
@@ -15,26 +14,50 @@ SUBDIRS := \
 	xl_net \
 	persist
 
-SUBDIRS_CLEAN = $(patsubst %, %.clean, $(SUBDIRS))
+.PHONY: $(APPS)
 
-.PHONY: clean all $(SUBDIRS) \
-	spec
+all: $(APPS)
 
-all: $(SUBDIRS)
+compile: $(APPS)
 
-$(SUBDIRS):
-	$(MAKE) -C $@
+install: $(APPS)
 
-clean:	$(SUBDIRS_CLEAN)
+doc: $(APPS)
 
-$(SUBDIRS_CLEAN):
-	$(MAKE) -C $(@:.clean=) clean
+doc-install: $(APPS)
 
-SUBST_SPECS := \
-	$(PACKAGE).spec
+eunit: $(APPS)
 
-$(SUBST_SPECS):
-	sed "s,{{VERSION}},$(VERSION),g" $@.in | \
-	sed "s,{{REVISION}},$(REVISION),g" > $@
+all-tests:
+	$(MAKE) TEST=yes clean compile
+	$(MAKE) eunit
+## do separate build because dialyzer produces a lot
+## of warnings for eunit code
+	$(MAKE) DEBUG=yes clean compile
+	$(MAKE) dialyze
 
-spec: $(SUBST_SPECS)
+clean: $(APPS)
+	rm --force -- $(PROJECT).spec
+
+$(APPS):
+	$(MAKE) -C "$@" $(MAKECMDGOALS)
+
+spec:
+	cat opensuse.spec-templ | \
+		sed "s/{{VERSION}}/$(VERSION)/" | \
+		sed "s/{{RELEASE}}/$(RELEASE)/" | \
+		sed "s/{{REVISION}}/$(REVISION)/" \
+		> $(PROJECT).spec
+
+PLT=.dialyzer_plt
+
+dialyze: $(PLT)
+	dialyzer --plt $(PLT) -r . \
+		-Wunmatched_returns -Werror_handling -Wrace_conditions
+	dialyzer --src --plt $(PLT) -r . \
+		-Wunmatched_returns -Werror_handling -Wrace_conditions
+
+$(PLT):
+	dialyzer --build_plt --output_plt $(PLT) \
+		--apps erts kernel stdlib crypto compiler
+
