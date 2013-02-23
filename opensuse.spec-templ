@@ -37,14 +37,6 @@ make compile
 
 %install
 make install DESTDIR=%buildroot%install_dir
-apps="  xl_stdlib \
-	xl_json \
-	xl_leveldb \
-	xl_yaws \
-	xl_csv \
-	xl_io \
-	xl_net \
-	persist"
 
 %files
 %defattr(-,root,root)
