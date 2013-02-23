@@ -1,0 +1,11 @@
+{application, xl_json_binder_test, [
+    {description, "xl_json_binder_test"},
+    {vsn,"{{VERSION}}"},
+    {applications, [
+        kernel,
+        stdlib,
+        xl_json
+    ]}
+]}.
+
+

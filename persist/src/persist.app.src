@@ -1,0 +1,12 @@
+{application, persist, [
+	{description, "tiny inmemory DB with async fsync"},
+	{vsn, "{{VERSION}}"},
+	{modules, []},
+	{applications, [
+		kernel,
+		stdlib,
+		xl_stdlib,
+		xl_io
+	]},
+	{env, []}
+]}.
