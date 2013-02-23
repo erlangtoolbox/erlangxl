@@ -10,13 +10,15 @@ compile: ebin/$(APP).app Emakefile
 	erl -noinput -eval 'up_to_date = make:all()' -s erlang halt
 
 install:
-	install --mode=0755 --directory \
-		$(DESTDIR)/$(APP)-$(VERSION)/ebin \
-		$(DESTDIR)/$(APP)-$(VERSION)/include
+	install --mode=0755 --directory $(DESTDIR)/$(APP)-$(VERSION)/ebin
 	install --mode=644 ebin/*.app ebin/*.beam \
 		$(DESTDIR)/$(APP)-$(VERSION)/ebin
-	install --mode=644 include/*.hrl \
-		$(DESTDIR)/$(APP)-$(VERSION)/include
+	if [ -d include ]; then \
+	    install --mode=0755 --directory \
+		$(DESTDIR)/$(APP)-$(VERSION)/include; \
+	    install --mode=644 include/*.hrl \
+		$(DESTDIR)/$(APP)-$(VERSION)/include; \
+	fi
 
 doc: doc/overview.edoc figures
 	erl -noinput -eval \
