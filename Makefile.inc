@@ -47,11 +47,11 @@ clean:
 		erl_crash.dump Emakefile doc/overview.edoc
 	rm --force --recursive -- ebin
 
-ebin/$(APP).app: src/$(APP).app.src ../version
+ebin/$(APP).app: src/$(APP).app.in ../version
 	mkdir --parents ebin
 	sed "s/{{VERSION}}/$(VERSION)/" $< > $@
 
-doc/overview.edoc: doc/overview.edoc.src ../version
+doc/overview.edoc: doc/overview.edoc.in ../version
 	sed "s/{{VERSION}}/$(VERSION)/" $< > $@
 
 ifdef DEBUG
@@ -62,6 +62,6 @@ ifdef TEST
 EXTRA_OPTS:=$(EXTRA_OPTS) {d,'TEST', true},
 endif
 
-Emakefile: ../Emakefile.src
+Emakefile: ../Emakefile.in
 	sed "s/{{EXTRA_OPTS}}/$(EXTRA_OPTS)/" $< > $@
 

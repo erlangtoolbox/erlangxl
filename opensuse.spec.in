@@ -48,7 +48,7 @@ make install DESTDIR=%buildroot%install_dir
 %install_dir/*/include
 
 %changelog
-* Sun Feb 24 2013 Aleksey Morarash <aleksey.morarash@strikead.com> 1.2.0-1
+* Tue Feb 26 2013 Aleksey Morarash <aleksey.morarash@strikead.com> 1.2.0-2
 - change package arch;
 - remove obsolete deps;
 - makefiles and RPM spec refactored, headers moved to separate package;

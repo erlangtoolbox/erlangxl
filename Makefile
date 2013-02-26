@@ -42,8 +42,8 @@ clean: $(APPS)
 $(APPS):
 	$(MAKE) -C "$@" $(MAKECMDGOALS)
 
-spec:
-	cat opensuse.spec-templ | \
+spec: opensuse.spec.in
+	cat $< | \
 		sed "s/{{VERSION}}/$(VERSION)/" | \
 		sed "s/{{RELEASE}}/$(RELEASE)/" | \
 		sed "s/{{REVISION}}/$(REVISION)/" \
@@ -52,12 +52,12 @@ spec:
 PLT=.dialyzer_plt
 
 dialyze: $(PLT)
-	dialyzer --plt $(PLT) -r . \
+	dialyzer --plt $< -r . \
 		-Wunmatched_returns -Werror_handling -Wrace_conditions
-	dialyzer --src --plt $(PLT) -r . \
+	dialyzer --src --plt $< -r . \
 		-Wunmatched_returns -Werror_handling -Wrace_conditions
 
 $(PLT):
-	dialyzer --build_plt --output_plt $(PLT) \
+	dialyzer --build_plt --output_plt $@ \
 		--apps erts kernel stdlib crypto compiler
 
