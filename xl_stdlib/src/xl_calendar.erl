@@ -1,7 +1,7 @@
 -module(xl_calendar).
 
 -export([format/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
-    day_of_week/1, datetime_to_ms/1, weekdays/0, weekdays_order/0]).
+    day_of_week/1, datetime_to_ms/1, weekdays/0, weekdays_order/0, adjust/4, whole_day/0, diff_hours/4, daynum_of_week/1, diff_days/3, daynum/1, dayname/1]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -56,8 +56,25 @@ add(Date, N, years) -> add(Date, 12 * N, months).
 
 % end of Jonas Enlund
 
-day_of_week({Date, _}) ->
-    case calendar:day_of_the_week(Date) of
+day_of_week(Date) when is_integer(Date) -> day_of_week(ms_to_datetime(Date));
+day_of_week({Date, _}) -> dayname(calendar:day_of_the_week(Date)).
+
+daynum_of_week(Date) when is_integer(Date) -> daynum_of_week(ms_to_datetime(Date));
+daynum_of_week({Date, _}) -> calendar:day_of_the_week(Date).
+
+daynum(Day) ->
+    case Day of
+        'Mon' -> 1;
+        'Tue' -> 2;
+        'Wed' -> 3;
+        'Thu' -> 4;
+        'Fri' -> 5;
+        'Sat' -> 6;
+        'Sun' -> 7
+    end.
+
+dayname(Day) ->
+    case Day of
         1 -> 'Mon';
         2 -> 'Tue';
         3 -> 'Wed';
@@ -66,6 +83,8 @@ day_of_week({Date, _}) ->
         6 -> 'Sat';
         7 -> 'Sun'
     end.
+
+
 
 month_name({{_, Mon, _}, _}) ->
     case Mon of
@@ -120,6 +139,9 @@ datetime_to_ms(DateTime) -> (calendar:datetime_to_gregorian_seconds(DateTime) - 
 -spec(weekdays() -> [weekday()]).
 weekdays() -> ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].
 
+-spec(whole_day() -> [integer()]).
+whole_day() -> lists:seq(0, 23).
+
 -spec(weekdays_order() -> fun((weekday(), weekday()) -> boolean())).
 weekdays_order() ->
     Week = weekdays(),
@@ -128,3 +150,56 @@ weekdays_order() ->
             {{ok, X}, {ok, Y}} -> X =< Y
         end
     end.
+
+adjust(_Start, Finish, [], _Hours) -> {Finish, Finish};
+adjust(_Start, Finish, _Weekdays, []) -> {Finish, Finish};
+adjust(Start, Finish, Weekdays, Hours) ->
+    case {adjust(Start, datetime_to_ms(Finish), Weekdays, Hours, 1), adjust(Finish, datetime_to_ms(Start), Weekdays, Hours, -1)} of
+        {undefined, _} -> {Finish, Finish};
+        {_, undefined} -> {Finish, Finish};
+        {{ok, S}, {ok, F}} -> {S, F}
+    end.
+
+adjust(Date, Limit, Weekdays, Hours, Shift) ->
+    case (datetime_to_ms(Date) > Limit andalso Shift == 1) orelse (datetime_to_ms(Date) < Limit andalso Shift == -1) of
+        true -> undefined;
+        _ ->
+            case lists:member(day_of_week(Date), Weekdays) of
+                true -> {ok, Date};
+                _ -> adjust(add(Date, Shift, days), Limit, Weekdays, Hours, Shift)
+            end
+    end.
+
+
+diff_hours(Start, Finish, Weekdays, Hours) when is_integer(Start), is_integer(Finish) ->
+    diff_hours(ms_to_datetime(Start), ms_to_datetime(Finish), Weekdays, Hours);
+diff_hours(Start = {_, {SH, _, _}}, Finish = {_, {FH, _, _}}, Weekdays, Hours) ->
+    case diff_days(Start, Finish, Weekdays) of
+        1 -> xl_lists:count(fun(H) -> lists:member(H, Hours) end, lists:seq(SH, FH));
+        Days ->
+            FirstDayHoursMinus = case lists:member(day_of_week(Start), Weekdays) of
+                true -> length(Hours) - xl_lists:count(fun(H) -> lists:member(H, Hours) end, lists:seq(SH, 23));
+                _ -> 0
+            end,
+            LastDayHoursMinus = case lists:member(day_of_week(Finish), Weekdays) of
+                true -> length(Hours) - xl_lists:count(fun(H) -> lists:member(H, Hours) end, lists:seq(0, FH));
+                _ -> 0
+            end,
+            Days * length(Hours) - FirstDayHoursMinus - LastDayHoursMinus
+    end.
+
+diff_days(Start, Finish, Weekdays) when is_integer(Start), is_integer(Finish) ->
+    diff_days(ms_to_datetime(Start), ms_to_datetime(Finish), Weekdays);
+diff_days(Start = {StartDate, _}, Finish = {FinishDate, _}, Weekdays) ->
+    FirstDay = daynum_of_week(Start),
+    LastDay = daynum_of_week(Finish),
+    TotalDays = calendar:date_to_gregorian_days(FinishDate) - calendar:date_to_gregorian_days(StartDate),
+    case TotalDays div 7 of
+        0 when LastDay >= FirstDay ->
+            xl_lists:count(fun(D) -> lists:member(dayname(D), Weekdays) end, lists:seq(FirstDay, LastDay));
+        Weeks ->
+            xl_lists:count(fun(D) -> lists:member(dayname(D), Weekdays) end, lists:seq(FirstDay, 7))
+                + Weeks * length(Weekdays)
+                + xl_lists:count(fun(D) -> lists:member(dayname(D), Weekdays) end, lists:seq(1, LastDay))
+    end.
+

@@ -25,3 +25,34 @@ datetime_to_ms_test() ->
 
 weekdays_order_test() ->
     ?assertEqual(['Mon', 'Wed', 'Sun'], lists:sort(xl_calendar:weekdays_order(), ['Wed', 'Sun', 'Mon'])).
+
+adjust_test() ->
+    {S1, F1} = xl_calendar:adjust({{2013, 2, 23}, {0, 0, 0}}, {{2013, 2, 28}, {0, 0, 0}}, ['Mon', 'Wed'], xl_calendar:whole_day()),
+    ?assertEqual('Mon', xl_calendar:day_of_week(S1)),
+    ?assertEqual('Wed', xl_calendar:day_of_week(F1)),
+
+    {S4, F4} = xl_calendar:adjust({{2013, 2, 23}, {0, 0, 0}}, {{2013, 2, 28}, {0, 0, 0}}, ['Mon'], xl_calendar:whole_day()),
+    ?assertEqual('Mon', xl_calendar:day_of_week(S4)),
+    ?assertEqual('Mon', xl_calendar:day_of_week(F4)),
+
+    {S2, F2} = xl_calendar:adjust({{2013, 2, 23}, {0, 0, 0}}, {{2013, 2, 28}, {0, 0, 0}}, ['Fri'], xl_calendar:whole_day()),
+    ?assertEqual({{2013, 2, 28}, {0, 0, 0}}, S2),
+    ?assertEqual({{2013, 2, 28}, {0, 0, 0}}, F2),
+
+    {S3, F3} = xl_calendar:adjust({{2013, 2, 23}, {0, 0, 0}}, {{2013, 2, 28}, {0, 0, 0}}, [], xl_calendar:whole_day()),
+    ?assertEqual({{2013, 2, 28}, {0, 0, 0}}, S3),
+    ?assertEqual({{2013, 2, 28}, {0, 0, 0}}, F3).
+
+diff_hours_test() ->
+    ?assertEqual(24 * 2, xl_calendar:diff_hours({{2013, 2, 23}, {0, 0, 0}}, {{2013, 2, 28}, {0, 0, 0}}, ['Mon', 'Wed'], xl_calendar:whole_day())),
+    ?assertEqual(3 * 2, xl_calendar:diff_hours({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 28}, {8, 0, 0}}, ['Mon', 'Wed'], [4, 7, 9])),
+    ?assertEqual(3 + 2 + 2, xl_calendar:diff_hours({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 27}, {8, 0, 0}}, ['Sat', 'Mon', 'Wed'], [4, 7, 9])),
+    ?assertEqual(1, xl_calendar:diff_hours({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 23}, {8, 0, 0}}, ['Sat', 'Mon', 'Wed'], [4, 7, 9])).
+
+diff_days_test() ->
+    ?assertEqual(6, xl_calendar:diff_days({{2013, 2, 1}, {0, 0, 0}}, {{2013, 2, 20}, {0, 0, 0}}, ['Mon', 'Wed'])),
+    ?assertEqual(1, xl_calendar:diff_days({{2013, 2, 12}, {0, 0, 0}}, {{2013, 2, 15}, {0, 0, 0}}, ['Mon', 'Wed'])),
+    ?assertEqual(2, xl_calendar:diff_days({{2013, 2, 12}, {0, 0, 0}}, {{2013, 2, 18}, {0, 0, 0}}, ['Mon', 'Wed'])),
+    ?assertEqual(1, xl_calendar:diff_days({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 23}, {8, 0, 0}}, ['Sat', 'Mon', 'Wed'])).
+
+

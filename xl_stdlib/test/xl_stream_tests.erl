@@ -22,9 +22,8 @@ foldl_test() ->
 
 to_random_stream_test() ->
     L = lists:seq(1, 10),
-    R = xl_stream:to_list(xl_stream:to_random_stream(L)),
-    ?assertNotEqual(L, R),
-    ?assertEqual(L, lists:sort(R)).
+    ?assertNotEqual(xl_stream:to_list(xl_stream:to_random_stream(L)), xl_stream:to_list(xl_stream:to_random_stream(L))),
+    ?assertEqual(L, lists:sort(xl_stream:to_list(xl_stream:to_random_stream(L)))).
 
 keyfilter_test() ->
     Keys = [1, 3, 6],
