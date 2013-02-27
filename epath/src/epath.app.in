@@ -1,0 +1,11 @@
+%% Copyright
+{application, epath, [
+    {description, ""},
+    {vsn, "{{VERSION}}"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {env, []}
+]}.

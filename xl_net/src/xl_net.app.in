@@ -1,0 +1,12 @@
+{application, xl_net, [
+    {description, "ErlangXL Net Extentions"},
+    {vsn,"{{VERSION}}"},
+    {applications, [
+        kernel,
+        stdlib,
+        xl_stdlib,
+        xl_io
+    ]}
+]}.
+
+

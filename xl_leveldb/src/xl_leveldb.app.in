@@ -1,0 +1,7 @@
+{application, xl_leveldb,
+ [{description, "ErlangXL LevelDB Extentions"},
+  {vsn,"{{VERSION}}"},
+  {applications, [kernel,stdlib]}
+ ]}.
+
+

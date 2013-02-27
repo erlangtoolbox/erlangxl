@@ -8,3 +8,16 @@ data.index
 out
 lib
 tags
+ebin
+*.beam
+*~
+overview.edoc
+erl_crash.dump
+edoc-info
+.#*
+*.html
+*.png
+*.css
+Emakefile
+.dialyzer_plt
+erlangxl.spec
