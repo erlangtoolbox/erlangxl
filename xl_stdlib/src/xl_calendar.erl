@@ -170,7 +170,8 @@ adjust(Date, Limit, Weekdays, Hours, Shift) ->
             end
     end.
 
-
+%% todo unify algorithm
+%% example: accepted values for Tue with 10min resolution is lists:seq(24*6, 24*6*2)
 diff_hours(Start, Finish, Weekdays, Hours) when is_integer(Start), is_integer(Finish) ->
     diff_hours(ms_to_datetime(Start), ms_to_datetime(Finish), Weekdays, Hours);
 diff_hours(Start = {_, {SH, _, _}}, Finish = {_, {FH, _, _}}, Weekdays, Hours) ->
