@@ -7,11 +7,13 @@
 -export([gen/2]).
 
 next_test() ->
+    application:start(xl_stdlib),
     ?assert(xl_uid:next() < xl_uid:next()),
     xl_eunit:performance(uid, fun(_) -> xl_uid:next() end, 100000),
     xl_eunit:performance(uid_hex, fun(_) -> xl_uid:next_hex() end, 100000).
 
 uniq_test() ->
+    application:start(xl_stdlib),
     xl_state:new(state1),
     lists:foreach(fun(X) ->
         spawn(?MODULE, gen, [state1, xl_convert:make_atom([result, X])])

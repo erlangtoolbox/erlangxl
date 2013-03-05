@@ -5,25 +5,15 @@
 -compile({parse_transform, do}).
 
 %% API
--export([next/0, next_hex/0]).
+-export([next/0, next_hex/0, start/0]).
 
-next() ->
-    try
-        next_uid()
-    catch
-        error:_ ->
-            initialize(),
-            next_uid()
-    end.
+next() -> {ok, [P]} = xl_state:get(?MODULE, prefix),
+    P + xl_calendar:now_micros().
 
 next_hex() ->
     integer_to_list(next(), 16).
 
-next_uid() ->
-    {ok, [P]} = xl_state:get(?MODULE, prefix),
-    P + xl_calendar:now_micros().
-
-initialize() ->
+start() ->
     xl_state:new(?MODULE, [{read_concurrency, true}]),
     case inet:getifaddrs() of
         {ok, Ifs} ->
