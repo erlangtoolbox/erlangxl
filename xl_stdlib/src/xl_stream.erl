@@ -1,11 +1,11 @@
 -module(xl_stream).
 
 -export([stream/2, map/2, foreach/2, seq/2, foldl/3, filter/2, to_list/1,
-    to_stream/1, to_pair/1, mapfind/2, empty/0, to_random_stream/1, keyfilter/3]).
+    to_stream/1, to_pair/1, mapfind/2, empty/0, to_random_stream/1, keyfilter/3, eforeach/2]).
 -export([ifoldl/3]).
 
--opaque stream() :: fun().
--export_type([stream/0]).
+-opaque(stream(A) :: fun(() -> [A | stream(A)])).
+-export_type([stream/1]).
 
 stream(Context, Next) ->
     fun() ->
@@ -25,8 +25,19 @@ map(F, S) ->
 
 foreach(F, S) ->
     case S() of
-        [] -> done;
+        [] -> ok;
         [H | T] -> F(H), foreach(F, T)
+    end.
+
+eforeach(F, S) ->
+    case S() of
+        [] -> ok;
+        [H | T] ->
+            case F(H) of
+                ok -> eforeach(F, T);
+                {ok, _} -> eforeach(F, T);
+                E -> E
+            end
     end.
 
 seq(From, To) ->
@@ -76,7 +87,7 @@ to_stream(L) when is_list(L) ->
         ([H | T]) -> {H, T}
     end).
 
--spec mapfind/2 :: (fun((any()) -> option_m:monad(any())), stream()) -> option_m:monad(any()).
+-spec mapfind/2 :: (fun((any()) -> option_m:monad(any())), stream(any())) -> option_m:monad(any()).
 mapfind(F, S) ->
     case S() of
         [] -> undefined;

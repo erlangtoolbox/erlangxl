@@ -46,7 +46,7 @@ eforeach(F, [H | T]) ->
     case F(H) of
         ok -> eforeach(F, T);
         {ok, _} -> eforeach(F, T);
-        X -> X
+        E -> E
     end.
 
 -spec(efoldl(fun((term(), term())-> error_m:monad(term())), term(), [term()]) -> error_m:monad(term())).
