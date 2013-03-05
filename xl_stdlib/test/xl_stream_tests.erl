@@ -29,3 +29,6 @@ keyfilter_test() ->
     Keys = [1, 3, 6],
     Objects = xl_stream:to_stream(lists:zip(lists:seq(1, 7), lists:seq(1, 7))),
     ?assertEqual([{1, 1}, {3, 3}, {6, 6}], xl_stream:to_list(xl_stream:keyfilter(Keys, 1, Objects))).
+
+to_rpc_stream_test() ->
+    ?assertEqual([{ok, 1}, {ok, 2}, {ok, 3}], xl_stream:to_list(xl_stream:to_rpc_stream(xl_stream:to_stream([1, 2, 3])))).
