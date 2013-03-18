@@ -1,8 +1,7 @@
 -module(xl_stream).
 
--export([stream/2, map/2, foreach/2, seq/2, foldl/3, filter/2, to_list/1,
-    to_stream/1, to_pair/1, mapfind/2, empty/0, to_random_stream/1, keyfilter/3, eforeach/2, to_rpc_stream/1]).
--export([ifoldl/3]).
+-export([stream/2, map/2, foreach/2, seq/2, foldl/3, filter/2, to_list/1, ifoldl/3, to_stream/1, to_pair/1, mapfind/2,
+    empty/0, to_random_stream/1, keyfilter/3, eforeach/2, to_rpc_stream/1, to_rpc_stream/2]).
 
 -opaque(stream(A) :: fun(() -> [A | stream(A)])).
 -export_type([stream/1]).
@@ -120,11 +119,12 @@ keyfilter_next(Keys = [K | KT], KeyPos, S) ->
         _ -> keyfilter_next(KT, KeyPos, S)
     end.
 
-to_rpc_stream(S) ->
-    stream({node(), S}, fun({Node, Stream}) ->
+to_rpc_stream(S) -> to_rpc_stream(node(), S).
+to_rpc_stream(Node, S) ->
+    stream(S, fun(Stream) ->
         case xl_rpc:call(Node, xl_stream, to_pair, [Stream]) of
             {ok, []} -> empty;
-            {ok, [H | T]} -> {{ok, H}, {Node, T}};
-            E -> {E, {Node, []}}
+            {ok, [H | T]} -> {{ok, H}, T};
+            E -> {E, []}
         end
     end).
