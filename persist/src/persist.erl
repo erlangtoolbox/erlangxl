@@ -3,7 +3,7 @@
 -compile({parse_transform, do}).
 
 -export([open/4, open/3, close/1, store/2, select/1, delete/2, get/2, by_index/1,
-    changes/2, identify/2, cursor/1, cursor/2, cursor/3]).
+    changes/2, identify/2, cursor/1, cursor/2, cursor/3, lookup/2]).
 
 % Internal
 -export([ets_changes/2]).
@@ -12,25 +12,27 @@
     name :: atom(),
     identify :: fun((tuple()) -> xl_string:iostring()),
     ets :: ets:tid() | atom(),
-    fsync :: pid()
+    fsync :: pid(),
+    indices :: [ets:tid() | atom()]
 }).
 
 -opaque persister() :: #persister{}.
 -export_types([persister/0]).
 
--spec open/3 :: (atom(), fun((term()) -> xl_string:iostring()), atom()) ->
-    error_m:monad(persister()).
+-spec open/3 :: (atom(), fun((term()) -> xl_string:iostring()), atom()) -> error_m:monad(persister()).
 open(Name, Identify, StoreModule) -> open(Name, Identify, StoreModule, []).
 
--spec open/4 :: (atom(), fun((term()) -> xl_string:iostring()), atom(), [{atom(), term()}]) ->
-    error_m:monad(persister()).
+-spec open/4 :: (atom(), fun((term()) -> xl_string:iostring()), atom(), [{atom(), term()}]) -> error_m:monad(persister()).
 open(Name, Identify, StoreModule, Options) ->
     ETS = ets:new(xl_convert:make_atom([Name, '_persister']), [
         ordered_set, {keypos, 1}, public
     ]),
+    Indices = lists:map(fun({IndexName, F}) ->
+        {IndexName, persist_index:new(IndexName, F, Identify)}
+    end, xl_lists:kvfind(indices, Options, [])),
     do([error_m ||
         Objects <- StoreModule:load(),
-        return([ets:insert(ETS, X) || X <- Objects]),
+        return([begin ets:insert(ETS, X), index_index(Indices, O) end || X = {_, O, _, _} <- Objects]),
         Fsync <- persist_fsync:start_link(
             ETS,
             xl_lists:kvfind(fsync_interval, Options, 5000),
@@ -40,7 +42,8 @@ open(Name, Identify, StoreModule, Options) ->
                     name = Name,
                     identify = Identify,
                     ets = ETS,
-                    fsync = Fsync
+                    fsync = Fsync,
+                    indices = Indices
         })
     ]).
 
@@ -49,9 +52,9 @@ close(#persister{fsync = Fsync}) ->
     persist_fsync:stop(Fsync).
 
 -spec store/2 :: (persister(), term()) -> ok.
-store(#persister{ets = ETS, identify = Id}, X) ->
+store(#persister{ets = ETS, identify = Id, indices = Indices}, X) ->
     true = ets:insert(ETS, {Id(X), X, xl_calendar:now_millis(), false}),
-    ok.
+    index_update(Indices, X).
 
 -spec select/1 :: (persister()) -> [term()].
 select(#persister{ets = ETS}) ->
@@ -81,8 +84,23 @@ changes(#persister{ets = ETS}, Since) ->
 -spec identify/2 :: (persister(), term()) -> xl_string:iostring().
 identify(#persister{identify = I}, X) -> I(X).
 
--spec(cursor(persister()) -> xl_stream:stream()).
+-spec(cursor(persister()) -> xl_stream:stream(term())).
 cursor(P) -> cursor(P, []).
+
+-spec(lookup(persister(), [{atom(), term()}]) -> xl_stream:stream(term())).
+lookup(P = #persister{indices = Indices}, Query) ->
+    case xl_stream:matchfilter(fun persist_index:matchfilter_comparator/2, index_lookup(Indices, Query)) of
+        [] -> xl_stream:empty();
+        Result ->
+            xl_stream:filter(fun(X) -> X /= undefined end,
+                xl_stream:map(fun([{_, Id, _} | _] = Values) ->
+                    case get(P, Id) of
+                        {ok, Obj} -> {Obj, Values};
+                        _ -> undefined
+                    end
+                end, Result)
+            )
+    end.
 
 -spec(cursor(persister(), [term()]) -> xl_stream:stream()).
 cursor(#persister{ets = ETS}, Options) ->
@@ -121,4 +139,18 @@ ets_cursor(ETS, Options) ->
 ets_cursor(ETS, Predicate, Options) -> xl_stream:filter(Predicate, ets_cursor(ETS, Options)).
 
 ets_changes(ETS, Since) -> ets_cursor(ETS, fun({_, _, Date, _}) -> Since =< Date end, []).
+
+index_index(Indices, Object) ->
+    lists:foreach(fun({_, Index}) -> persist_index:index(Index, Object) end, Indices).
+
+index_update(Indices, Object) ->
+    lists:foreach(fun({_, Index}) -> persist_index:update(Index, Object) end, Indices).
+
+index_lookup(Indices, Query) ->
+    lists:map(fun({Name, Value}) ->
+        case xl_lists:kvfind(Name, Indices) of
+            {ok, Index} -> persist_index:lookup(Index, Value);
+            undefined -> error({unknown_index, Name})
+        end
+    end, Query).
 

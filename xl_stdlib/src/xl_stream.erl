@@ -1,7 +1,7 @@
 -module(xl_stream).
 
 -export([stream/2, map/2, foreach/2, seq/2, foldl/3, filter/2, to_list/1, ifoldl/3, to_stream/1, to_pair/1, mapfind/2,
-    empty/0, to_random_stream/1, keyfilter/3, eforeach/2, to_rpc_stream/1, to_rpc_stream/2]).
+    empty/0, to_random_stream/1, keyfilter/3, eforeach/2, to_rpc_stream/1, to_rpc_stream/2, matchfilter/2]).
 
 -opaque(stream(A) :: fun(() -> [A | stream(A)])).
 -export_type([stream/1]).
@@ -128,3 +128,23 @@ to_rpc_stream(Node, S) ->
             E -> {E, []}
         end
     end).
+
+matchfilter(_F, [X]) -> map(fun(E) -> [E] end, to_stream(X));
+matchfilter(F, Lists) -> fun() -> matchfilter_next(F, Lists) end.
+
+matchfilter_next(_F, []) -> [];
+matchfilter_next(F, [[H1 | T1] | TL]) ->
+    case shift(F, H1, TL, {[], []}) of
+        nomatch -> [];
+        {next, Tails} -> matchfilter_next(F, [T1 | Tails]);
+        {Values, Tails} -> [[H1 | Values] | matchfilter(F, [T1 | Tails])]
+    end.
+
+shift(_F, _K, [], Acc) -> Acc;
+shift(_F, _K, [[] | _TL], _Acc) -> nomatch;
+shift(F, K, L = [[H | T] | TL], Acc = {Values, Tails}) ->
+    case F(K, H) of
+        eq -> shift(F, K, TL, {[H | Values], [T | Tails]});
+        gt -> shift(F, K, [T | TL], Acc);
+        _ -> {next, Tails ++ L}
+    end.

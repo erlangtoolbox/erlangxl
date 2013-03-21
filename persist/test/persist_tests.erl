@@ -43,7 +43,8 @@ persiste_fsync_test() ->
 open() ->
     persist:open(test, persist:by_index(#testobj.id),
         persist_storage_bin:new("/tmp/test/test"), [
-            {fsync_interval, 100}
+            {fsync_interval, 100},
+            {indices, [{name, fun(#testobj{id = Id, name = Name}) -> [{Name, Id, Id}] end}]}
         ]).
 
 cursor_test() ->
@@ -66,3 +67,17 @@ cursor_test() ->
 
     ?assertEqual(ok, persist:close(P)).
 
+
+indexed_lookup_test() ->
+    {ok, P} = open(),
+    L = lists:map(fun(I) -> #testobj{id = integer_to_list(I), name = integer_to_list(I rem 3)} end, lists:seq(1, 9)),
+
+    [persist:store(P, X) || X <- L],
+
+    ?assertEqual([
+        {#testobj{id = "2", name = "2"}, [{"2", "2", "2"}]},
+        {#testobj{id = "5", name = "2"}, [{"2", "5", "5"}]},
+        {#testobj{id = "8", name = "2"}, [{"2", "8", "8"}]}
+    ], xl_stream:to_list(persist:lookup(P, [{name, "2"}]))),
+
+    ?assertEqual(ok, persist:close(P)).

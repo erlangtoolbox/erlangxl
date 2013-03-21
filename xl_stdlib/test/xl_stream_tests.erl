@@ -21,7 +21,7 @@ foldl_test() ->
     ?assertEqual(lists:foldl(Sum, 0, lists:seq(1, 5)), xl_stream:foldl(Sum, 0, xl_stream:seq(1, 5))).
 
 to_random_stream_test() ->
-    L = lists:seq(1, 10),
+    L = lists:seq(1, 100),
     ?assertNotEqual(xl_stream:to_list(xl_stream:to_random_stream(L)), xl_stream:to_list(xl_stream:to_random_stream(L))),
     ?assertEqual(L, lists:sort(xl_stream:to_list(xl_stream:to_random_stream(L)))).
 
@@ -32,3 +32,18 @@ keyfilter_test() ->
 
 to_rpc_stream_test() ->
     ?assertEqual([{ok, 1}, {ok, 2}, {ok, 3}], xl_stream:to_list(xl_stream:to_rpc_stream(xl_stream:to_stream([1, 2, 3])))).
+
+matchfilter_test() ->
+    Cmp = fun
+        ({X, _}, {X, _}) -> eq;
+        ({X, _}, {Y, _}) when X > Y -> gt;
+        (_, _) -> lt
+    end,
+    ?assertEqual([[{3, 1}, {3, 3}, {3, 2}], [{7, 1}, {7, 2}, {7, 3}]], xl_stream:to_list(
+        xl_stream:matchfilter(Cmp, [
+            [{1, 1}, {3, 1}, {7, 1}, {8, 1}],
+            [{3, 2}, {7, 2}, {8, 2}],
+            [{1, 3}, {2, 3}, {3, 3}, {5, 3}, {7, 3}]
+        ])
+    )),
+    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_stream:to_list(xl_stream:matchfilter(Cmp, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]]))).
