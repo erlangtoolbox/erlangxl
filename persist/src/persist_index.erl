@@ -38,7 +38,7 @@ update(I = #persist_index{ets = ETS, ident = Ident}, Value) ->
 
 -spec(lookup(#persist_index{}, term()) -> [index_value()]).
 lookup(#persist_index{ets = ETS}, Key) ->
-    lists:sort(fun({_, Id1, _}, {_, Id2, _}) -> Id1 < Id2 end, ets:lookup(ETS, Key)).
+    lists:sort(fun({_, Id1, _}, {_, Id2, _}) -> Id1 < Id2 end, ets:lookup(ETS, Key) ++ ets:lookup(ETS, any)).
 
 matchfilter_comparator({_, X, _}, {_, X, _}) -> eq;
 matchfilter_comparator({_, X, _}, {_, Y, _}) when X > Y -> gt;
