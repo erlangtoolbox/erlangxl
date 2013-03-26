@@ -62,6 +62,19 @@ generate_field({Name, {list, Type, Default}}) when is_atom(Type), is_list(Defaul
 generate_field({Name, {list, {Module, Type}, Default}}) when is_atom(Module), is_atom(Type), is_list(Default) ->
     {ok, xl_string:format("~p = ~p", [Name, Default])};
 
+
+%dicts with defaults
+generate_field({Name, {dict, Type, {_Key, []}}}) when is_atom(Type) ->
+    {ok, xl_string:format("~p = gb_trees:empty() :: gb_tree()", [Name])};
+generate_field({Name, {dict, {Module, Type}, {_Key, []}}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = gb_trees:empty()", [Name])};
+
+%dicts
+generate_field({Name, {dict, Type, _Key}}) when is_atom(Type) ->
+    {ok, xl_string:format("~p = error({required, ~p}) :: gb_tree()", [Name, Name])};
+generate_field({Name, {dict, {Module, Type}, _Key}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = error({required, ~p}) :: gb_tree()", [Name, Name])};
+
 %options
 generate_field({Name, {option, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p :: option_m:monad(~p())", [Name, Type])};
@@ -100,7 +113,7 @@ generate_field({Name, {{Module, Type}, undefined}}) when is_atom(Module), is_ato
     {ok, xl_string:format("~p", [Name])};
 
 %wtf
-generate_field(D) -> {error, {record, dont_understand, D}}.
+generate_field(D) -> {error, {gen_record, dont_understand, D}}.
 
 generate_file(Path, Generate) ->
     io:format("Generate ~s~n", [Path]),
@@ -192,6 +205,10 @@ generate_to_json_field(RecordName, {Name, {list, {Module, Type}}}) when is_atom(
     {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([~p:to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Name, Module, RecordName, Name])};
 generate_to_json_field(RecordName, {Name, {list, {Module, Type}, _Default}}) when is_atom(Module), is_atom(Type) ->
     generate_to_json_field(RecordName, {Name, {list, {Module, Type}}});
+generate_to_json_field(RecordName, {Name, {dict, Type, _Opts}}) when is_atom(Type) ->
+    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([to_json(X)||X <- gb_trees:values(R#~p.~p)], \",\") ++ \"]\"", [Name, RecordName, Name])};
+generate_to_json_field(RecordName, {Name, {dict, {Module, Type}, _Opts}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([~p:to_json(X)||X <- gb_trees:values(R#~p.~p)], \",\") ++ \"]\"", [Name, Module, RecordName, Name])};
 generate_to_json_field(RecordName, {Name, Type}) when is_atom(Type) ->
     {ok, xl_string:format("\"\\\"~p\\\":\", to_json(R#~p.~p)", [Name, RecordName, Name])};
 generate_to_json_field(RecordName, {Name, {Type, undefined}}) when is_atom(Type) ->
@@ -200,7 +217,7 @@ generate_to_json_field(RecordName, {Name, {Module, Type}}) when is_atom(Module),
     {ok, xl_string:format("\"\\\"~p\\\":\", ~p:to_json(R#~p.~p)", [Name, Module, RecordName, Name])};
 generate_to_json_field(RecordName, {Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
     generate_to_json_field(RecordName, {Name, {Module, Type}});
-generate_to_json_field(_RecordName, Field) -> {error, {to_json, dont_understand, Field}}.
+generate_to_json_field(_RecordName, Field) -> {error, {gen_to_json, dont_understand, Field}}.
 
 generate_from_json(Records, Out) ->
     do([error_m ||
@@ -234,13 +251,17 @@ default_or_required({_Name, {list, {Module, Type}, Default}}) when is_atom(Modul
 default_or_required({_Name, {list, Type, Default}}) when is_atom(Type) -> Default;
 default_or_required({Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) -> {required, Name};
 default_or_required({Name, {list, Type}}) when is_atom(Type) -> {required, Name};
+default_or_required({_Name, {dict, {Module, Type}, {_Key, []}}}) when is_atom(Module), is_atom(Type) -> gb_trees:empty();
+default_or_required({_Name, {dict, Type, {_Key, []}}}) when is_atom(Type) -> gb_trees:empty();
+default_or_required({Name, {dict, {Module, Type}, _Opts}}) when is_atom(Module), is_atom(Type) -> {required, Name};
+default_or_required({Name, {dict, Type}, _Opts}) when is_atom(Type) -> {required, Name};
 default_or_required({_Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) -> undefined;
 default_or_required({_Name, {option, Type}}) when is_atom(Type) -> undefined;
 default_or_required({_Name, {Type, undefined}}) when is_atom(Type) -> undefined;
 default_or_required({Name, Type}) when is_atom(Type) -> {required, Name};
 default_or_required({_Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) -> undefined;
 default_or_required({Name, {Module, Type}}) when is_atom(Module), is_atom(Type) -> {required, Name};
-default_or_required(Field) -> {error, {default_or_required, dont_understand, Field}}.
+default_or_required(Field) -> {error, {gen_default_or_required, dont_understand, Field}}.
 
 generate_from_json_field(RecordName, {Name, Qualified = {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
@@ -272,6 +293,12 @@ generate_from_json_field(RecordName, {Name, {list, {Module, Type}}}) when is_ato
     generate_from_json_field(RecordName, {Name, {list, {Module, Type}, {required, Name}}});
 generate_from_json_field(RecordName, {Name, {list, Type}}) when is_atom(Type) ->
     generate_from_json_field(RecordName, {Name, {list, Type, {required, Name}}});
+
+generate_from_json_field(RecordName, {Name, Qualified = {dict, {Module, Type}, _Opts}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
+generate_from_json_field(RecordName, {Name, {dict, Type, Opts}}) when is_atom(Type) ->
+    {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, {dict, {?MODULE, ~p}, ~p})}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Type, Opts])};
+
 generate_from_json_field(RecordName, {Name, Qualified = {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
 generate_from_json_field(RecordName, {Name, {option, Type}}) when is_atom(Type) ->
@@ -284,7 +311,7 @@ generate_from_json_field(RecordName, {Name, {Qualified = {Module, Type}, undefin
     {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
 generate_from_json_field(RecordName, {Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
-generate_from_json_field(RecordName, Field) -> {error, {from_json, dont_understand, RecordName, Field}}.
+generate_from_json_field(RecordName, Field) -> {error, {gen_from_json, dont_understand, RecordName, Field}}.
 
 % runtime functions
 
@@ -370,17 +397,19 @@ cast({json, JsonApi}, V, any) -> JsonApi:to_abstract(V);
 cast({json, JsonApi}, V, {list, any}) when is_list(V) -> [JsonApi:to_abstract(X) || X <- V];
 cast({json, JsonApi}, V, {option, any}) -> {ok, JsonApi:to_abstract(V)};
 
-cast(proplist, V, any) -> V;
-cast(proplist, V, {list, any}) when is_list(V) -> V;
-cast(proplist, V, {option, any}) -> {ok, V};
+cast(Source, V, {dict, {Module, Record}, {Key, _}}) when is_list(V) -> cast(Source, V, {dict, {Module, Record}, Key});
+cast({json, JsonApi}, V, {dict, {Module, Record}, Key}) when is_list(V) ->
+    lists:foldl(fun(O, Tree) ->
+        Object = Module:from_json_(O, Record),
+        case JsonApi:get_value(Key, O) of
+            {ok, KeyValue} -> gb_trees:insert(KeyValue, Object, Tree);
+            _ -> error({cannot_cast_no_key_field, O, {Module, Record}})
+        end
 
+    end, gb_trees:empty(), V);
 cast({json, _JsonApi}, V, {list, {Module, Record}}) when is_list(V) -> [Module:from_json_(O, Record) || O <- V];
 cast({json, _JsonApi}, V, {option, {Module, Record}}) -> {ok, Module:from_json_(V, Record)};
 cast({json, _JsonApi}, V, {Module, Record}) -> Module:from_json_(V, Record);
-
-%% cast(proplist, V, {list, {Module, Record}}) when is_list(V) -> [Module:from_proplist_(O, Record) || O <- V];
-cast(proplist, V, {option, {Module, Record}}) -> {ok, Module:from_proplist_(V, Record)};
-cast(proplist, V, {Module, Record}) -> Module:from_proplist_(V, Record);
 
 cast(_Source, Value, Type) -> error({cannot_cast, Value, Type}).
 
@@ -440,17 +469,9 @@ cast(_Source, {ok, <<"false">>}, boolean, _Default) -> false;
 cast(_Source, {ok, V}, {list, boolean}, _Default) when is_list(V) -> V;
 cast(_Source, {ok, V}, {option, boolean}, _Default) when V == true; V == false -> {ok, V};
 
-cast({json, JsonApi}, {ok, V}, any, _Default) -> JsonApi:to_abstract(V);
-cast({json, JsonApi}, {ok, V}, {list, any}, _Default) when is_list(V) -> [JsonApi:to_abstract(X) || X <- V];
-cast({json, JsonApi}, {ok, V}, {option, any}, _Default) -> {ok, JsonApi:to_abstract(V)};
-
 cast(proplist, {ok, V}, any, _Default) -> V;
 cast(proplist, {ok, V}, {list, any}, _Default) when is_list(V) -> V;
 cast(proplist, {ok, V}, {option, any}, _Default) -> {ok, V};
-
-cast({json, _JsonApi}, {ok, V}, {list, {Module, Record}}, _Default) when is_list(V) -> [Module:from_json_(O, Record) || O <- V];
-cast({json, _JsonApi}, {ok, V}, {option, {Module, Record}}, _Default) -> {ok, Module:from_json_(V, Record)};
-cast({json, _JsonApi}, {ok, V}, {Module, Record}, _Default) -> Module:from_json_(V, Record);
 
 %% cast(proplist, {ok, V}, {list, {Module, Record}}, _Default) when is_list(V) -> [Module:from_proplist_(O, Record) || O <- V];
 cast(proplist, {ok, V}, {option, {Module, Record}}, _Default) -> {ok, Module:from_proplist_(V, Record)};
@@ -510,6 +531,16 @@ generate_from_proplist_field({Name, {list, {Module, Type}}}) when is_atom(Module
     generate_from_proplist_field({Name, {list, {Module, Type}, {required, Name}}});
 generate_from_proplist_field({Name, {list, Type}}) when is_atom(Type) ->
     generate_from_proplist_field({Name, {list, Type, {required, Name}}});
+
+generate_from_proplist_field({Name, Qualified = {dict, {Module, Type}, {_, Default}}}) when is_atom(Module), is_atom(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), ~p, ~p)", [Name, Name, Qualified, Default])};
+generate_from_proplist_field({Name, Qualified = {dict, Type, {_, Default}}}) when is_atom(Type) ->
+    {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, xl_lists:kvfind(~p, J), {list, {?MODULE, ~p}}, ~p)", [Name, Name, Qualified, Default])};
+generate_from_proplist_field({Name, {dict, {Module, Type}, Key}}) when is_atom(Module), is_atom(Type) ->
+    generate_from_proplist_field({Name, {dict, {Module, Type}, {Key, {required, Name}}}});
+generate_from_proplist_field({Name, {dict, Type, Key}}) when is_atom(Type) ->
+    generate_from_proplist_field({Name, {dict, Type, {Key, {required, Name}}}});
+
 generate_from_proplist_field({Name, Qualified = {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, undefined])};
 generate_from_proplist_field({Name, {option, Type}}) when is_atom(Type) ->
@@ -522,4 +553,4 @@ generate_from_proplist_field({Name, {Qualified = {Module, Type}, undefined}}) wh
     {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, undefined])};
 generate_from_proplist_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, {required, Name}])};
-generate_from_proplist_field(Field) -> {error, {from_proplist, dont_understand, Field}}.
+generate_from_proplist_field(Field) -> {error, {gen_from_proplist, dont_understand, Field}}.

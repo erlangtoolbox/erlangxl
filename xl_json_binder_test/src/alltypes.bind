@@ -181,3 +181,10 @@
     {integer_or_float, {either, [integer, float]}},
     {float_or_atom, {either, [float, atom]}}
 ]}.
+
+{dicts, [
+    {record, {dict, primitives, integer}},
+    {record_def, {dict, primitives, {integer, []}}},
+    {record_qualified, {dict, {alltypes, primitives}, integer}},
+    {record_qualified_def, {dict, {alltypes, primitives}, {integer, []}}}
+]}.
