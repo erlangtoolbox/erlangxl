@@ -3,7 +3,7 @@
 -export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
     sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
-    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2, mapfind/2, set/1, union/2, count/2, times/2, etimes/2]).
+    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2, mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -235,3 +235,12 @@ count(Predicate, [H | T], Acc) ->
 times(Fun, Count) -> lists:foreach(Fun, lists:seq(1, Count)).
 
 etimes(Fun, Count) -> eforeach(Fun, lists:seq(1, Count)).
+
+%% todo make it parse_trasform over [||]
+-spec(transform(atom(), fun((term())-> term()), [term()]) -> term()).
+transform(TargetStruct, NodeFun, List) ->
+    lists:foldl(fun(X, S) -> transform_add(TargetStruct, NodeFun(X), S) end, transform_init(TargetStruct), List).
+
+transform_init(gb_tree) -> gb_trees:empty().
+
+transform_add(gb_tree, {Key, Value}, Tree) -> gb_trees:insert(Key, Value, Tree).

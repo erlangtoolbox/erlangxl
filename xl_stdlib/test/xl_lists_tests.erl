@@ -123,3 +123,7 @@ union_test() ->
     ?assertEqual([a, b, c, d], xl_lists:union([a, b, c], [a, b, d])),
     ?assertEqual([a, b, c, d], xl_lists:union([a, b, b, c], [a, b, d, d])),
     ?assertEqual([a, b, c, d], xl_lists:union([a, b, d, d], [a, b, b, c])).
+
+transform_gb_tree_test() ->
+    Expected = gb_trees:insert(3, c, gb_trees:insert(2, b, gb_trees:insert(1, a, gb_trees:empty()))),
+    ?assertEqual(Expected, xl_lists:transform(gb_tree, fun(X) -> X end, [{1, a}, {2, b}, {3, c}])).
