@@ -2,7 +2,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--export([resource/2, explode/3, performance/3, format/2]).
+-export([resource/2, explode/3, performance/3, format/2, format/1]).
 
 resource(Module, Name) -> within(Module, fun(Path) -> filename:join(Path, Name) end).
 
@@ -29,3 +29,6 @@ performance(Name, Fun, Count) ->
 
 -spec(format(string(), [term()]) -> ok).
 format(Format, Args) -> io:format(user, Format, Args).
+
+-spec(format(string()) -> ok).
+format(Format) -> format(Format, []).
