@@ -46,7 +46,8 @@ matchfilter_test() ->
             [{1, 3}, {2, 3}, {3, 3}, {5, 3}, {7, 3}]
         ])
     )),
-    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_stream:to_list(xl_stream:matchfilter(Cmp, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]]))).
+    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_stream:to_list(xl_stream:matchfilter(Cmp, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]]))),
+    ?assertEqual([], xl_stream:to_list(xl_stream:matchfilter(Cmp, [[], []]))).
 
 concat_test() ->
     ?assertEqual([1, 2, 3, 4, 5, 6], xl_stream:to_list(xl_stream:concat([

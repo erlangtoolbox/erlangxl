@@ -133,6 +133,7 @@ matchfilter(_F, [X]) -> map(fun(E) -> [E] end, to_stream(X));
 matchfilter(F, Lists) -> {?MODULE, fun() -> matchfilter_next(F, Lists) end}.
 
 matchfilter_next(_F, []) -> [];
+matchfilter_next(_F, [[] | _]) -> [];
 matchfilter_next(F, [[H1 | T1] | TL]) ->
     case shift(F, H1, TL, {[], []}) of
         nomatch -> [];

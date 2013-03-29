@@ -95,7 +95,7 @@ lookup(P = #persister{indices = Indices}, Query) ->
             xl_stream:filter(fun(X) -> X /= undefined end,
                 xl_stream:map(fun([{_, Id, _} | _] = Values) ->
                     case get(P, Id) of
-                        {ok, Obj} -> {Obj, Values};
+                        {ok, Obj} -> {Obj, lists:zip(lists:map(fun({Name, _}) -> Name end, Indices), lists:map(fun({_, _, Context}) -> Context end, Values))};
                         _ -> undefined
                     end
                 end, Result)

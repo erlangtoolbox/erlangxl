@@ -44,7 +44,10 @@ open() ->
     persist:open(test, persist:by_index(#testobj.id),
         persist_storage_bin:new("/tmp/test/test"), [
             {fsync_interval, 100},
-            {indices, [{name, fun(#testobj{id = Id, name = Name}) -> [{Name, Id, Id}] end}]}
+            {indices, [
+                {name, fun(#testobj{id = Id, name = Name}) -> [{Name, Id, Id}] end},
+                {name2, fun(#testobj{id = Id, name = Name}) -> [{Name, Id, Id}] end}
+            ]}
         ]).
 
 cursor_test() ->
@@ -75,9 +78,9 @@ indexed_lookup_test() ->
     [persist:store(P, X) || X <- L],
 
     ?assertEqual([
-        {#testobj{id = "2", name = "2"}, [{"2", "2", "2"}]},
-        {#testobj{id = "5", name = "2"}, [{"2", "5", "5"}]},
-        {#testobj{id = "8", name = "2"}, [{"2", "8", "8"}]}
-    ], xl_stream:to_list(persist:lookup(P, [{name, "2"}]))),
+        {#testobj{id = "2", name = "2"}, [{name, "2"}, {name2, "2"}]},
+        {#testobj{id = "5", name = "2"}, [{name, "5"}, {name2, "5"}]},
+        {#testobj{id = "8", name = "2"}, [{name, "8"}, {name2, "8"}]}
+    ], xl_stream:to_list(persist:lookup(P, [{name, "2"}, {name2, "2"}]))),
 
     ?assertEqual(ok, persist:close(P)).
