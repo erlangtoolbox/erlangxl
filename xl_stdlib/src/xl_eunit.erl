@@ -24,7 +24,7 @@ performance(Name, Fun, Count) ->
         lists:foreach(Fun, Times)
     end),
     Xps = Count / Time * 1000000,
-    erlang:display({Name, Count / Time * 1000000, x_per_sec}),
+    xl_eunit:format("PERFORMANCE ~s: ~.1f op/s~n", [Name, Count / Time * 1000000]),
     Xps.
 
 -spec(format(string(), [term()]) -> ok).

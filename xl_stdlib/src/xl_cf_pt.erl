@@ -6,9 +6,9 @@
 -export([parse_transform/2]).
 
 parse_transform(Forms, _Options) ->
-    erlang:display(Forms),
+%%     erlang:display(Forms),
     Forms1 = forms(Forms),
-    erlang:display(Forms1),
+%%     erlang:display(Forms1),
     Forms1.
 
 %% forms(Fs) -> lists:map(fun (F) -> form(F) end, Fs).

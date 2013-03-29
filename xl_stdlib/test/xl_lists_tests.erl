@@ -127,3 +127,18 @@ union_test() ->
 transform_gb_tree_test() ->
     Expected = gb_trees:insert(3, c, gb_trees:insert(2, b, gb_trees:insert(1, a, gb_trees:empty()))),
     ?assertEqual(Expected, xl_lists:transform(gb_tree, fun(X) -> X end, [{1, a}, {2, b}, {3, c}])).
+
+gb_tree_vs_random_access_list_test() ->
+    Counts = xl_lists:seq(1, 10, 0.5, fun(X) -> round(math:exp(X)) end),
+    lists:foreach(fun(Count) ->
+        T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
+        xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_list, '#', Count]), fun(_) ->
+            {ok, _} = xl_lists:keyfind(random:uniform(Count), 1, T)
+        end, 100)
+    end, Counts),
+    lists:foreach(fun(Count) ->
+        T = xl_lists:transform(gb_tree, fun(X) -> {X, X} end, lists:seq(1, Count)),
+        xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_tree, '#', Count]), fun(_) ->
+            {value, _} = gb_trees:lookup(random:uniform(Count), T)
+        end, 1000)
+    end, Counts).
