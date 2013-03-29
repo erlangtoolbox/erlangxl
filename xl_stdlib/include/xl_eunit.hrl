@@ -8,17 +8,15 @@ end).
     ((fun(X) ->
         case X of
             ok -> ok;
-            _ ->
-                case element(1, X) of
-                    ok -> ok;
-                    _ -> erlang:error({assertOk_failed, X})
-                end
+            _ when element(1, X) == ok -> ok;
+            _ -> erlang:error({assertOk_failed, X})
         end
     end)(Expr))
 ).
 
--define(assertEquals(Expect, Expr),
+-define(assertEquals(ExpectExpr, Expr),
     ((fun(X) ->
+        Expect = ExpectExpr,
         case X of
             Expect -> ok;
             Value ->
