@@ -89,13 +89,14 @@ cursor(P) -> cursor(P, []).
 
 -spec(lookup(persister(), [{atom(), term()}]) -> xl_stream:stream(term())).
 lookup(P = #persister{indices = Indices}, Query) ->
-    case xl_stream:matchfilter(fun persist_index:matchfilter_comparator/2, index_lookup(Indices, Query)) of
+    {IndexNames, IndexData} = lists:unzip(index_lookup(Indices, Query)),
+    case xl_stream:matchfilter(fun persist_index:matchfilter_comparator/2, IndexData) of
         [] -> xl_stream:empty();
         Result ->
             xl_stream:filter(fun(X) -> X /= undefined end,
                 xl_stream:map(fun([{_, Id, _} | _] = Values) ->
                     case get(P, Id) of
-                        {ok, Obj} -> {Obj, lists:zip(lists:map(fun({Name, _}) -> Name end, Indices), lists:map(fun({_, _, Context}) -> Context end, Values))};
+                        {ok, Obj} -> {Obj, lists:zip(IndexNames, lists:map(fun({_, _, Context}) -> Context end, Values))};
                         _ -> undefined
                     end
                 end, Result)
@@ -149,7 +150,7 @@ index_update(Indices, Object) ->
 index_lookup(Indices, Query) ->
     lists:map(fun({Name, Value}) ->
         case xl_lists:kvfind(Name, Indices) of
-            {ok, Index} -> persist_index:lookup(Index, Value);
+            {ok, Index} -> {Name, persist_index:lookup(Index, Value)};
             undefined -> error({unknown_index, Name})
         end
     end, Query).
