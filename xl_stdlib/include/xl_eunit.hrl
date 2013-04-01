@@ -1,3 +1,4 @@
+%% Copyright
 -define(assertFilesEqual(File1, File2), begin
     ?assertEquals({ok, true}, xl_file:exists(File1)),
     ?assertEquals({ok, true}, xl_file:exists(File2)),

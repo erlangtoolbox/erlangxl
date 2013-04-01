@@ -1,3 +1,4 @@
+%% Copyright
 {application, persist, [
 	{description, "tiny inmemory DB with async fsync"},
 	{modules, []},

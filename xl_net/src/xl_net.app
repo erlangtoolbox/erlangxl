@@ -1,3 +1,4 @@
+%% Copyright
 {application, xl_net, [
     {description, "ErlangXL Net Extentions"},
     {vsn,"0.1.0"},

@@ -1,3 +1,4 @@
+%% Copyright
 {application, xl_json, [
     {description, "xl_json"},
     {vsn,"0.1.0"},
