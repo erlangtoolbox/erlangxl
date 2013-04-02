@@ -85,18 +85,18 @@ cursor_test() ->
     [persist:store(P, X) || X <- L],
 
     lists:foreach(fun(_) ->
-        ?assertEqual(length(L), length(xl_stream:to_list(persist:cursor(P, [random]))))
+        ?assertEquals(length(L), length(xl_stream:to_list(persist:cursor(P, [random]))))
     end, lists:seq(1, 100)),
 
     ?assertNotEqual(xl_stream:to_list(persist:cursor(P, [random])), xl_stream:to_list(persist:cursor(P, [random]))),
 
     Compare = fun(#testobj{id = Id1}, #testobj{id = Id2}) -> Id1 < Id2 end,
-    ?assertEqual(L, lists:sort(Compare, xl_stream:to_list(persist:cursor(P, [random])))),
+    ?assertEquals(L, lists:sort(Compare, xl_stream:to_list(persist:cursor(P, [random])))),
 
     persist:delete(P, "1"),
     ?assertEquals(T, xl_stream:to_list(persist:cursor(P))),
 
-    ?assertEqual(ok, persist:close(P)).
+    ?assertEquals(ok, persist:close(P)).
 
 
 indexed_lookup_test() ->

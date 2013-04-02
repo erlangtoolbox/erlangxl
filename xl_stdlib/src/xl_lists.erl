@@ -31,7 +31,7 @@
 -export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
     sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
-    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2, mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4]).
+    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2, mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -275,3 +275,25 @@ transform_add(gb_tree, {Key, Value}, Tree) -> gb_trees:insert(Key, Value, Tree).
 
 seq(Start, Stop, Step, F) when Start =< Stop -> [F(Start) | seq(Start + Step, Stop, Step, F)];
 seq(_Start, _Stop, _Step, _F) -> [].
+
+
+matchfilter(_F, [X]) -> lists:map(fun(E) -> [E] end, X);
+matchfilter(F, Lists) -> matchfilter_next(F, Lists).
+
+matchfilter_next(_F, []) -> [];
+matchfilter_next(_F, [[] | _]) -> [];
+matchfilter_next(F, [[H1 | T1] | TL]) ->
+    case shift(F, H1, TL, {[], []}) of
+        nomatch -> [];
+        {next, Tails} -> matchfilter_next(F, [T1 | Tails]);
+        {Values, Tails} -> [[H1 | Values] | matchfilter(F, [T1 | Tails])]
+    end.
+
+shift(_F, _K, [], Acc) -> Acc;
+shift(_F, _K, [[] | _TL], _Acc) -> nomatch;
+shift(F, K, L = [[H | T] | TL], Acc = {Values, Tails}) ->
+    case F(K, H) of
+        eq -> shift(F, K, TL, {[H | Values], [T | Tails]});
+        gt -> shift(F, K, [T | TL], Acc);
+        _ -> {next, Tails ++ L}
+    end.

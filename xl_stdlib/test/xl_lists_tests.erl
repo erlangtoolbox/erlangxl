@@ -170,3 +170,17 @@ gb_tree_vs_random_access_list_test() ->
             {value, _} = gb_trees:lookup(random:uniform(Count), T)
         end, 1000)
     end, Counts).
+
+matchfilter_test() ->
+    Cmp = fun
+        ({X, _}, {X, _}) -> eq;
+        ({X, _}, {Y, _}) when X > Y -> gt;
+        (_, _) -> lt
+    end,
+    ?assertEqual([[{3, 1}, {3, 3}, {3, 2}], [{7, 1}, {7, 2}, {7, 3}]], xl_lists:matchfilter(Cmp, [
+        [{1, 1}, {3, 1}, {7, 1}, {8, 1}],
+        [{3, 2}, {7, 2}, {8, 2}],
+        [{1, 3}, {2, 3}, {3, 3}, {5, 3}, {7, 3}]
+    ])),
+    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_lists:matchfilter(Cmp, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]])),
+    ?assertEqual([], xl_lists:matchfilter(Cmp, [[], []])).
