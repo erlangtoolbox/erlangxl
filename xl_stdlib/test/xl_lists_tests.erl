@@ -178,4 +178,5 @@ matchfilter_test() ->
         [{1, 3}, {2, 3}, {3, 3}, {5, 3}, {7, 3}]
     ])),
     ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_lists:matchfilter(fun xl_lists:key_comparator/2, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]])),
-    ?assertEqual([], xl_lists:matchfilter(fun xl_lists:key_comparator/2, [[], []])).
+    ?assertEqual([], xl_lists:matchfilter(fun xl_lists:key_comparator/2, [[], []])),
+    ?assertEqual([[1], [3]], xl_lists:matchfilter(fun xl_lists:value_comparator/2, [[1, 3]])).
