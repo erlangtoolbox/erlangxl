@@ -93,7 +93,7 @@ substitute(Str, Map) -> substitute(Str, Map, {${, $}}).
 -spec(substitute(string(), xl_lists:kvlist_at(), {char(), char()}) -> string()).
 substitute(Str, Map, Braces) when is_list(Str) -> binary_to_list(substitute(list_to_binary(Str), Map, Braces));
 substitute(Str, Map, {Open, Close}) ->
-    Parts = re:split(Str, format("(\\\~s[a-zA-Z0-9_\\.:-]+\\\~s)", [[Open], [Close]]), [{return, binary}, trim]),
+    Parts = xl_re:split(Str, <<"(\\", Open, "[a-zA-Z0-9_\\.:-]+\\", Close, ")">>, [{return, binary}, trim]),
     join([replace_macro(X, Map, {Open, Close}) || X <- Parts], <<>>).
 
 -spec(replace_macro(string(), xl_lists:kvlist_at(), {char(), char()}) -> string()).
@@ -156,7 +156,7 @@ join([H | T], Acc, Delim) when is_list(Delim) ->
 to_binary(X) -> xl_convert:to_binary(X).
 
 -spec(to_integer(iostring() | atom() | binary()) -> integer()).
-to_integer(X) -> xl_conver:to_integer(X).
+to_integer(X) -> xl_convert:to_integer(X).
 
 -spec(generate_uuid() -> binary()).
 generate_uuid() ->

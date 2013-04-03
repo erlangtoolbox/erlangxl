@@ -30,6 +30,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 -include("xl_lang.hrl").
+-include("xl_eunit.hrl").
 
 strip_test() ->
     ?assertEqual("a b\tc", xl_string:strip(" \ta b\tc \r\n")).
@@ -41,6 +42,7 @@ stripthru_test() ->
     ?assertEqual("abc\"\\n\"", xl_string:stripthru("a\tb\nc\"\\n\"")).
 
 substitute_test() ->
+    application:start(xl_stdlib),
     ?assertEqual(<<"xyz1">>,
         xl_string:substitute(<<"x@a_a@z@b-b@">>, [{a_a, "y"}, {'b-b', 1}], {$@, $@})),
     ?assertEqual("xyz1",
@@ -57,6 +59,20 @@ substitute_test() ->
         xl_string:substitute("x{a.b}", [{'a.b', "y"}])),
     ?assertEqual("xyz{}",
         xl_string:substitute("x{a}z{}", [{a, "y"}])).
+
+substitute_performance_test() ->
+    application:start(xl_stdlib),
+    Text = <<"@IMPRESSION_ID@aaaaaa@PLATFORM-ID-MD5@sdfsdfs@PLATFORM-ID-SHA1@sadasd@MOBILE-ID-MD5@%#$%#$@MOBILE-ID-SHA1@">>,
+    Map = [
+        {'IMPRESSION_ID', "12312.3221312.123123123"},
+        {'PLATFORM-ID-MD5', "12312.3221312.123123123"},
+        {'PLATFORM-ID-SHA1', "12312.3221312.123123123"},
+        {'MOBILE-ID-MD5', "12312.3221312.123123123"},
+        {'MOBILE-ID-SHA1', "12312.3221312.123123123"}
+    ],
+    xl_eunit:performance(substitute, fun() ->
+        ?assertEquals(<<"12312.3221312.123123123aaaaaa12312.3221312.123123123sdfsdfs12312.3221312.123123123sadasd12312.3221312.123123123%#$%#$12312.3221312.123123123">>, xl_string:substitute(Text, Map, {$@, $@}))
+    end, 10000).
 
 equal_ignore_case_test() ->
     ?assert(xl_string:equal_ignore_case(<<"A">>, <<"a">>)),
@@ -77,16 +93,16 @@ join_performance_test() ->
     MixedBinaries = [<<"a">>, 1, <<"b">>, 2.3, c, <<"a">>, 1, <<"b">>, 2.3, c, <<"a">>, 1, <<"b">>, 2.3, c],
     Strings = ["a", "b", "a", "b", "a", "b"],
     Binaries = [<<"a">>, <<"b">>, <<"a">>, <<"b">>, <<"a">>, <<"b">>],
-    MixedStringsXps = xl_eunit:performance("mixed strings", fun(_) ->
+    MixedStringsXps = xl_eunit:performance("mixed strings", fun() ->
         xl_string:join(MixedStrings, "")
     end, 10000),
-    MixedBinariesXps = xl_eunit:performance("mixed binaries", fun(_) ->
+    MixedBinariesXps = xl_eunit:performance("mixed binaries", fun() ->
         xl_string:join(MixedBinaries, <<"">>)
     end, 10000),
-    StringsXps = xl_eunit:performance("strings", fun(_) ->
+    StringsXps = xl_eunit:performance("strings", fun() ->
         xl_string:join(Strings, "")
     end, 10000),
-    BinariesXps = xl_eunit:performance("binaries", fun(_) ->
+    BinariesXps = xl_eunit:performance("binaries", fun() ->
         xl_string:join(Binaries, <<"">>)
     end, 10000),
     ?assert(MixedBinariesXps > MixedStringsXps),

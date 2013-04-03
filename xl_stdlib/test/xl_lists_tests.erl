@@ -76,11 +76,12 @@ sublistmatch_perf_test() ->
     Pattern = [{a, 1}, {b, ".+"}],
     List = [{a, 1}, {x, y}, {b, "aaa"}],
     Count = 100000,
-    xl_eunit:performance(regex, fun(_) -> xl_lists:sublistmatch(Pattern, List) end, Count),
+    xl_eunit:performance(regex, fun() -> xl_lists:sublistmatch(Pattern, List) end, Count),
     Pattern2 = [{a, 1}, {b, not_empty}],
-    xl_eunit:performance(atom, fun(_) -> xl_lists:sublistmatch(Pattern2, List) end, Count).
+    xl_eunit:performance(atom, fun() -> xl_lists:sublistmatch(Pattern2, List) end, Count).
 
 substitute_test() ->
+    application:start(xl_stdlib),
     Pattern = [a, 1, "c{b}c", "c"],
     List = [{a, "1"}, {b, "x"}, {"c", 2}],
     ?assertEqual(["1", 1, "cxc", 2],
@@ -160,13 +161,13 @@ gb_tree_vs_random_access_list_test() ->
     Counts = xl_lists:seq(1, 10, 0.5, fun(X) -> round(math:exp(X)) end),
     lists:foreach(fun(Count) ->
         T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
-        xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_list, '#', Count]), fun(_) ->
+        xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_list, '#', Count]), fun() ->
             {ok, _} = xl_lists:keyfind(random:uniform(Count), 1, T)
-        end, 100)
+        end, 1000)
     end, Counts),
     lists:foreach(fun(Count) ->
         T = xl_lists:transform(gb_tree, fun(X) -> {X, X} end, lists:seq(1, Count)),
-        xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_tree, '#', Count]), fun(_) ->
+        xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_tree, '#', Count]), fun() ->
             {value, _} = gb_trees:lookup(random:uniform(Count), T)
         end, 1000)
     end, Counts).

@@ -32,8 +32,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 keys_test() ->
-    application:start(sasl),
-    erlang:display(application:start(xl_stdlib)),
+    application:start(xl_stdlib),
     xl_state:new(test),
     xl_state:set(test, a, a),
     xl_state:set(test, b, b),

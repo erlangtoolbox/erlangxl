@@ -30,7 +30,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--export([resource/2, explode/3, performance/3, format/2, format/1]).
+-export([resource/2, explode/3, performance/3, format/2, format/1, profile/3]).
 
 resource(Module, Name) -> within(Module, fun(Path) -> filename:join(Path, Name) end).
 
@@ -47,9 +47,8 @@ within(Module, Fun) ->
     end.
 
 performance(Name, Fun, Count) ->
-    Times = lists:seq(0, Count),
     {Time, _} = timer:tc(fun() ->
-        lists:foreach(Fun, Times)
+        xl_lists:times(Fun, Count)
     end),
     Xps = Count / Time * 1000000,
     xl_eunit:format("PERFORMANCE ~s: ~.1f op/s~n", [Name, Count / Time * 1000000]),
@@ -60,3 +59,10 @@ format(Format, Args) -> io:format(user, Format, Args).
 
 -spec(format(string()) -> ok).
 format(Format) -> format(Format, []).
+
+profile(Name, Fun, Count) ->
+    fprof:trace(start),
+    performance(Name, Fun, Count),
+    fprof:trace(stop),
+    fprof:profile(),
+    fprof:analyse(dest, xl_string:format("/tmp/~s.analysis", [Name])).

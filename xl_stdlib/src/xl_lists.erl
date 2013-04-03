@@ -260,7 +260,9 @@ count(Predicate, [H | T], Acc) ->
         _ -> count(Predicate, T, Acc)
     end.
 
-times(Fun, Count) -> lists:foreach(Fun, lists:seq(1, Count)).
+times(Fun, Count) when is_function(Fun, 1) -> lists:foreach(Fun, lists:seq(1, Count));
+times(_Fun, 0) -> ok;
+times(Fun, Count) -> Fun(), times(Fun, Count - 1).
 
 etimes(Fun, Count) -> eforeach(Fun, lists:seq(1, Count)).
 

@@ -41,7 +41,7 @@ format_test() ->
     ?assertEqual(undefined, xl_calendar:format("yyyy-MM-dd HH-mm-ss", undefined, binary)).
 
 format_perf_test() ->
-    xl_eunit:performance(format, fun(_) ->
+    xl_eunit:performance(format, fun() ->
         xl_calendar:format("EEE, dd-MMM-yyyy HH:mm:ss GMT", {{1970, 2, 1}, {0, 0, 1}})
     end, 100000).
 

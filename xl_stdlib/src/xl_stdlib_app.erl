@@ -38,6 +38,7 @@
 start(_Type, _Args) ->
     xl_state:start_link(),
     xl_uid:start(),
+    xl_re:start(),
     xl_stdlib_sup:start_link().
 
 stop(_State) -> ok.

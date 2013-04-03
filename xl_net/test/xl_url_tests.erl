@@ -40,6 +40,7 @@ escape_params_test() ->
         xl_url:escape_params([{a, "a+b"}])).
 
 substitute_test() ->
+    application:start(xl_stdlib),
     ?assertEqual("http://strikead.com?a=a%2bb",
         xl_url:substitute("http://strikead.com?a={a}", [{a, "a+b"}])).
 
