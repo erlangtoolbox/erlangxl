@@ -74,6 +74,12 @@ generate_records(Records, Out) ->
     Default == undefined, Type == any
 ).
 
+%private
+generate_field({Name, private}) ->
+    {ok, xl_string:format("~p", [Name])};
+generate_field({Name, {private, Default}}) ->
+    {ok, xl_string:format("~p = ~p", [Name, Default])};
+
 %lists
 generate_field({Name, {list, Type}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("~p = error({required, ~p}) :: [~p()]", [Name, Name, Type])};
@@ -189,11 +195,18 @@ generate_module(Records, Name, Out) ->
         generate_from_proplist(Records, Out)
     ]).
 
+serializable_fields(Fields) ->
+    lists:filter(fun
+        ({_, private}) -> false;
+        ({_, {private, _}}) -> false;
+        (_) -> true
+    end, Fields).
+
 generate_to_json(Records, Out) ->
     do([error_m ||
         Functions <- xl_lists:emap(fun({RecordName, Fields}) ->
             do([error_m ||
-                Generated <- xl_lists:emap(fun(Field) -> generate_to_json_field(RecordName, Field) end, Fields),
+                Generated <- xl_lists:emap(fun(Field) -> generate_to_json_field(RecordName, Field) end, serializable_fields(Fields)),
                 return(
                     xl_string:format(
                         "to_json(R=#~p{}) ->\n\txl_string:join([\"{\",\n~s\n\t\"}\"])", [RecordName,
@@ -251,7 +264,7 @@ generate_from_json(Records, Out) ->
     do([error_m ||
         Functions <- xl_lists:emap(fun({RecordName, Fields}) ->
             do([error_m ||
-                Generated <- xl_lists:emap(fun(Field) -> generate_from_json_field(RecordName, Field) end, Fields),
+                Generated <- xl_lists:emap(fun(Field) -> generate_from_json_field(RecordName, Field) end, serializable_fields(Fields)),
                 return(
                     xl_string:format("from_json_(J, ~p) ->\n\tR = ?JSON_API:bind(fun\n\t\t~s\n\t;(_, _, T)-> T end, ~p, J),\n\txl_json_bindc:check_required(R),\n\tR", [
                         RecordName,
@@ -264,6 +277,8 @@ generate_from_json(Records, Out) ->
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
+default_or_required({_Name, private}) -> undefined;
+default_or_required({_Name, {private, Default}}) -> Default;
 default_or_required({Name, {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) -> {required, Name};
 default_or_required({Name, {either, _Types}}) -> {required, Name};
 default_or_required({_Name, {enum, {Type, Default}, _Enumeration}}) when ?is_primitive_type(Type) -> Default;
@@ -289,7 +304,7 @@ default_or_required({_Name, {Type, undefined}}) when is_atom(Type) -> undefined;
 default_or_required({Name, Type}) when is_atom(Type) -> {required, Name};
 default_or_required({_Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) -> undefined;
 default_or_required({Name, {Module, Type}}) when is_atom(Module), is_atom(Type) -> {required, Name};
-default_or_required(Field) -> {error, {gen_default_or_required, dont_understand, Field}}.
+default_or_required(_Field) -> undefined.
 
 generate_from_json_field(RecordName, {Name, Qualified = {enum, Type, _Enumeration}}) when ?is_primitive_type(Type) ->
     {ok, xl_string:format("(~p, Value, T) -> T#~p{~p = xl_json_bindc:cast({json, ?JSON_API}, Value, ~p)}", [?JSON_API:field_name_presentation(Name), RecordName, Name, Qualified])};
@@ -517,7 +532,7 @@ generate_from_proplist(Records, Out) ->
     do([error_m ||
         Functions <- xl_lists:emap(fun({RecordName, Fields}) ->
             do([error_m ||
-                Generated <- xl_lists:emap(fun(Field) -> generate_from_proplist_field(Field) end, Fields),
+                Generated <- xl_lists:emap(fun(Field) -> generate_from_proplist_field(Field) end, serializable_fields(Fields)),
                 return(
                     xl_string:format(
                         "from_proplist_(J, ~p) ->\n\t#~p{\n~s\n\t}",

@@ -26,7 +26,10 @@
 
     {any, any},
     {any_undef, {any, undefined}},
-    {any_def, {any, [{a, <<"b">>}]}}
+    {any_def, {any, [{a, <<"b">>}]}},
+
+    {private, private},
+    {private_def, {private, []}}
 ]}.
 
 {lists, [
