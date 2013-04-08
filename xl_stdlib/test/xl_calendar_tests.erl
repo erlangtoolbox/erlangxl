@@ -84,3 +84,14 @@ diff_days_test() ->
     ?assertEqual(1, xl_calendar:diff_days({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 23}, {8, 0, 0}}, ['Sat', 'Mon', 'Wed'])).
 
 
+weekdays_member_test() ->
+    ?assert(xl_calendar:weekdays_member('Tue', ['Mon', 'Tue'])),
+    ?assertNot(xl_calendar:weekdays_member('Tue', ['Mon', 'Wed'])),
+    Week = xl_calendar:weekdays(),
+    Mask = xl_calendar:weekdays_mask(Week),
+    xl_eunit:performance(weekdays_member, fun() ->
+        xl_calendar:weekdays_member('Thu', Mask)
+    end, 10000),
+    xl_eunit:performance(lists_member, fun() ->
+        lists:member('Thu', Week)
+    end, 10000).

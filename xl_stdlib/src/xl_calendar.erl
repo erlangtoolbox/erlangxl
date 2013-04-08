@@ -29,7 +29,8 @@
 -module(xl_calendar).
 
 -export([format/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
-    day_of_week/1, datetime_to_ms/1, weekdays/0, weekdays_order/0, adjust/4, whole_day/0, diff_hours/4, daynum_of_week/1, diff_days/3, daynum/1, dayname/1]).
+    day_of_week/1, datetime_to_ms/1, weekdays/0, weekdays_order/0, adjust/4, whole_day/0, diff_hours/4,
+    daynum_of_week/1, diff_days/3, daynum/1, dayname/1, weekdays_member/2, weekdays_mask/1]).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -232,3 +233,8 @@ diff_days(Start = {StartDate, _}, Finish = {FinishDate, _}, Weekdays) ->
                 + xl_lists:count(fun(D) -> lists:member(dayname(D), Weekdays) end, lists:seq(1, LastDay))
     end.
 
+weekdays_mask(D) when is_atom(D) -> 1 bsl (daynum(D) - 1);
+weekdays_mask(Days) when is_list(Days) -> lists:foldl(fun(D, Bits) -> weekdays_mask(D) bor Bits end, 0, Days).
+
+weekdays_member(D, Days) when is_list(Days) -> weekdays_member(D, weekdays_mask(Days));
+weekdays_member(D, Mask) when is_integer(Mask) -> DMask = weekdays_mask(D), DMask band Mask == DMask.
