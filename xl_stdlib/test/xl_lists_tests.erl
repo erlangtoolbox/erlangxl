@@ -184,3 +184,7 @@ matchfilter_test() ->
     ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_lists:matchfilter(fun xl_lists:key_comparator/2, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]])),
     ?assertEqual([], xl_lists:matchfilter(fun xl_lists:key_comparator/2, [[], []])),
     ?assertEqual([[1], [3]], xl_lists:matchfilter(fun xl_lists:value_comparator/2, [[1, 3]])).
+
+nth_test() ->
+    ?assertEqual({ok, 2}, xl_lists:nth(2, [1, 2, 3])),
+    ?assertEqual(undefined, xl_lists:nth(22, [1, 2, 3])).
