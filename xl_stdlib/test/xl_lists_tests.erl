@@ -143,6 +143,9 @@ efoldl_test() ->
 imap_test() ->
     ?assertEqual([{a, 1}, {b, 2}, {c, 3}], xl_lists:imap(fun(X, I) -> {X, I} end, [a, b, c])).
 
+zip_with_index_test() ->
+    ?assertEqual([{a, 1}, {b, 2}, {c, 3}], xl_lists:zip_with_index([a, b, c])).
+
 intersect_test() ->
     ?assertEqual([a, b], xl_lists:intersect([a, b, c], [a, b, d])),
     ?assertEqual([a, b], xl_lists:intersect([a, b, b, c], [a, b, d, d])),

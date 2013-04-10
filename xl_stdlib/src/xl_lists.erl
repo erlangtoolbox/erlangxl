@@ -31,7 +31,7 @@
 -export([find/2, first/1, emap/2, eforeach/2, mapfilter/2, index/2, split/2, keypsort/3,
     sublistmatch/2, substitute/3, keyfind/3, keyfind/4, keyreplace/3, kvfind/2,
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
-    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2, mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2, value_comparator/2, key_comparator/2]).
+    count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2, mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2, value_comparator/2, key_comparator/2, zip_with_index/1]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -307,3 +307,5 @@ value_comparator(_, _) -> lt.
 key_comparator({X, _}, {X, _}) -> eq;
 key_comparator({X, _}, {Y, _}) when X > Y -> gt;
 key_comparator(_, _) -> lt.
+
+zip_with_index(List) -> imap(fun(T, I) -> {T, I} end, List).
