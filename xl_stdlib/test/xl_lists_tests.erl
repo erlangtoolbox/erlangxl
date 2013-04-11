@@ -190,4 +190,15 @@ nth_test() ->
     ?assertEqual(undefined, xl_lists:nth(22, [1, 2, 3])).
 
 kvmerge_test() ->
-    ?assertEqual([{a, 2}, {b, 4}, {c, 5}], xl_lists:kvmerge(fun erlang:'+'/2, [{a, 2}, {b, 3}], [{b, 1}, {c,5}])).
+    ?assertEqual([{a, 2}, {b, 4}, {c, 5}], xl_lists:kvmerge(fun erlang:'+'/2, [{a, 2}, {b, 3}], [{b, 1}, {c, 5}])).
+
+shuffle_test() ->
+    L = [1, 2, 3, 4, 5],
+    ?assertNotEqual(xl_lists:shuffle(L), xl_lists:shuffle(L)),
+    Counts = xl_lists:seq(1, 5, 0.5, fun(X) -> round(math:exp(X)) end),
+    lists:foreach(fun(Count) ->
+        T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
+        xl_eunit:performance(xl_convert:make_atom([shuffle, '#', Count]), fun() ->
+            xl_lists:shuffle(T)
+        end, 1000)
+    end, Counts).
