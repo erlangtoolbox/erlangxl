@@ -323,4 +323,6 @@ kvmerge(Fun, List1, List2) ->
             {ok, V2} -> {K, Fun(V1, V2)};
             undefined -> {K, V1}
         end
-    end, List1).
+    end, List1) ++ lists:filter(fun({K, _}) ->
+        not lists:keymember(K, 1, List1)
+    end, List2).
