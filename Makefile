@@ -1,7 +1,7 @@
 PROJECT=erlangxl
 VERSION=`cat version`
 RELEASE=`cat release`
-REVISION=`git --no-pager log --max-count=1 --format=format:%H`
+REVISION=`git --no-pager log --max-count=1 --format=format:%h`
 
 .PHONY: all compile install doc doc-install eunit clean dialyze all-tests spec
 
