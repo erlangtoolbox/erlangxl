@@ -12,6 +12,7 @@ APPS =	xl_stdlib \
 	xl_csv \
 	xl_io \
 	xl_net \
+	epath \
 	persist
 
 .PHONY: $(APPS)
