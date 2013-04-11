@@ -5,15 +5,8 @@ REVISION=`git --no-pager log --max-count=1 --format=format:%h`
 
 .PHONY: all compile install doc doc-install eunit clean dialyze all-tests spec
 
-APPS =	xl_stdlib \
-	xl_json \
-	xl_leveldb \
-	xl_yaws \
-	xl_csv \
-	xl_io \
-	xl_net \
-	epath \
-	persist
+APPS =	xl_stdlib xl_json xl_leveldb xl_yaws xl_csv \
+	xl_io xl_net epath persist
 
 .PHONY: $(APPS)
 

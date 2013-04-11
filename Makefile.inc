@@ -6,8 +6,22 @@ VERSION=`cat ../version`
 
 all: compile doc
 
-compile: ebin/$(APP).app Emakefile
-	erl -noinput -eval 'up_to_date = make:all()' -s erlang halt
+BINDS=$(wildcard src/*.bind)
+BINDERLS=$(patsubst src/%.bind, src/%.erl, $(BINDS))
+BINDHRLS=$(patsubst src/%.bind, include/%.hrl, $(BINDS))
+
+YRLS=$(wildcard src/*.yrl)
+YRLERLS=$(patsubst src/%.yrl, src/%.erl, $(YRLS))
+
+XRLS=$(wildcard src/*.xrl)
+XRLERLS=$(patsubst src/%.xrl, src/%.erl, $(XRLS))
+
+compile: ebin/$(APP).app Emakefile $(BINDERLS) $(BINDHRLS)
+	erlc -o src $(YRLS) $(XRLS)
+	erl -noinput -eval 'up_to_date=make:all(),halt()'
+
+include/%.hrl src/%.erl: src/%.bind
+	erl -noinput -eval 'ok=xl_json_bindc:compile("$<","."),halt()'
 
 install:
 	install --mode=0755 --directory $(DESTDIR)/$(APP)-$(VERSION)/ebin
@@ -22,8 +36,7 @@ install:
 
 doc: doc/overview.edoc figures
 	erl -noinput -eval \
-		'edoc:application($(APP), ".", [{application, $(APP)}])' \
-		-s erlang halt
+		'edoc:application($(APP),".",[{application,$(APP)}]),halt()'
 
 FIGSSRC=$(wildcard doc/*.dot)
 FIGS=$(patsubst doc/%.dot, doc/%.png, $(FIGSSRC))
@@ -39,13 +52,12 @@ doc-install: doc
 
 eunit:
 	erl -noinput -pa ebin \
-		-eval 'ok = eunit:test({application, $(APP)}, [verbose])' \
-		-s erlang halt
+		-eval 'ok=eunit:test({application,$(APP)},[verbose]),halt()'
 
 clean:
 	rm --force -- doc/*.html doc/*.css doc/*.png doc/edoc-info \
 		erl_crash.dump Emakefile doc/overview.edoc
-	rm --force --recursive -- ebin
+	rm --force --recursive -- ebin $(BINDERLS) $(BINDHRLS) $(YRLERLS) $(XRLERLS)
 
 ebin/$(APP).app: src/$(APP).app.in ../version
 	mkdir --parents ebin
