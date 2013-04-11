@@ -188,3 +188,6 @@ matchfilter_test() ->
 nth_test() ->
     ?assertEqual({ok, 2}, xl_lists:nth(2, [1, 2, 3])),
     ?assertEqual(undefined, xl_lists:nth(22, [1, 2, 3])).
+
+kvmerge_test() ->
+    ?_assertEqual([{a, 2}, {b, 4}], xl_lists:kvmerge(fun erlang:'+'/2, [{b, 1}], [{a, 2}, {b, 3}])).
