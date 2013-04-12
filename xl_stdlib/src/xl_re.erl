@@ -41,14 +41,18 @@ start() ->
 -type mp() :: term().
 -type hash() :: integer().
 
--spec run(Subject :: iodata() | io:charlist(), RE :: mp() | iodata() | integer(), Options :: [option()]) ->
+-spec run(Subject :: iodata() | io:charlist(), RE :: mp() | iodata() | integer()) ->
     {match, Captured :: [term()]} | nomatch | {error, not_compiled}.
 run(Subject, RE) -> run(Subject, RE, []).
+-spec run(Subject :: iodata() | io:charlist(), RE :: mp() | iodata() | integer(), Options :: [option()]) ->
+    {match, Captured :: [term()]} | nomatch | {error, not_compiled}.
 run(Subject, RE, Options) -> apply_fun(Subject, RE, Options, fun re:run/3).
 
--spec split(Subject :: iodata() | io:charlist(), RE :: mp() | iodata() | integer(), Options :: [option()]) ->
+-spec split(Subject :: iodata() | io:charlist(), RE :: mp() | iodata() | integer()) ->
     {match, Captured :: [term()]} | nomatch | {error, not_compiled}.
 split(Subject, RE) -> split(Subject, RE, []).
+-spec split(Subject :: iodata() | io:charlist(), RE :: mp() | iodata() | integer(), Options :: [option()]) ->
+    {match, Captured :: [term()]} | nomatch | {error, not_compiled}.
 split(Subject, RE, Options) -> apply_fun(Subject, RE, Options, fun re:split/3).
 
 -spec compile(RE :: iodata(), Options :: [option()]) ->
