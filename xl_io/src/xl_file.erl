@@ -33,7 +33,7 @@
 -compile({parse_transform, do}).
 
 -behaviour(xl_autoresource).
--export([auto_open/1, auto_close/1, using/3, rename/2]).
+-export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
     read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3,
     absolute/1]).
@@ -201,7 +201,7 @@ read_files(Wildcards, Option) ->
             {ok, T} -> {error, {cannot_read, T, Name}};
             E -> E
         end
-    end, [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)])).
+    end, wildcards(Wildcards))).
 
 delete(Path) ->
     case type(Path) of
@@ -220,6 +220,7 @@ delete(Path) ->
         E -> E
     end.
 
+wildcards(Wildcards) -> [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)].
 
 %%
 % autoresource
