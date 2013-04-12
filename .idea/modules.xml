@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/epath/epath.iml" filepath="$PROJECT_DIR$/epath/epath.iml" />
+      <module fileurl="file://$PROJECT_DIR$/erlangxl.iml" filepath="$PROJECT_DIR$/erlangxl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/persist/persist.iml" filepath="$PROJECT_DIR$/persist/persist.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_csv/xl_csv.iml" filepath="$PROJECT_DIR$/xl_csv/xl_csv.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_io/xl_io.iml" filepath="$PROJECT_DIR$/xl_io/xl_io.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_json/xl_json.iml" filepath="$PROJECT_DIR$/xl_json/xl_json.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_json_binder_test/xl_json_binder_test.iml" filepath="$PROJECT_DIR$/xl_json_binder_test/xl_json_binder_test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_leveldb/xl_leveldb.iml" filepath="$PROJECT_DIR$/xl_leveldb/xl_leveldb.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_net/xl_net.iml" filepath="$PROJECT_DIR$/xl_net/xl_net.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_stdlib/xl_stdlib.iml" filepath="$PROJECT_DIR$/xl_stdlib/xl_stdlib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_yaws/xl_yaws.iml" filepath="$PROJECT_DIR$/xl_yaws/xl_yaws.iml" />
+    </modules>
+  </component>
+</project>
+
