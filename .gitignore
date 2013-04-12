@@ -21,5 +21,3 @@ edoc-info
 Emakefile
 .dialyzer_plt
 erlangxl.spec
-*.iml
-.idea
