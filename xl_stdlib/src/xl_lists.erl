@@ -33,7 +33,7 @@
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
     count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2,
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
-    value_comparator/2, key_comparator/2, zip_with_index/1, nth/2, kvmerge/3, shuffle/1]).
+    value_comparator/2, key_comparator/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -319,14 +319,14 @@ nth(N, List) ->
         _:_ -> undefined
     end.
 
-kvmerge(Fun, List1, List2) ->
-    lists:map(fun({K, V1}) ->
-        case kvfind(K, List2) of
-            {ok, V2} -> {K, Fun(V1, V2)};
-            undefined -> {K, V1}
+keymerge(Fun, Pos, List1, List2) ->
+    lists:map(fun(V1) ->
+        case keyfind(element(Pos, V1), Pos, List2) of
+            {ok, V2} -> Fun(V1, V2);
+            undefined -> V1
         end
-    end, List1) ++ lists:filter(fun({K, _}) ->
-        not lists:keymember(K, 1, List1)
+    end, List1) ++ lists:filter(fun(V) ->
+        not lists:keymember(element(Pos, V), Pos, List1)
     end, List2).
 
 

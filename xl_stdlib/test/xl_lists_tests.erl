@@ -189,8 +189,11 @@ nth_test() ->
     ?assertEqual({ok, 2}, xl_lists:nth(2, [1, 2, 3])),
     ?assertEqual(undefined, xl_lists:nth(22, [1, 2, 3])).
 
-kvmerge_test() ->
-    ?assertEqual([{a, 2}, {b, 4}, {c, 5}], xl_lists:kvmerge(fun erlang:'+'/2, [{a, 2}, {b, 3}], [{b, 1}, {c, 5}])).
+keymerge_test() ->
+    Plus = fun({K, V1}, {_, V2}) -> {K, V1 + V2} end,
+    ?assertEqual([{a, 2}, {b, 4}, {c, 5}], xl_lists:keymerge(Plus, 1, [{a, 2}, {b, 3}], [{b, 1}, {c, 5}])),
+    ?assertEqual([{b, 1}, {c, 5}], xl_lists:keymerge(Plus, 1, [], [{b, 1}, {c, 5}])),
+    ?assertEqual([{b, 1}, {c, 5}], xl_lists:keymerge(Plus, 1, [{b, 1}, {c, 5}], [])).
 
 shuffle_test() ->
     L = [1, 2, 3, 4, 5],
