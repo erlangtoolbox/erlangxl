@@ -33,26 +33,24 @@
 -include("xl_httpc.hrl").
 
 call_test() ->
-    inets:start(),
-    application:set_env(xl_net_test, test, [{client, []}, {request, []}]),
-    ?assertOk(xl_httpc:start_link(xl_net_test, test)),
+    xl_application:start(inets),
+    application:set_env(xl_net_test, test_call, [{client, []}, {request, []}]),
+    ?assertOk(xl_httpc:start_link(xl_net_test, test_call)),
     try
         ?assertEqual({ok, #http_resp{code = 200, reason = "OK"}},
-            xl_httpc:call(test, "http://google.com"))
+            xl_httpc:call(test_call, "http://google.com"))
     after
-        xl_httpc:stop(test),
-        inets:stop()
+        xl_httpc:stop(test_call)
     end.
 
 
 post_test() ->
-    inets:start(),
-    application:set_env(xl_net_test, test, [{client, []}, {request, []}]),
-    ?assertOk(xl_httpc:start_link(xl_net_test, test)),
+    xl_application:start(inets),
+    application:set_env(xl_net_test, test_post, [{client, []}, {request, []}]),
+    ?assertOk(xl_httpc:start_link(xl_net_test, test_post)),
     try
-        ?assertOk(xl_httpc:post(test, "http://google.com", "text/plain", "test"))
+        ?assertOk(xl_httpc:post(test_post, "http://google.com", "text/plain", "test"))
     after
-        xl_httpc:stop(test),
-        inets:stop()
+        xl_httpc:stop(test_post)
     end.
 

@@ -81,7 +81,7 @@ sublistmatch_perf_test() ->
     xl_eunit:performance(atom, fun() -> xl_lists:sublistmatch(Pattern2, List) end, Count).
 
 substitute_test() ->
-    application:start(xl_stdlib),
+    xl_application:start(xl_stdlib),
     Pattern = [a, 1, "c{b}c", "c"],
     List = [{a, "1"}, {b, "x"}, {"c", 2}],
     ?assertEqual(["1", 1, "cxc", 2],
@@ -123,9 +123,9 @@ insert_before_test() ->
 random_test() ->
     Results = [xl_lists:random([1, 2, 3]) || _ <- lists:seq(1, 100)],
     [{_, C1}, {_, C2}, {_, C3}] = xl_lists:count_unique(Results),
-    ?assert(C1 >= 25),
-    ?assert(C2 >= 25),
-    ?assert(C3 >= 25),
+    ?assert(C1 >= 20),
+    ?assert(C2 >= 20),
+    ?assert(C3 >= 20),
     Results2 = [xl_lists:random([1, 2]) || _ <- lists:seq(1, 100)],
     [{_, C21}, {_, C22}] = xl_lists:count_unique(Results2),
     ?assert(C21 >= 40),
@@ -176,14 +176,14 @@ gb_tree_vs_random_access_list_test() ->
     end, Counts).
 
 matchfilter_test() ->
-    ?assertEqual([[{3, 1}, {3, 3}, {3, 2}], [{7, 1}, {7, 2}, {7, 3}]], xl_lists:matchfilter(fun xl_lists:key_comparator/2, [
+    ?assertEqual([[{3, 1}, {3, 3}, {3, 2}], [{7, 1}, {7, 2}, {7, 3}]], xl_lists:matchfilter(fun xl_lists:compare_key/2, [
         [{1, 1}, {3, 1}, {7, 1}, {8, 1}],
         [{3, 2}, {7, 2}, {8, 2}],
         [{1, 3}, {2, 3}, {3, 3}, {5, 3}, {7, 3}]
     ])),
-    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_lists:matchfilter(fun xl_lists:key_comparator/2, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]])),
-    ?assertEqual([], xl_lists:matchfilter(fun xl_lists:key_comparator/2, [[], []])),
-    ?assertEqual([[1], [3]], xl_lists:matchfilter(fun xl_lists:value_comparator/2, [[1, 3]])).
+    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_lists:matchfilter(fun xl_lists:compare_key/2, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]])),
+    ?assertEqual([], xl_lists:matchfilter(fun xl_lists:compare_key/2, [[], []])),
+    ?assertEqual([[1], [3]], xl_lists:matchfilter(fun xl_lists:compare/2, [[1, 3]])).
 
 nth_test() ->
     ?assertEqual({ok, 2}, xl_lists:nth(2, [1, 2, 3])),
@@ -196,7 +196,7 @@ keymerge_test() ->
     ?assertEqual([{b, 1}, {c, 5}], xl_lists:keymerge(Plus, 1, [{b, 1}, {c, 5}], [])).
 
 shuffle_test() ->
-    L = [1, 2, 3, 4, 5],
+    L = lists:seq(1, 1000),
     ?assertNotEqual(xl_lists:shuffle(L), xl_lists:shuffle(L)),
     Counts = xl_lists:seq(1, 5, 0.5, fun(X) -> round(math:exp(X)) end),
     lists:foreach(fun(Count) ->

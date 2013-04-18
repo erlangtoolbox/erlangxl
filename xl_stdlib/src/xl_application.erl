@@ -29,8 +29,10 @@
 -module(xl_application).
 -author("volodymyr.kyrychenko@strikead.com").
 
+-compile({parse_transform, do}).
+
 %% API
--export([eget_env/2, get_env/3, is_started/1]).
+-export([eget_env/2, get_env/3, is_started/1, start/1]).
 
 -spec(eget_env(atom(), atom()) -> error_m:monad(any())).
 eget_env(Application, Env) ->
@@ -44,4 +46,32 @@ get_env(Application, Env, Default) ->
     end.
 
 -spec(is_started(atom()) -> boolean()).
-is_started(App) -> lists:keymember(App, 1, application:loaded_applications()).
+is_started(App) -> lists:keymember(App, 1, application:which_applications()).
+
+%% @doc Recursive application start
+-spec(start(atom()) -> error_m:monad(ok)).
+start(App) ->
+    do([error_m ||
+        load_safely(App),
+        case application:get_key(App, applications) of
+            {ok, Deps} -> xl_lists:eforeach(fun(Dep) -> start(Dep) end, Deps);
+            _ -> ok
+        end,
+        start_safely(App)
+    ]).
+
+-spec(load_safely(atom()) -> error_m:monad(ok)).
+load_safely(App) ->
+    case application:load(App) of
+        ok -> ok;
+        {error, {already_loaded, _}} -> ok;
+        E -> E
+    end.
+
+-spec(start_safely(atom()) -> error_m:monad(ok)).
+start_safely(App) ->
+    case application:start(App) of
+        ok -> ok;
+        {error, {already_started, _}} -> ok;
+        E -> E
+    end.

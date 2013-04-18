@@ -69,6 +69,7 @@ persiste_fsync_test() ->
     ?assertEqual(ok, persist:close(P2)).
 
 open() ->
+    xl_application:start(xl_stdlib),
     persist:open(test, persist:by_index(#testobj.id),
         persist_storage_bin:new("/tmp/test/test"), [
             {fsync_interval, 100},

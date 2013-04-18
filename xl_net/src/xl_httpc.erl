@@ -70,7 +70,7 @@ call(Profile, Url) -> gen_server:call(server_name(Profile), {call, Url}).
 init({App, Profile}) ->
     do([error_m ||
         inets:start(httpc, [{profile, Profile}]),
-        ClientOpts <- application:get_env(App, Profile),
+        ClientOpts <- xl_application:eget_env(App, Profile),
         httpc:set_options(
             element(2, xl_lists:keyfind(client, 1,
                 ClientOpts, {client, []})),

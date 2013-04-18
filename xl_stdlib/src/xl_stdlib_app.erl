@@ -29,6 +29,8 @@
 -module(xl_stdlib_app).
 -author("volodymyr.kyrychenko@strikead.com").
 
+-compile({parse_transform, do}).
+
 -behaviour(application).
 
 % application
@@ -36,9 +38,15 @@
 
 % application callbacks
 start(_Type, _Args) ->
-    xl_state:start_link(),
-    xl_uid:start(),
-    xl_re:start(),
-    xl_stdlib_sup:start_link().
+    do([error_m ||
+        xl_state:start_link(),
+        xl_uid:start(),
+        xl_re:start(),
+        xl_random:start(),
+        case xl_stdlib_sup:start_link() of
+            ignore -> ok;
+            X -> X
+        end
+    ]).
 
 stop(_State) -> ok.

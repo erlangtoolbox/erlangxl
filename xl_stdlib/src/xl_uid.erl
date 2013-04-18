@@ -34,7 +34,8 @@
 %% API
 -export([next/0, next_hex/0, start/0]).
 
-next() -> {ok, [P]} = xl_state:get(?MODULE, prefix),
+next() ->
+    {ok, P} = xl_state:value(?MODULE, prefix),
     P + xl_calendar:now_micros().
 
 next_hex() ->

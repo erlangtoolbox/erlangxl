@@ -63,14 +63,14 @@ to_rpc_stream_test() ->
 
 matchfilter_test() ->
     ?assertEqual([[{3, 1}, {3, 3}, {3, 2}], [{7, 1}, {7, 2}, {7, 3}]], xl_stream:to_list(
-        xl_stream:matchfilter(fun xl_lists:key_comparator/2, [
+        xl_stream:matchfilter(fun xl_lists:compare_key/2, [
             [{1, 1}, {3, 1}, {7, 1}, {8, 1}],
             [{3, 2}, {7, 2}, {8, 2}],
             [{1, 3}, {2, 3}, {3, 3}, {5, 3}, {7, 3}]
         ])
     )),
-    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_stream:to_list(xl_stream:matchfilter(fun xl_lists:key_comparator/2, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]]))),
-    ?assertEqual([], xl_stream:to_list(xl_stream:matchfilter(fun xl_lists:key_comparator/2, [[], []]))).
+    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_stream:to_list(xl_stream:matchfilter(fun xl_lists:compare_key/2, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]]))),
+    ?assertEqual([], xl_stream:to_list(xl_stream:matchfilter(fun xl_lists:compare_key/2, [[], []]))).
 
 concat_test() ->
     ?assertEqual([1, 2, 3, 4, 5, 6], xl_stream:to_list(xl_stream:concat([

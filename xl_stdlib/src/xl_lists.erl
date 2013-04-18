@@ -33,7 +33,7 @@
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
     count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2,
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
-    value_comparator/2, key_comparator/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1]).
+    compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -240,6 +240,11 @@ imap(F, List) -> imap(F, [], 1, List).
 imap(_F, Acc, _Index, []) -> lists:reverse(Acc);
 imap(F, Acc, Index, [H | T]) -> imap(F, [F(H, Index) | Acc], Index + 1, T).
 
+-spec(ifoldl(fun((term(), term(), pos_integer()) -> term()), term(), [term()]) -> [term()]).
+ifoldl(F, Seed, List) -> ifoldl(F, Seed, 1, List).
+ifoldl(_F, Seed, _Index, []) -> Seed;
+ifoldl(F, Seed, Index, [H | T]) -> ifoldl(F, F(H, Seed, Index), Index + 1, T).
+
 intersect(List1, List2) ->
     L1 = set(List1),
     L2 = set(List2),
@@ -302,13 +307,13 @@ shift(F, K, L = [[H | T] | TL], Acc = {Values, Tails}) ->
         _ -> {next, Tails ++ L}
     end.
 
-value_comparator(X, X) -> eq;
-value_comparator(X, Y) when X > Y -> gt;
-value_comparator(_, _) -> lt.
+compare(X, X) -> eq;
+compare(X, Y) when X > Y -> gt;
+compare(_, _) -> lt.
 
-key_comparator({X, _}, {X, _}) -> eq;
-key_comparator({X, _}, {Y, _}) when X > Y -> gt;
-key_comparator(_, _) -> lt.
+compare_key({X, _}, {X, _}) -> eq;
+compare_key({X, _}, {Y, _}) when X > Y -> gt;
+compare_key(_, _) -> lt.
 
 zip_with_index(List) -> imap(fun(T, I) -> {T, I} end, List).
 
@@ -335,3 +340,5 @@ shuffle(List) -> shuffle(xl_random:uniform(length(List)) - 1, List, []).
 
 shuffle(0, L, R) -> L ++ R;
 shuffle(N, [H | T], R) -> shuffle(N - 1, T, [H | R]).
+
+init(Fun, Count) -> [Fun() || _ <- lists:seq(1, Count)].

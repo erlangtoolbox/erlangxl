@@ -26,14 +26,22 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_state_tests).
+-module(xl_random_tests).
 -author("volodymyr.kyrychenko@strikead.com").
 
 -include_lib("eunit/include/eunit.hrl").
 
-keys_test() ->
+ditribution_test() ->
     xl_application:start(xl_stdlib),
-    xl_state:new(test),
-    xl_state:set(test, a, a),
-    xl_state:set(test, b, b),
-    ?assertEqual([b, a], xl_state:keys(test)).
+    N = 10,
+    Unique = xl_lists:count_unique([xl_random:uniform(10) || _ <- lists:seq(1, 1000000)]),
+    ?assertEqual(N, length(Unique)).
+
+weird_ditribution_test() ->
+    xl_application:start(xl_stdlib),
+    Unique = xl_lists:count_unique([list_to_tuple([xl_random:uniform(N) || N <- [10, 10, 10]]) || _ <- lists:seq(1, 1000)]),
+    ?assert(600 < length(Unique)).
+
+performance_test() ->
+    xl_application:start(xl_stdlib),
+    xl_eunit:performance(uniform, fun() -> xl_random:uniform(100) end, 100000).

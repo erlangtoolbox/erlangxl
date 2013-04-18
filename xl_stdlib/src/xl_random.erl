@@ -30,6 +30,16 @@
 
 -author("Dmitry Kasimtsev <dmitry.kasimtsev@strikead.com>").
 
--export([uniform/1]).
+-export([uniform/1, start/0, cyclic/1]).
 
-uniform(N) when is_integer(N) -> (xl_calendar:now_micros() rem N) + 1.
+start() ->
+    ok = xl_state:new(?MODULE),
+    xl_state:set(?MODULE, seed, erlang:now()).
+
+uniform(N) when is_integer(N) ->
+    {ok, Seed0} = xl_state:value(?MODULE, seed),
+    {R, Seed1} = random:uniform_s(N, Seed0),
+    xl_state:set(?MODULE, seed, Seed1),
+    R.
+
+cyclic(N) when is_integer(N) -> (xl_calendar:now_micros() rem N) + 1.

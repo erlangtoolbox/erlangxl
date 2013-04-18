@@ -47,8 +47,11 @@ uniq_test() ->
     end, lists:seq(1, 100)),
     timer:sleep(1000),
     [H | T] = xl_state:keys(state1),
-    L = lists:foldl(fun(Current, L) -> lists:subtract(L, hd(element(2, xl_state:get(state1, Current)))) end,
-        hd(element(2, xl_state:get(state1, H))), T),
+    L = lists:foldl(
+        fun(Current, L) -> lists:subtract(L, element(2, xl_state:value(state1, Current))) end,
+        element(2, xl_state:value(state1, H)),
+        T
+    ),
     ?assertEqual(1000, length(L)).
 
 gen(State, Name) ->
