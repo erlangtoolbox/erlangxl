@@ -34,7 +34,7 @@
 ditribution_test() ->
     xl_application:start(xl_stdlib),
     N = 10,
-    Unique = xl_lists:count_unique([xl_random:uniform(10) || _ <- lists:seq(1, 1000000)]),
+    Unique = xl_lists:count_unique([xl_random:uniform(10) || _ <- lists:seq(1, 100000)]),
     ?assertEqual(N, length(Unique)).
 
 weird_ditribution_test() ->
