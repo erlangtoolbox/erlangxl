@@ -336,6 +336,7 @@ keymerge(Fun, Pos, List1, List2) ->
 
 
 -spec(shuffle([term()]) -> [term()]).
+shuffle([]) -> [];
 shuffle(List) -> shuffle(xl_random:uniform(length(List)) - 1, List, []).
 
 shuffle(0, L, R) -> L ++ R;

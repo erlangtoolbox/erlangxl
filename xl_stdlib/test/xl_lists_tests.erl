@@ -196,6 +196,7 @@ keymerge_test() ->
     ?assertEqual([{b, 1}, {c, 5}], xl_lists:keymerge(Plus, 1, [{b, 1}, {c, 5}], [])).
 
 shuffle_test() ->
+    ?assertEqual([], xl_lists:shuffle([])),
     L = lists:seq(1, 1000),
     ?assertNotEqual(xl_lists:shuffle(L), xl_lists:shuffle(L)),
     Counts = xl_lists:seq(1, 5, 0.5, fun(X) -> round(math:exp(X)) end),
