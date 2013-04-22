@@ -94,16 +94,24 @@ depth({ok, _}, Depth) -> Depth;
 depth({_, _, L, E, R}, Depth) -> lists:max([depth(L, Depth + 1), depth(E, Depth + 1), depth(R, Depth + 1)]).
 
 -spec(find(find_point(), tree()) -> option_m:monad([term()])).
-find(Point, {?MODULE, Node, Options}) -> find(Point, Node, get_comparator(Options)).
+find(Query, {?MODULE, Node, Options}) -> find(Query, Node, get_comparator(Options)).
 
-find(_Point, undefined, _Compare) -> undefined;
-find(_Point, Ok = {ok, _}, _Compare) -> Ok;
-find(Point, {Value, Plane, L, E, R}, Compare) ->
-    case Compare(Plane, element(Plane, Point), Value) of
-        eq -> find(Point, E, Compare);
-        lt -> find(Point, L, Compare);
-        gt -> find(Point, R, Compare)
+find(_Query, undefined, _Compare) -> undefined;
+find(_Query, Ok = {ok, _}, _Compare) -> Ok;
+find(Query, {Value, Plane, L, E, R}, Compare) ->
+    case element(Plane, Query) of
+        undefined ->
+            case monad:flatten(option_m, [find(Query, L, Compare), find(Query, E, Compare), find(Query, R, Compare)]) of
+                [] -> undefined;
+                X -> {ok, X}
+            end;
+        X ->
+            case Compare(Plane, X, Value) of
+                eq -> find(Query, E, Compare);
+                lt -> find(Query, L, Compare);
+                gt -> find(Query, R, Compare)
+            end
     end.
 
 get_comparator(Options) ->
-    xl_lists:kvfind(compare, Options, fun(_Plane, X, Y) -> xl_lists:compare(X, Y) end).
+    xl_lists:kvfind(compare, Options, fun(_Plane, Q, V) -> xl_lists:compare(Q, V) end).
