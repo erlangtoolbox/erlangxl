@@ -33,7 +33,7 @@
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
     count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2,
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
-    compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3]).
+    compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3, keypartition/3]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -185,6 +185,12 @@ keyreplace_or_add(N, List, Tuple) when is_tuple(Tuple) ->
 keyreplace(_N, List, []) -> List;
 keyreplace(N, List, [R | ReplList]) ->
     keyreplace(N, lists:keyreplace(element(N, R), N, List, R), ReplList).
+
+-spec(keyfilter(pos_integer(), term(), [tuple()]) -> [tuple()]).
+keyfilter(N, Value, List) -> lists:filter(fun(X) -> element(N, X) == Value end, List).
+
+-spec(keypartition(pos_integer(), term(), [tuple()]) -> {[tuple()], [tuple()]}).
+keypartition(N, Value, List) -> lists:partition(fun(X) -> element(N, X) == Value end, List).
 
 -spec(split(pos_integer(), [term()]) -> {[term()], [term()]}).
 split(Pos, List) when length(List) > Pos -> lists:split(Pos, List);

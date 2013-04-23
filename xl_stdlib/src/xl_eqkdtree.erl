@@ -98,20 +98,19 @@ find(Query, {?MODULE, Node, Options}) -> find(Query, Node, get_comparator(Option
 
 find(_Query, undefined, _Compare) -> undefined;
 find(_Query, Ok = {ok, _}, _Compare) -> Ok;
+find(Query, {_Value, Plane, L, E, R}, Compare) when element(Plane, Query) == undefined ->
+    case monad:flatten(option_m, [find(Query, L, Compare), find(Query, E, Compare), find(Query, R, Compare)]) of
+        [] -> undefined;
+        X -> {ok, X}
+    end;
 find(Query, {Value, Plane, L, E, R}, Compare) ->
-    case element(Plane, Query) of
-        undefined ->
-            case monad:flatten(option_m, [find(Query, L, Compare), find(Query, E, Compare), find(Query, R, Compare)]) of
-                [] -> undefined;
-                X -> {ok, X}
-            end;
-        X ->
-            case Compare(Plane, X, Value) of
-                eq -> find(Query, E, Compare);
-                lt -> find(Query, L, Compare);
-                gt -> find(Query, R, Compare)
-            end
+    case Compare(Plane, element(Plane, Query), Value) of
+        eq -> find(Query, E, Compare);
+        lt -> find(Query, L, Compare);
+        gt -> find(Query, R, Compare)
     end.
 
 get_comparator(Options) ->
-    xl_lists:kvfind(compare, Options, fun(_Plane, Q, V) -> xl_lists:compare(Q, V) end).
+    xl_lists:kvfind(compare, Options, default_comparator()).
+
+default_comparator() -> fun(_Plane, Q, V) -> xl_lists:compare(Q, V) end.
