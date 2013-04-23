@@ -33,7 +33,7 @@
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
     count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2,
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
-    compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3, keypartition/3]).
+    compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3, keypartition/3, fastsplitwith/2]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
@@ -349,3 +349,13 @@ shuffle(0, L, R) -> L ++ R;
 shuffle(N, [H | T], R) -> shuffle(N - 1, T, [H | R]).
 
 init(Fun, Count) -> [Fun() || _ <- lists:seq(1, Count)].
+
+-spec(fastsplitwith(fun((term()) -> boolean()), [term()]) -> {[term()], [term()]}).
+fastsplitwith(Pred, List) when is_function(Pred, 1) -> fastsplitwith(Pred, List, []).
+
+fastsplitwith(Pred, [Hd | Tail], Taken) ->
+    case Pred(Hd) of
+        true -> fastsplitwith(Pred, Tail, [Hd | Taken]);
+        false -> {Taken, [Hd | Tail]}
+    end;
+fastsplitwith(Pred, [], Taken) when is_function(Pred, 1) -> {Taken, []}.

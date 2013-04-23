@@ -32,22 +32,33 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("xl_eunit.hrl").
 
--define(POINTS_FOR_SMALL_TREE, [{1, c, c}, {1, b, b}, {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}]).
+-define(POINTS_FOR_SMALL_TREE, [
+    {1, c, c}, {1, b, b}, {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}
+]).
+-define(POINTS_FOR_SMALL_TREE_WITH_UNDEFS, [
+    {1, c, c}, {undefined, b, ub1}, {3, a, a}, {2, undefined, uc}, {undefined, b, ub2},
+    {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}
+]).
 
 new_test() ->
     xl_application:start(xl_stdlib),
     ExpectedTree = {xl_eqkdtree,
         {2, 1,
+            undefined,
             {b, 2,
                 undefined,
+                undefined,
                 {1, 1,
+                    undefined,
                     undefined,
                     {ok, [b, b, b]},
                     undefined
                 },
                 {1, 1,
                     undefined,
+                    undefined,
                     {c, 2,
+                        undefined,
                         undefined,
                         {ok, [c]},
                         undefined
@@ -57,12 +68,15 @@ new_test() ->
             },
             {c, 2,
                 undefined,
+                undefined,
                 {ok, [c, c, c]},
                 undefined
             },
             {a, 2,
                 undefined,
+                undefined,
                 {3, 1,
+                    undefined,
                     undefined,
                     {ok, [a, a, a]},
                     undefined
@@ -71,6 +85,57 @@ new_test() ->
             }
         }, []},
     ?assertEquals(ExpectedTree, xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE)).
+
+new_with_undefs_test() ->
+    xl_application:start(xl_stdlib),
+    ExpectedTree = {xl_eqkdtree,
+        {2, 1,
+            {b, 2,
+                undefined,
+                undefined,
+                {ok, [ub2, ub1]},
+                undefined
+            },
+            {b, 2,
+                undefined,
+                undefined,
+                {1, 1,
+                    undefined,
+                    undefined,
+                    {ok, [b]},
+                    undefined
+                },
+                {1, 1,
+                    undefined,
+                    undefined,
+                    {c, 2,
+                        undefined,
+                        undefined,
+                        {ok, [c]},
+                        undefined
+                    },
+                    undefined
+                }
+            },
+            {c, 2,
+                {ok, [uc]},
+                undefined,
+                {ok, [c, c]},
+                undefined
+            },
+            {a, 2,
+                undefined,
+                undefined,
+                {3, 1,
+                    undefined,
+                    undefined,
+                    {ok, [a, a, a]},
+                    undefined
+                },
+                undefined
+            }
+        }, []},
+    ?assertEquals(ExpectedTree, xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
 
 new_performance_test_() ->
     xl_application:start(xl_stdlib),
@@ -102,13 +167,24 @@ find_all_test() ->
     [{_, Expected}] = extract_results(?POINTS_FOR_SMALL_TREE, [Q], fun undefined_match/2),
     ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))).
 
+find_all_with_undefs_test() ->
+    xl_application:start(xl_stdlib),
+    Tree = xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
+    Q = {undefined, undefined},
+    [{_, Expected}] = extract_results(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS, [Q], fun undefined_match/2),
+    ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))).
+
+find_all_with_any_test() ->
+    xl_application:start(xl_stdlib),
+    Tree = xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
+    Q = {1, b},
+    ?assertEquals([b, ub1, ub2], lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))).
+
 find_undefined_test_() ->
     xl_application:start(xl_stdlib),
     {timeout, 2000, fun() ->
         {Tree, Points} = prepare_space(10, 1000),
-        Queries = [lists:foldl(fun(_, Q) ->
-            setelement(xl_random:uniform(10), Q, undefined)
-        end, Q0, lists:seq(1, 12)) || Q0 <- make_random_queries(Points, 10)],
+        Queries = [undefine(Q, 7, 10) || Q <- make_random_queries(Points, 10)],
         ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
         xl_eunit:format("muplitple results expected: ~p~n", [
             length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
@@ -116,7 +192,25 @@ find_undefined_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-            xl_eunit:performance(eqkdtree_find, fun() ->
+            xl_eunit:performance(eqkdtree_find_undef_q, fun() ->
+                ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree))))
+            end, 1000)
+        end, 10)
+    end}.
+
+find_with_any_test_() ->
+    xl_application:start(xl_stdlib),
+    {timeout, 2000, fun() ->
+        {Tree, Points} = prepare_space(10, 1000, 5),
+        Queries = make_random_queries(Points, 10),
+        ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
+        xl_eunit:format("muplitple results expected: ~p~n", [
+            length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
+        ]),
+        xl_lists:times(fun() ->
+            {ok, Q} = xl_lists:random(Queries),
+            {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
+            xl_eunit:performance(eqkdtree_find_w_any, fun() ->
                 ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree))))
             end, 1000)
         end, 10)
@@ -124,21 +218,22 @@ find_undefined_test_() ->
 
 undefined_match(P, Q) when is_tuple(P) -> undefined_match(tuple_to_list(P), tuple_to_list(Q));
 undefined_match([], []) -> true;
+undefined_match([undefined | PT], [_ | QT]) -> undefined_match(PT, QT);
 undefined_match([_ | PT], [undefined | QT]) -> undefined_match(PT, QT);
 undefined_match([H | PT], [H | QT]) -> undefined_match(PT, QT);
 undefined_match(_, _) -> false.
 
-
-generate_points(PlaneSizes, Count) ->
+generate_points(PlaneSizes, Count, Undefined) ->
     Planes = lists:map(fun(Size) -> lists:seq(1, Size) end, PlaneSizes),
-    [list_to_tuple([element(2, xl_lists:random(P)) || P <- Planes] ++ [V]) || V <- lists:seq(1, Count)].
+    [undefine(list_to_tuple([element(2, xl_lists:random(P)) || P <- Planes] ++ [V]), Undefined, length(Planes)) || V <- lists:seq(1, Count)].
 
 generate_planes(Variabililty, Count) ->
     [element(2, xl_lists:random(Variabililty)) || _ <- lists:seq(1, Count)].
 
-prepare_space(Dimensions, TotalPoints) ->
+prepare_space(Dimensions, TotalPoints) -> prepare_space(Dimensions, TotalPoints, 0).
+prepare_space(Dimensions, TotalPoints, Undefined) ->
     Planes = generate_planes([100, 50, 10], Dimensions),
-    Points = generate_points(Planes, TotalPoints),
+    Points = generate_points(Planes, TotalPoints, Undefined),
     UniquePoints = xl_lists:count_unique(Points),
     {Time, Tree} = timer:tc(xl_eqkdtree, new, [Points]),
     xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\tunique: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
@@ -162,3 +257,23 @@ extract_results(Points, Queries, Match) ->
         fun(T) -> element(tuple_size(T), T) end,
         lists:filter(fun(P) -> Match(point_to_query(P), Q) end, Points)
     ))} || Q <- Queries].
+
+
+sorter_test() ->
+    Sorter = xl_eqkdtree:get_sorter(1, xl_eqkdtree:default_comparator()),
+    Expected = [
+        {undefined, b, ub1}, {undefined, b, ub2}, {1, c, c}, {1, b, b}, {2, undefined, uc},
+        {2, c, c}, {2, c, c}, {3, a, a}, {3, a, a}, {3, a, a}
+    ],
+    xl_lists:times(fun() ->
+        ?assertEquals(Expected, lists:sort(Sorter, ?POINTS_FOR_SMALL_TREE_WITH_UNDEFS))
+    end, 10).
+
+undefine(Tuple, Count, Length) ->
+    {Positions, _} = lists:foldl(fun(_, {R, L}) ->
+        {ok, E} = xl_lists:random(L),
+        {[E | R], lists:delete(E, L)}
+    end, {[], lists:seq(1, Length)}, lists:seq(1, Count)),
+    lists:foldl(fun(P, Q) ->
+        setelement(P, Q, undefined)
+    end, Tuple, Positions).
