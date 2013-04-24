@@ -50,14 +50,14 @@ new(Points) -> new(Points, []).
 -spec(new([point()], xl_lists:kvlist_at()) -> tree()).
 new(Points, Options) -> {?MODULE, new_tree(Points, get_comparator(Options), 1, planes(Points)), Options}.
 
-new_tree([], _Compare, _PlanePos, _Planes) -> undefined;
-new_tree(Points, _Compare, _PlanePos, []) -> {ok, lists:map(fun(P) -> element(tuple_size(P), P) end, Points)};
+new_tree([], _Compare, _PlanePos, _Planes) -> [];
+new_tree(Points, _Compare, _PlanePos, []) -> lists:map(fun(P) -> element(tuple_size(P), P) end, Points);
 new_tree(Points, Compare, PlanePos, Planes) when PlanePos > length(Planes) -> new_tree(Points, Compare, 1, Planes);
 new_tree(Points, Compare, PlanePos, Planes) ->
     Plane = lists:nth(PlanePos, Planes),
     {Undefs, Defs} = xl_lists:keypartition(Plane, undefined, Points),
     {MedianValue, Less, Equal, Greater} = case Defs of
-        [] -> {undefined, [], [], []};
+        [] -> {[], [], [], []};
         _ ->
             Sorted = lists:sort(get_sorter(Plane, Compare), Defs),
             Median = lists:nth(round(length(Sorted) / 2), Sorted),
@@ -82,8 +82,8 @@ planes([H | _]) -> lists:seq(1, tuple_size(H) - 1).
 size({?MODULE, Node, _Compare}) -> size(Node, 0).
 
 -spec(size(tree_node(), pos_integer()) -> pos_integer()).
-size(undefined, Count) -> Count;
-size({ok, _}, Count) -> Count;
+size([], Count) -> Count;
+size([_ | _], Count) -> Count;
 size({_, _, U, L, E, R}, Count) ->
     UNodes = size(U, Count + 1),
     LNodes = size(L, UNodes),
@@ -94,37 +94,35 @@ size({_, _, U, L, E, R}, Count) ->
 depth({?MODULE, Node, _Compare}) -> depth(Node, 0).
 
 -spec(depth(tree_node(), pos_integer()) -> pos_integer()).
-depth(undefined, Depth) -> Depth;
-depth({ok, _}, Depth) -> Depth;
+depth([], Depth) -> Depth;
+depth([_ | _], Depth) -> Depth;
 depth({_, _, U, L, E, R}, Depth) -> lists:max([depth(U, Depth + 1), depth(L, Depth + 1), depth(E, Depth + 1), depth(R, Depth + 1)]).
 
 -spec(find(find_point(), tree()) -> option_m:monad([term()])).
-find(Query, {?MODULE, Node, Options}) -> find(Query, Node, get_comparator(Options)).
+find(Query, {?MODULE, Node, Options}) ->
+    case lists:flatten(find(Query, Node, get_comparator(Options))) of
+        [] -> undefined;
+        R -> {ok, R}
+    end.
 
-find(_Query, undefined, _Compare) -> undefined;
-find(_Query, Ok = {ok, _}, _Compare) -> Ok;
+find(_Query, L, _Compare) when is_list(L) -> L;
 find(Query, {_Value, Plane, U, L, E, R}, Compare) when element(Plane, Query) == undefined ->
-    find_union([
-        find(Query, U, Compare),
-        find(Query, L, Compare),
-        find(Query, E, Compare),
-        find(Query, R, Compare)
-    ]);
+    [find(Query, U, Compare), find(Query, L, Compare), find(Query, E, Compare), find(Query, R, Compare)];
 find(Query, {Value, Plane, U, L, E, R}, Compare) ->
-    find_union([
+    [
         find(Query, U, Compare),
         case Compare(Plane, element(Plane, Query), Value) of
             eq -> find(Query, E, Compare);
             lt -> find(Query, L, Compare);
             gt -> find(Query, R, Compare)
         end
-    ]).
+    ].
 
-find_union(List) ->
-    case monad:flatten(option_m, List) of
-        [] -> undefined;
-        X -> {ok, X}
-    end.
+%% find_union(List) ->
+%%     case monad:flatten(option_m, List) of
+%%         [] -> undefined;
+%%         X -> {ok, X}
+%%     end.
 
 
 get_comparator(Options) ->

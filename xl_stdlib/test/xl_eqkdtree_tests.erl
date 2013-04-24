@@ -44,44 +44,44 @@ new_test() ->
     xl_application:start(xl_stdlib),
     ExpectedTree = {xl_eqkdtree,
         {2, 1,
-            undefined,
+            [],
             {b, 2,
-                undefined,
-                undefined,
+                [],
+                [],
                 {1, 1,
-                    undefined,
-                    undefined,
-                    {ok, [b, b, b]},
-                    undefined
+                    [],
+                    [],
+                    [b, b, b],
+                    []
                 },
                 {1, 1,
-                    undefined,
-                    undefined,
+                    [],
+                    [],
                     {c, 2,
-                        undefined,
-                        undefined,
-                        {ok, [c]},
-                        undefined
+                        [],
+                        [],
+                        [c],
+                        []
                     },
-                    undefined
+                    []
                 }
             },
             {c, 2,
-                undefined,
-                undefined,
-                {ok, [c, c, c]},
-                undefined
+                [],
+                [],
+                [c, c, c],
+                []
             },
             {a, 2,
-                undefined,
-                undefined,
+                [],
+                [],
                 {3, 1,
-                    undefined,
-                    undefined,
-                    {ok, [a, a, a]},
-                    undefined
+                    [],
+                    [],
+                    [a, a, a],
+                    []
                 },
-                undefined
+                []
             }
         }, []},
     ?assertEquals(ExpectedTree, xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE)).
@@ -91,48 +91,48 @@ new_with_undefs_test() ->
     ExpectedTree = {xl_eqkdtree,
         {2, 1,
             {b, 2,
-                undefined,
-                undefined,
-                {ok, [ub2, ub1]},
-                undefined
+                [],
+                [],
+                [ub2, ub1],
+                []
             },
             {b, 2,
-                undefined,
-                undefined,
+                [],
+                [],
                 {1, 1,
-                    undefined,
-                    undefined,
-                    {ok, [b]},
-                    undefined
+                    [],
+                    [],
+                    [b],
+                    []
                 },
                 {1, 1,
-                    undefined,
-                    undefined,
+                    [],
+                    [],
                     {c, 2,
-                        undefined,
-                        undefined,
-                        {ok, [c]},
-                        undefined
+                        [],
+                        [],
+                        [c],
+                        []
                     },
-                    undefined
+                    []
                 }
             },
             {c, 2,
-                {ok, [uc]},
-                undefined,
-                {ok, [c, c]},
-                undefined
+                [uc],
+                [],
+                [c, c],
+                []
             },
             {a, 2,
-                undefined,
-                undefined,
+                [],
+                [],
                 {3, 1,
-                    undefined,
-                    undefined,
-                    {ok, [a, a, a]},
-                    undefined
+                    [],
+                    [],
+                    [a, a, a],
+                    []
                 },
-                undefined
+                []
             }
         }, []},
     ?assertEquals(ExpectedTree, xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
@@ -185,7 +185,7 @@ find_undefined_test_() ->
     xl_application:start(xl_stdlib),
     {timeout, 2000, fun() ->
         {Tree, Points} = prepare_space(10, 1000),
-        Queries = [undefine(Q, 7, 10) || Q <- make_random_queries(Points, 10)],
+        Queries = [undefine(Q, 8, 10) || Q <- make_random_queries(Points, 10)],
         ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
         xl_eunit:format("muplitple results expected: ~p~n", [
             length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
