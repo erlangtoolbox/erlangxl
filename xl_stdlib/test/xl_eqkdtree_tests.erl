@@ -154,9 +154,10 @@ find_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             Expected = xl_lists:kvfind(Q, ExpectedResuts),
+            ?assertEquals(Expected, xl_eqkdtree:find(Q, Tree)),
             xl_eunit:performance(eqkdtree_find, fun() ->
-                ?assertEquals(Expected, xl_eqkdtree:find(Q, Tree))
-            end, 10000)
+                xl_eqkdtree:find(Q, Tree)
+            end, 1000)
         end, 10)
     end}.
 
@@ -192,8 +193,9 @@ find_undefined_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
+            ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))),
             xl_eunit:performance(eqkdtree_find_undef_q, fun() ->
-                ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree))))
+                xl_eqkdtree:find(Q, Tree)
             end, 1000)
         end, 10)
     end}.
@@ -210,8 +212,9 @@ find_with_any_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
+            ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))),
             xl_eunit:performance(eqkdtree_find_w_any, fun() ->
-                ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree))))
+                xl_eqkdtree:find(Q, Tree)
             end, 1000)
         end, 10)
     end}.
