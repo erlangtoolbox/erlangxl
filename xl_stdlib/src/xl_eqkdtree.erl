@@ -100,34 +100,30 @@ depth({_, _, U, L, E, R}, Depth) -> lists:max([depth(U, Depth + 1), depth(L, Dep
 
 -spec(find(find_point(), tree()) -> option_m:monad([term()])).
 find(Query, {?MODULE, Node, Options}) ->
-    case lists:flatten(find(Query, Node, get_comparator(Options))) of
+    case find(Query, Node, get_comparator(Options), []) of
         [] -> undefined;
         R -> {ok, R}
     end.
 
-find(_Query, L, _Compare) when is_list(L) -> L;
-find(Query, {_Value, Plane, U, L, E, R}, Compare) when element(Plane, Query) == undefined ->
-    [find(Query, U, Compare), find(Query, L, Compare), find(Query, E, Compare), find(Query, R, Compare)];
-find(Query, {Value, Plane, U, L, E, R}, Compare) ->
-    [
-        find(Query, U, Compare),
-        case Compare(Plane, element(Plane, Query), Value) of
-            eq -> find(Query, E, Compare);
-            lt -> find(Query, L, Compare);
-            gt -> find(Query, R, Compare)
-        end
-    ].
-
-%% find_union(List) ->
-%%     case monad:flatten(option_m, List) of
-%%         [] -> undefined;
-%%         X -> {ok, X}
-%%     end.
-
+find(_Query, [], _Compare, Acc) -> Acc;
+find(_Query, L, _Compare, Acc) when is_list(L) -> L ++ Acc;
+find(Query, {_Value, Plane, U, L, E, R}, Compare, Acc) when element(Plane, Query) == undefined ->
+    UAcc = find(Query, U, Compare, Acc),
+    LAcc = find(Query, L, Compare, UAcc),
+    EAcc = find(Query, E, Compare, LAcc),
+    find(Query, R, Compare, EAcc);
+find(Query, {Value, Plane, U, L, E, R}, Compare, Acc) ->
+    UAcc = find(Query, U, Compare, Acc),
+    case Compare(Plane, element(Plane, Query), Value) of
+        eq -> find(Query, E, Compare, UAcc);
+        lt -> find(Query, L, Compare, UAcc);
+        gt -> find(Query, R, Compare, UAcc)
+    end.
 
 get_comparator(Options) ->
     xl_lists:kvfind(compare, Options, default_comparator()).
 
+%% prebuild sorters
 get_sorter(Plane, Compare) ->
     fun(X, Y) ->
         case Compare(Plane, element(Plane, X), element(Plane, Y)) of
