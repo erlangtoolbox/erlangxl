@@ -40,6 +40,11 @@
     {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}
 ]).
 
+-define(POINTS_FOR_SMALL_TREE_WITH_EXCLUDES, [
+    {1, c, c}, {{x, 1}, b, xb1}, {3, a, a}, {2, {x, c}, xc}, {{x, 2}, b, xb2},
+    {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}
+]).
+
 new_test() ->
     xl_application:start(xl_stdlib),
     ExpectedTree = {xl_eqkdtree,
@@ -48,92 +53,85 @@ new_test() ->
             {b, 2,
                 [],
                 [],
+                {1, 1, [], [], [b, b, b], [], []},
                 {1, 1,
                     [],
                     [],
-                    [b, b, b],
+                    {c, 2, [], [], [c], [], []},
+                    [],
                     []
                 },
-                {1, 1,
-                    [],
-                    [],
-                    {c, 2,
-                        [],
-                        [],
-                        [c],
-                        []
-                    },
-                    []
-                }
-            },
-            {c, 2,
-                [],
-                [],
-                [c, c, c],
                 []
             },
+            {c, 2, [], [], [c, c, c], [], []},
             {a, 2,
                 [],
                 [],
-                {3, 1,
+                {3, 1, [], [], [a, a, a], [], []},
+                [],
+                []
+            },
+            []
+        }, []},
+    ?assertEquals(ExpectedTree, xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE)).
+
+new_with_excludes_test() ->
+    xl_application:start(xl_stdlib),
+    ExpectedTree = {xl_eqkdtree,
+        {2, 1,
+            [],
+            {b, 2,
+                [],
+                [],
+                {1, 1, [], [], [b], [], [xb1]},
+                {1, 1,
                     [],
                     [],
-                    [a, a, a],
+                    {c, 2, [], [], [c], [], []},
+                    [],
                     []
                 },
                 []
-            }
+            },
+            {c, 2, [], [], [c, c], [], [xc]},
+            {a, 2,
+                [],
+                [],
+                {3, 1, [], [], [a, a, a], [], []},
+                [],
+                []
+            },
+            {b, 2, [], [], [xb2], [], []}
         }, []},
-    ?assertEquals(ExpectedTree, xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE)).
+    ?assertEquals(ExpectedTree, xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES)).
 
 new_with_undefs_test() ->
     xl_application:start(xl_stdlib),
     ExpectedTree = {xl_eqkdtree,
         {2, 1,
+            {b, 2, [], [], [ub2, ub1], [], []},
             {b, 2,
                 [],
                 [],
-                [ub2, ub1],
-                []
-            },
-            {b, 2,
-                [],
-                [],
+                {1, 1, [], [], [b], [], []},
                 {1, 1,
                     [],
                     [],
-                    [b],
+                    {c, 2, [], [], [c], [], []},
+                    [],
                     []
                 },
-                {1, 1,
-                    [],
-                    [],
-                    {c, 2,
-                        [],
-                        [],
-                        [c],
-                        []
-                    },
-                    []
-                }
-            },
-            {c, 2,
-                [uc],
-                [],
-                [c, c],
                 []
             },
+            {c, 2, [uc], [], [c, c], [], []},
             {a, 2,
                 [],
                 [],
-                {3, 1,
-                    [],
-                    [],
-                    [a, a, a],
-                    []
-                },
+                {3, 1, [], [], [a, a, a], [], []},
+                [],
                 []
-            }
+            },
+            []
         }, []},
     ?assertEquals(ExpectedTree, xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
 
@@ -165,21 +163,27 @@ find_all_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE),
     Q = {undefined, undefined},
-    [{_, Expected}] = extract_results(?POINTS_FOR_SMALL_TREE, [Q], fun undefined_match/2),
+    Expected = lists:sort(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE)),
     ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))).
 
 find_all_with_undefs_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
     Q = {undefined, undefined},
-    [{_, Expected}] = extract_results(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS, [Q], fun undefined_match/2),
+    Expected = lists:sort(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)),
     ?assertEquals(Expected, lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))).
 
-find_all_with_any_test() ->
+find_with_any_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
     Q = {1, b},
     ?assertEquals([b, ub1, ub2], lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))).
+
+find_with_x_test() ->
+    xl_application:start(xl_stdlib),
+    Tree = xl_eqkdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
+    Q = {1, b},
+    ?assertEquals([b, xb2], lists:sort(element(2, xl_eqkdtree:find(Q, Tree)))).
 
 find_undefined_test_() ->
     xl_application:start(xl_stdlib),
@@ -239,11 +243,12 @@ prepare_space(Dimensions, TotalPoints, Undefined) ->
     Points = generate_points(Planes, TotalPoints, Undefined),
     UniquePoints = xl_lists:count_unique(Points),
     {Time, Tree} = timer:tc(xl_eqkdtree, new, [Points]),
-    xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\tunique: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+    xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\tunique: ~p\t'any' positions: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
         length(Planes),
         list_to_tuple(Planes),
         TotalPoints,
         length(UniquePoints),
+        Undefined,
         xl_eqkdtree:size(Tree),
         xl_eqkdtree:depth(Tree),
         Time
@@ -263,7 +268,7 @@ extract_results(Points, Queries, Match) ->
 
 
 sorter_test() ->
-    Sorter = xl_eqkdtree:get_sorter(1, xl_eqkdtree:default_comparator()),
+    Sorter = xl_eqkdtree:get_sorter(1, fun xl_eqkdtree:default_comparator/3),
     Expected = [
         {undefined, b, ub1}, {undefined, b, ub2}, {1, c, c}, {1, b, b}, {2, undefined, uc},
         {2, c, c}, {2, c, c}, {3, a, a}, {3, a, a}, {3, a, a}

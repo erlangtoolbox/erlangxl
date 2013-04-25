@@ -51,7 +51,7 @@ performance(Name, Fun, Count) ->
         xl_lists:times(Fun, Count)
     end),
     Xps = Count / Time * 1000000,
-    xl_eunit:format("PERFORMANCE ~s: ~.1f op/s~n", [Name, Count / Time * 1000000]),
+    xl_eunit:format("PERFORMANCE ~s: ~.1f op/s, time: ~p ms~n", [Name, Count * 1000000 / Time, Time / 1000]),
     Xps.
 
 -spec(format(string(), [term()]) -> ok).

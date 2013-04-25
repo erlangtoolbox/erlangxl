@@ -32,7 +32,7 @@
 -compile({no_auto_import, [size/1]}).
 
 %% API
--export([new/2, size/1, depth/1, new/1, find/2, get_sorter/2, default_comparator/0]).
+-export([new/2, size/1, depth/1, new/1, find/2, get_sorter/2, default_comparator/3]).
 
 -export_type([tree/0, tree_node/0, leaf/0, point/0, comparator/0, find_point/0]).
 
@@ -40,7 +40,7 @@
 -type(point() :: tuple()).
 -type(find_point() :: tuple()).
 -type(leaf() :: option_m:monad([point()])).
--type(tree_node() :: {term(), pos_integer(), tree_node(), tree_node(), tree_node(), tree_node()} | leaf()).
+-type(tree_node() :: {term(), pos_integer(), Undefined :: tree_node(), Less :: tree_node(), Equal :: tree_node(), Greater :: tree_node(), Excluded :: tree_node()} | leaf()).
 -type(tree() :: {module(), tree_node(), comparator()}).
 
 
@@ -56,15 +56,16 @@ new_tree(Points, Compare, PlanePos, Planes) when PlanePos > length(Planes) -> ne
 new_tree(Points, Compare, PlanePos, Planes) ->
     Plane = lists:nth(PlanePos, Planes),
     {Undefs, Defs} = xl_lists:keypartition(Plane, undefined, Points),
-    {MedianValue, Less, Equal, Greater} = case Defs of
-        [] -> {[], [], [], []};
+    {MedianValue, Less, Equal, Greater, Excluded} = case Defs of
+        [] -> {[], [], [], [], []};
         _ ->
             Sorted = lists:sort(get_sorter(Plane, Compare), Defs),
             Median = lists:nth(round(length(Sorted) / 2), Sorted),
-            MV = element(Plane, Median),
-            {L, Rest} = xl_lists:fastsplitwith(fun(X) -> Compare(Plane, element(Plane, X), MV) == lt end, Sorted),
-            {E, G} = xl_lists:fastsplitwith(fun(X) -> Compare(Plane, element(Plane, X), MV) == eq end, Rest),
-            {MV, L, E, G}
+            MV = value(element(Plane, Median)),
+            {L, Rest} = xl_lists:fastsplitwith(fun(X) -> Compare(Plane, value(element(Plane, X)), MV) == lt end, Sorted),
+            {Eq, G} = xl_lists:fastsplitwith(fun(X) -> Compare(Plane, value(element(Plane, X)), MV) == eq end, Rest),
+            {E, X} = lists:partition(fun(X) -> case element(Plane, X) of {_, _} -> false; _ -> true end end, Eq),
+            {MV, L, E, G, X}
     end,
     {
         MedianValue,
@@ -72,7 +73,8 @@ new_tree(Points, Compare, PlanePos, Planes) ->
         new_tree(Undefs, Compare, PlanePos + 1, lists:delete(Plane, Planes)),
         new_tree(Less, Compare, PlanePos + 1, Planes),
         new_tree(Equal, Compare, PlanePos + 1, lists:delete(Plane, Planes)),
-        new_tree(Greater, Compare, PlanePos + 1, Planes)
+        new_tree(Greater, Compare, PlanePos + 1, Planes),
+        new_tree(Excluded, Compare, PlanePos + 1, lists:delete(Plane, Planes))
     }.
 
 planes([]) -> [];
@@ -83,20 +85,28 @@ size({?MODULE, Node, _Compare}) -> size(Node, 0).
 
 -spec(size(tree_node(), pos_integer()) -> pos_integer()).
 size([], Count) -> Count;
-size([_ | _], Count) -> Count;
-size({_, _, U, L, E, R}, Count) ->
+size(L, Count) when is_list(L) -> Count;
+size({_, _, U, L, E, R, X}, Count) ->
     UNodes = size(U, Count + 1),
     LNodes = size(L, UNodes),
     ENodes = size(E, LNodes),
-    size(R, ENodes).
+    RNodes = size(R, ENodes),
+    size(X, RNodes).
 
 -spec(depth(tree()) -> pos_integer()).
 depth({?MODULE, Node, _Compare}) -> depth(Node, 0).
 
 -spec(depth(tree_node(), pos_integer()) -> pos_integer()).
 depth([], Depth) -> Depth;
-depth([_ | _], Depth) -> Depth;
-depth({_, _, U, L, E, R}, Depth) -> lists:max([depth(U, Depth + 1), depth(L, Depth + 1), depth(E, Depth + 1), depth(R, Depth + 1)]).
+depth(L, Depth) when is_list(L) -> Depth;
+depth({_, _, U, L, E, R, X}, Depth) ->
+    lists:max([
+        depth(U, Depth + 1),
+        depth(L, Depth + 1),
+        depth(E, Depth + 1),
+        depth(R, Depth + 1),
+        depth(X, Depth + 1)
+    ]).
 
 -spec(find(find_point(), tree()) -> option_m:monad([term()])).
 find(Query, {?MODULE, Node, Options}) ->
@@ -107,35 +117,42 @@ find(Query, {?MODULE, Node, Options}) ->
 
 find(_Query, [], _Compare, Acc) -> Acc;
 find(_Query, L, _Compare, Acc) when is_list(L) -> L ++ Acc;
-find(Query, {_Value, Plane, U, L, E, R}, Compare, Acc) when element(Plane, Query) == undefined ->
+find(Query, {_Value, Plane, U, L, E, R, X}, Compare, Acc) when element(Plane, Query) == undefined ->
     UAcc = find(Query, U, Compare, Acc),
     LAcc = find(Query, L, Compare, UAcc),
     EAcc = find(Query, E, Compare, LAcc),
-    find(Query, R, Compare, EAcc);
-find(Query, {Value, Plane, U, L, E, R}, Compare, Acc) ->
+    RAcc = find(Query, R, Compare, EAcc),
+    find(Query, X, Compare, RAcc);
+find(Query, {Value, Plane, U, L, E, R, X}, Compare, Acc) ->
     UAcc = find(Query, U, Compare, Acc),
     case Compare(Plane, element(Plane, Query), Value) of
         eq -> find(Query, E, Compare, UAcc);
-        lt -> find(Query, L, Compare, UAcc);
-        gt -> find(Query, R, Compare, UAcc)
+        lt ->
+            LAcc = find(Query, L, Compare, UAcc),
+            find(Query, X, Compare, LAcc);
+        gt ->
+            RAcc = find(Query, R, Compare, UAcc),
+            find(Query, X, Compare, RAcc)
     end.
 
 get_comparator(Options) ->
-    xl_lists:kvfind(compare, Options, default_comparator()).
+    xl_lists:kvfind(compare, Options, fun default_comparator/3).
 
 %% prebuild sorters
 get_sorter(Plane, Compare) ->
     fun(X, Y) ->
-        case Compare(Plane, element(Plane, X), element(Plane, Y)) of
+        case Compare(Plane, value(element(Plane, X)), value(element(Plane, Y))) of
             gt -> false;
             _ -> true
         end
     end.
 
-default_comparator() ->
-    fun
-        (_Plane, undefined, undefined) -> eq;
-        (_Plane, undefined, _) -> lt;
-        (_Plane, _, undefined) -> gt;
-        (_Plane, Q, V) -> xl_lists:compare(Q, V)
-    end.
+value({x, V}) -> V;
+value(V) -> V.
+
+default_comparator(_Plane, undefined, undefined) -> eq;
+default_comparator(_Plane, undefined, _) -> lt;
+default_comparator(_Plane, _, undefined) -> gt;
+default_comparator(_Plane, X, X) -> eq;
+default_comparator(_Plane, X, Y) when X > Y -> gt;
+default_comparator(_Plane, _, _) -> lt.
