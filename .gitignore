@@ -21,3 +21,4 @@ edoc-info
 Emakefile
 .dialyzer_plt
 erlangxl.spec
+fprof.trace

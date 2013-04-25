@@ -52,9 +52,9 @@ copy_recursive_test() ->
     ?assert(filelib:is_dir("/tmp/test/y/a/b/e")),
     ok = xl_file:delete("/tmp/test").
 
-write_terms_test() ->
+write_term_test() ->
     ok = xl_file:delete("/tmp/test"),
-    ?assertEqual(ok, xl_file:write_terms("/tmp/test/x", a)),
+    ?assertEqual(ok, xl_file:write_term("/tmp/test/x", a)),
     ?assertEqual({ok, [a]}, xl_file:read_terms("/tmp/test/x")),
     ok = xl_file:delete("/tmp/test").
 

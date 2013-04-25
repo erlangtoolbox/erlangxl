@@ -33,7 +33,7 @@
 -compile({parse_transform, do}).
 
 -behaviour(xl_autoresource).
--export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1]).
+-export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
     read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3,
     absolute/1]).
@@ -86,11 +86,15 @@ mkdirs(Path) -> ensure_dir(filename:join(Path, "X")).
 -spec read_terms/1 :: (file:name()) -> {ok, [term()]} | xl_io:posix_error().
 read_terms(Filename) -> xl_io:apply_io(file, consult, [Filename]).
 
+write_term(File, T) -> write_terms(File, [T]).
+
 write_terms(File, L) ->
     R = do([error_m ||
         ensure_dir(File),
         using(File, [write], fun(F) ->
-            io:format(F, "~p.~n", [L])
+            lists:foreach(fun(T) ->
+                io:format(F, "~300p.~n", [T])
+            end, L)
         end)
     ]),
     case R of
