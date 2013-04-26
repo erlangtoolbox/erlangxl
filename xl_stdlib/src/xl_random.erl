@@ -30,7 +30,7 @@
 
 -author("Dmitry Kasimtsev <dmitry.kasimtsev@strikead.com>").
 
--export([uniform/1, start/0, cyclic/1]).
+-export([uniform/1, start/0, timer_uniform/1]).
 
 start() ->
     ok = xl_state:new(?MODULE),
@@ -42,4 +42,4 @@ uniform(N) when is_integer(N) ->
     xl_state:set(?MODULE, seed, Seed1),
     R.
 
-cyclic(N) when is_integer(N) -> (xl_calendar:now_micros() rem N) + 1.
+timer_uniform(N) when is_integer(N) -> (xl_calendar:now_micros() rem N) + 1.
