@@ -258,7 +258,7 @@ prepare_space(Dimensions, TotalPoints, Undefined) ->
 point_to_query(P) -> list_to_tuple(element(1, lists:split(tuple_size(P) - 1, tuple_to_list(P)))).
 
 make_random_queries(Points, Count) ->
-    [point_to_query(P) || _ <- lists:seq(1, Count), P <- [element(2, xl_lists:random(Points))]].
+    [point_to_query(element(2, xl_lists:random(Points))) || _ <- lists:seq(1, Count)].
 
 extract_results(Points, Queries, Match) ->
     [{Q, lists:sort(lists:map(

@@ -31,7 +31,7 @@
 -export([stream/2, map/2, foreach/2, seq/2, foldl/3, filter/2, to_list/1, ifoldl/3, to_stream/1, to_pair/1, mapfind/2,
     empty/0, to_random_stream/1, keyfilter/3, eforeach/2, to_rpc_stream/1, to_rpc_stream/2, matchfilter/2, concat/1, flatmap/2]).
 
--opaque(stream(A) :: {?MODULE, fun(() -> [A | stream(A)])}).
+-type(stream(A) :: {?MODULE, fun(() -> [A | stream(A)])}).
 -export_type([stream/1]).
 
 stream(Context, Next) ->
