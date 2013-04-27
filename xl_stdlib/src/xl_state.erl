@@ -52,7 +52,7 @@ loop() ->
         {init, Name, Options, Sender} ->
             try
                 catch ets:delete(Name),
-                ets:new(Name, [named_table, public | Options]),
+                Name = ets:new(Name, [named_table, public | Options]),
                 Sender ! ok,
                 loop()
             catch

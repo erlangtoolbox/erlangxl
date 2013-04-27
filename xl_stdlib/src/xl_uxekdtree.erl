@@ -41,7 +41,7 @@
 -type(find_point() :: tuple()).
 -type(leaf() :: option_m:monad([point()])).
 -type(tree_node() :: {term(), pos_integer(), Undefined :: tree_node(), Less :: tree_node(), Equal :: tree_node(), Greater :: tree_node(), Excluded :: tree_node()} | leaf()).
--type(tree() :: {module(), tree_node(), comparator()}).
+-type(tree() :: {module(), tree_node(), xl_lists:kvlist_at()}).
 
 
 -spec(new([point()]) -> tree()).
@@ -83,7 +83,7 @@ planes([H | _]) -> lists:seq(1, tuple_size(H) - 1).
 - spec(size(tree()) -> pos_integer()).
 size({?MODULE, Node, _Compare}) -> size(Node, 0).
 
--spec(size(tree_node(), pos_integer()) -> pos_integer()).
+-spec(size(tree_node(), non_neg_integer()) -> non_neg_integer()).
 size([], Count) -> Count;
 size(L, Count) when is_list(L) -> Count;
 size({_, _, U, L, E, R, X}, Count) ->
@@ -93,10 +93,10 @@ size({_, _, U, L, E, R, X}, Count) ->
     RNodes = size(R, ENodes),
     size(X, RNodes).
 
--spec(depth(tree()) -> pos_integer()).
+-spec(depth(tree()) -> non_neg_integer()).
 depth({?MODULE, Node, _Compare}) -> depth(Node, 0).
 
--spec(depth(tree_node(), pos_integer()) -> pos_integer()).
+-spec(depth(tree_node(), non_neg_integer()) -> non_neg_integer()).
 depth([], Depth) -> Depth;
 depth(L, Depth) when is_list(L) -> Depth;
 depth({_, _, U, L, E, R, X}, Depth) ->
