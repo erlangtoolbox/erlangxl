@@ -1,3 +1,3 @@
 #!/bin/sh
 
-echo -n `cat ../version`.`printf "%d\n" $BUILD_NUMBER`
+echo -n `printf "1.2.0.%d" $BUILD_NUMBER`
