@@ -1,7 +1,0 @@
-{application, xl_stdlib,
- [{description, "common libraries"},
-  {vsn,"{{VERSION}}"},
-  {applications, [kernel,stdlib]}
- ]}.
-
-
