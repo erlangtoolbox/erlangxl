@@ -138,7 +138,7 @@ new_with_undefs_test() ->
 new_performance_test_() ->
     xl_application:start(xl_stdlib),
     {timeout, 2000, fun() ->
-        xl_eunit:performance(eqkdtree, fun() ->
+        xl_eunit:performance(uxekdtree, fun() ->
             prepare_space(10, 1000)
         end, 5)
     end}.
@@ -153,7 +153,7 @@ find_test_() ->
             {ok, Q} = xl_lists:random(Queries),
             Expected = xl_lists:kvfind(Q, ExpectedResuts),
             ?assertEquals(Expected, xl_uxekdtree:find(Q, Tree)),
-            xl_eunit:performance(eqkdtree_find, fun() ->
+            xl_eunit:performance(uxekdtree_find, fun() ->
                 xl_uxekdtree:find(Q, Tree)
             end, 1000)
         end, 10)
@@ -198,7 +198,7 @@ find_undefined_test_() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
             ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))),
-            xl_eunit:performance(eqkdtree_find_undef_q, fun() ->
+            xl_eunit:performance(xl_uxekdtree_find_undef_q, fun() ->
                 xl_uxekdtree:find(Q, Tree)
             end, 1000)
         end, 10)
@@ -217,7 +217,7 @@ find_with_any_test_() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
             ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))),
-            xl_eunit:performance(eqkdtree_find_w_any, fun() ->
+            xl_eunit:performance(xl_uxekdtree_find_w_any, fun() ->
                 xl_uxekdtree:find(Q, Tree)
             end, 1000)
         end, 10)
@@ -241,19 +241,18 @@ prepare_space(Dimensions, TotalPoints) -> prepare_space(Dimensions, TotalPoints,
 prepare_space(Dimensions, TotalPoints, Undefined) ->
     Planes = generate_planes([100, 50, 10], Dimensions),
     Points = generate_points(Planes, TotalPoints, Undefined),
-    UniquePoints = xl_lists:count_unique(Points),
     {Time, Tree} = timer:tc(xl_uxekdtree, new, [Points]),
-    xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\tunique: ~p\t'any' positions: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+    xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\t'any' positions: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
         length(Planes),
         list_to_tuple(Planes),
         TotalPoints,
-        length(UniquePoints),
         Undefined,
         xl_uxekdtree:size(Tree),
         xl_uxekdtree:depth(Tree),
         Time
     ]),
     {Tree, Points}.
+
 
 point_to_query(P) -> list_to_tuple(element(1, lists:split(tuple_size(P) - 1, tuple_to_list(P)))).
 
@@ -285,3 +284,30 @@ undefine(Tuple, Count, Length) ->
     lists:foldl(fun(P, Q) ->
         setelement(P, Q, undefined)
     end, Tuple, Positions).
+
+%%      basic: points: 145250	size: 52344	depth: 26	construction time: 1628181 mcs
+real_space_test_() ->
+    {timeout, 200, fun() ->
+        {ok, Data} = xl_file:read_file(xl_eunit:resource(?MODULE, "space")),
+        Points = binary_to_term(Data),
+        {Time, Tree} = timer:tc(xl_uxekdtree, new, [Points]),
+        xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+            length(Points),
+            xl_uxekdtree:size(Tree),
+            xl_uxekdtree:depth(Tree),
+            Time
+        ]),
+        Qs = [{false, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
+            'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
+            {false, <<"US">>, <<"IAB-19">>, undefined, 1, undefined, site, nexage,
+                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
+            {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
+                'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}
+        ],
+        lists:foreach(fun(Q) ->
+            xl_eunit:format("~p: ~p~n", [Q, length(element(2, xl_uxekdtree:find(Q, Tree)))]),
+            xl_eunit:performance(xl_uxekdtree_real_space_find, fun() ->
+                xl_uxekdtree:find(Q, Tree)
+            end, 1000)
+        end, Qs)
+    end}.
