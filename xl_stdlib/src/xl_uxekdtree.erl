@@ -123,6 +123,29 @@ find(Query, {_Value, Plane, U, L, E, R, X}, Compare, Acc) when element(Plane, Qu
     EAcc = find(Query, E, Compare, LAcc),
     RAcc = find(Query, R, Compare, EAcc),
     find(Query, X, Compare, RAcc);
+find(Query, {Value, Plane, U, L, E, R, X}, Compare, Acc) when is_list(element(Plane, Query)) ->
+    UAcc = find(Query, U, Compare, Acc),
+    QL = element(Plane, Query),
+    {QLess, QRest} = lists:partition(fun(QV) -> Compare(Plane, QV, Value) == lt end, QL),
+    {QEq, QGreater} = lists:partition(fun(QV) -> Compare(Plane, QV, Value) == eq end, QRest),
+    EAcc = case QEq of [_ | _] ->
+        find(Query, E, Compare, UAcc);
+        _ -> UAcc
+    end,
+    XAcc = case {QLess, QGreater} of
+        {[], []} -> EAcc;
+        _ -> find(Query, X, Compare, EAcc)
+    end,
+    LAcc = case QLess of
+        [] -> XAcc;
+        [LV] -> find(setelement(Plane, Query, LV), L, Compare, XAcc);
+        _ -> find(setelement(Plane, Query, QLess), L, Compare, XAcc)
+    end,
+    case QGreater of
+        [] -> LAcc;
+        [GV] -> find(setelement(Plane, Query, GV), R, Compare, LAcc);
+        _ -> find(setelement(Plane, Query, QGreater), R, Compare, LAcc)
+    end;
 find(Query, {Value, Plane, U, L, E, R, X}, Compare, Acc) ->
     UAcc = find(Query, U, Compare, Acc),
     case Compare(Plane, element(Plane, Query), Value) of

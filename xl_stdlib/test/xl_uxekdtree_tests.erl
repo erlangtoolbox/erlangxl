@@ -143,22 +143,6 @@ new_performance_test_() ->
         end, 5)
     end}.
 
-find_test_() ->
-    xl_application:start(xl_stdlib),
-    {timeout, 2000, fun() ->
-        {Tree, Points} = prepare_space(10, 1000),
-        Queries = make_random_queries(Points, 10),
-        ExpectedResuts = extract_results(Points, Queries, fun erlang:'=='/2),
-        xl_lists:times(fun() ->
-            {ok, Q} = xl_lists:random(Queries),
-            Expected = xl_lists:kvfind(Q, ExpectedResuts),
-            ?assertEquals(Expected, xl_uxekdtree:find(Q, Tree)),
-            xl_eunit:performance(uxekdtree_find, fun() ->
-                xl_uxekdtree:find(Q, Tree)
-            end, 1000)
-        end, 10)
-    end}.
-
 find_all_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE),
@@ -184,6 +168,28 @@ find_with_x_test() ->
     Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
     Q = {1, b},
     ?assertEquals([b, xb2], lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
+
+find_with_variance_test() ->
+    xl_application:start(xl_stdlib),
+    Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
+    Q = {1, [b, c]},
+    ?assertEquals([b, c, xb2], lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
+
+find_test_() ->
+    xl_application:start(xl_stdlib),
+    {timeout, 2000, fun() ->
+        {Tree, Points} = prepare_space(10, 1000),
+        Queries = make_random_queries(Points, 10),
+        ExpectedResuts = extract_results(Points, Queries, fun erlang:'=='/2),
+        xl_lists:times(fun() ->
+            {ok, Q} = xl_lists:random(Queries),
+            Expected = xl_lists:kvfind(Q, ExpectedResuts),
+            ?assertEquals(Expected, xl_uxekdtree:find(Q, Tree)),
+            xl_eunit:performance(uxekdtree_find, fun() ->
+                xl_uxekdtree:find(Q, Tree)
+            end, 1000)
+        end, 10)
+    end}.
 
 find_undefined_test_() ->
     xl_application:start(xl_stdlib),
@@ -301,8 +307,12 @@ real_space_test_() ->
             'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
             {false, <<"US">>, <<"IAB-19">>, undefined, 1, undefined, site, nexage,
                 'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
+            {false, <<"US">>, [<<"IAB-19">>, <<"IAB-20">>], undefined, 1, undefined, site, nexage,
+                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
             {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
-                'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}
+                'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
+            {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
+                'Mon', 1, ['300x250', '320x50'], <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}
         ],
         lists:foreach(fun(Q) ->
             xl_eunit:format("~p: ~p~n", [Q, length(element(2, xl_uxekdtree:find(Q, Tree)))]),
