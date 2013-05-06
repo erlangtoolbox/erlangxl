@@ -78,7 +78,24 @@ new_tree(Points, Compare, PlanePos, Planes) ->
     }.
 
 planes([]) -> [];
-planes([H | _]) -> lists:seq(1, tuple_size(H) - 1).
+planes(Points = [H | _]) ->
+    Mask = data_mask(Points, tuple_size(H) - 1),
+    Planes = lists:filter(fun(Index) ->
+        Bit = (1 bsl (Index - 1)),
+        Bit band Mask == Bit
+    end, lists:seq(1, tuple_size(H) - 1)),
+%%     xl_eunit:format("planes ~.2B, ~p~n", [Mask, Planes]),
+    Planes.
+
+data_mask(Points, Size) ->
+    lists:foldl(fun(P, Mask) ->
+        lists:foldl(fun(Index, IMask) ->
+            case element(Index, P) of
+                undefined -> IMask;
+                _ -> IMask bor (1 bsl (Index - 1))
+            end
+        end, Mask, lists:seq(1, Size))
+    end, 0, Points).
 
 - spec(size(tree()) -> pos_integer()).
 size({?MODULE, Node, _Compare}) -> size(Node, 0).

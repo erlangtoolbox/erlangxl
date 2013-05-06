@@ -291,7 +291,19 @@ undefine(Tuple, Count, Length) ->
         setelement(P, Q, undefined)
     end, Tuple, Positions).
 
-%%      basic: points: 145250	size: 52344	depth: 26	construction time: 1628181 mcs
+%% basic: points: 145250 size: 52344 depth: 26	construction time: 1628181 mcs
+%% PERFORMANCE xl_uxekdtree_real_space_find: 126823.1 op/s, time: 7.885 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 104231.8 op/s, time: 9.594 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 93826.2 op/s, time: 10.658 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 96107.6 op/s, time: 10.405 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 35932.4 op/s, time: 27.83 ms
+%%
+%% mask: points: 145250	size: 45656	depth: 20	construction time: 1601274 mcs
+%% PERFORMANCE xl_uxekdtree_real_space_find: 211371.8 op/s, time: 4.731 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 156445.6 op/s, time: 6.392 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 152928.6 op/s, time: 6.539 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 161550.9 op/s, time: 6.19 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 61984.8 op/s, time: 16.133 ms
 real_space_test_() ->
     {timeout, 200, fun() ->
         {ok, Data} = xl_file:read_file(xl_eunit:resource(?MODULE, "space")),
@@ -303,19 +315,19 @@ real_space_test_() ->
             xl_uxekdtree:depth(Tree),
             Time
         ]),
-        Qs = [{false, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
-            'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
-            {false, <<"US">>, <<"IAB-19">>, undefined, 1, undefined, site, nexage,
-                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
-            {false, <<"US">>, [<<"IAB-19">>, <<"IAB-20">>], undefined, 1, undefined, site, nexage,
-                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
-            {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
-                'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>},
-            {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
-                'Mon', 1, ['300x250', '320x50'], <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}
+        Qs = [{6, {false, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
+            'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {263, {false, <<"US">>, <<"IAB-19">>, undefined, 1, undefined, site, nexage,
+                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {263, {false, <<"US">>, [<<"IAB-19">>, <<"IAB-20">>], undefined, 1, undefined, site, nexage,
+                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {111, {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
+                'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {381, {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
+                'Mon', 1, ['300x250', '320x50'], <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}}
         ],
-        lists:foreach(fun(Q) ->
-            xl_eunit:format("~p: ~p~n", [Q, length(element(2, xl_uxekdtree:find(Q, Tree)))]),
+        lists:foreach(fun({R, Q}) ->
+            ?assertEquals(R, length(element(2, xl_uxekdtree:find(Q, Tree)))),
             xl_eunit:performance(xl_uxekdtree_real_space_find, fun() ->
                 xl_uxekdtree:find(Q, Tree)
             end, 1000)
