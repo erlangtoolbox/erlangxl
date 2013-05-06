@@ -30,7 +30,7 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 -include_lib("eunit/include/eunit.hrl").
--include("xl_eunit.hrl").
+-include_lib("xl_stdlib/include/xl_eunit.hrl").
 
 -define(POINTS_FOR_SMALL_TREE, [
     {1, c, c}, {1, b, b}, {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}

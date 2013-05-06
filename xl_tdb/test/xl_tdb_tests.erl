@@ -26,49 +26,41 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(pl_persist).
+-module(xl_tdb_tests).
 -author("volodymyr.kyrychenko@strikead.com").
 
-%% API
--export([open/2, mutate/2, read/2]).
+-include_lib("eunit/include/eunit.hrl").
+-include_lib("xl_stdlib/include/xl_eunit.hrl").
 
--record(persistor, {
-    pid
+-record(testobj, {
+    id,
+    name
 }).
-open(Identify, Options) ->
-    Backend = xl_lists:kvfind(data_backend, Options, pl_persist_data_orddict),
-    Data = Backend:initialize(Identify, Options),
-    Pid = spawn_link(fun() -> loop(Data) end),
-    #persistor{
-            pid = Pid
-    }.
 
-loop(Data) ->
-    receive
-        {mutate, Fun, From} ->
-            case Fun(Data) of
-                {NewData} ->
-                    From ! {result, ok},
-                    loop(NewData);
-                {Result, NewData} ->
-                    From ! {result, Result},
-                    loop(NewData)
-            end;
-        {read, Fun, From} ->
-            spawn(fun() ->
-                From ! {result, Fun(Data)}
-            end),
-            loop(Data)
-    end.
+memory_options_test() ->
+    xl_application:start(xl_stdlib),
+    {ok, Pid} = xl_tdb:open("/tmp/test/tdb", xl_tdb:by_index(#testobj.id), [{fsync_interval, 100}]),
+    T1 = #testobj{id = "1", name = "n1"},
+    T2 = #testobj{id = "2", name = "n2"},
 
-mutate(#persistor{pid = Pid}, Fun) ->
-    Pid ! {mutate, Fun, self()},
-    receive
-        {result, R} -> R
-    end.
+    ?assertOk(xl_tdb:store(Pid, [T1, T2])),
+    ?assertEqual({ok, T1}, xl_tdb:get(Pid, "1")),
+    ?assertEqual({ok, T2}, xl_tdb:get(Pid, "2")),
+    ?assertEqual(undefined, xl_tdb:get(Pid, "3")),
 
-read(#persistor{pid = Pid}, Fun) ->
-    Pid ! {read, Fun, self()},
-    receive
-        {result, R} -> R
-    end.
+    ?assertOk(xl_tdb:delete(Pid, "1")),
+    ?assertEqual(undefined, xl_tdb:get(Pid, "1")),
+    ?assertEqual({ok, T2}, xl_tdb:get(Pid, "2")),
+
+    ?assertEqual(ok, xl_tdb:close(Pid)).
+
+dis_storage_test() ->
+    {ok, Pid} = xl_tdb:open("/tmp/test/tdb", xl_tdb:by_index(#testobj.id), [{fsync_interval, 100}]),
+    T1 = #testobj{id = "1", name = "n1"},
+    T2 = #testobj{id = "2", name = "n2"},
+    xl_tdb:store(Pid, [T1, T2]),
+    timer:sleep(500),
+    ?assertEqual(ok, xl_tdb:close(Pid)),
+    {ok, Pid2} = xl_tdb:open("/tmp/test/tdb", xl_tdb:by_index(#testobj.id), [{fsync_interval, 100}]),
+    ?assertEqual([T1, T2], xl_tdb:select(Pid2)),
+    ?assertEqual(ok, xl_tdb:close(Pid2)).

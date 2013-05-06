@@ -26,49 +26,31 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(pl_persist).
--author("volodymyr.kyrychenko@strikead.com").
+-module(xl_tdb_storage).
 
-%% API
--export([open/2, mutate/2, read/2]).
+-compile({parse_transform, do}).
 
--record(persistor, {
-    pid
-}).
-open(Identify, Options) ->
-    Backend = xl_lists:kvfind(data_backend, Options, pl_persist_data_orddict),
-    Data = Backend:initialize(Identify, Options),
-    Pid = spawn_link(fun() -> loop(Data) end),
-    #persistor{
-            pid = Pid
-    }.
+-export([load/1, store/3, delete/2]).
 
-loop(Data) ->
-    receive
-        {mutate, Fun, From} ->
-            case Fun(Data) of
-                {NewData} ->
-                    From ! {result, ok},
-                    loop(NewData);
-                {Result, NewData} ->
-                    From ! {result, Result},
-                    loop(NewData)
-            end;
-        {read, Fun, From} ->
-            spawn(fun() ->
-                From ! {result, Fun(Data)}
-            end),
-            loop(Data)
-    end.
+-spec(load(file:name()) -> error_m:monad([term()])).
+load(Location) ->
+    do([error_m ||
+        xl_file:mkdirs(Location),
+        Files <- xl_file:list_dir(Location, "*.bin"),
+        xl_lists:emap(fun(F) ->
+            do([error_m ||
+                Content <- xl_file:read_file(filename:join(Location, F)),
+                return(binary_to_term(Content))
+            ])
+        end, Files)
+    ]).
 
-mutate(#persistor{pid = Pid}, Fun) ->
-    Pid ! {mutate, Fun, self()},
-    receive
-        {result, R} -> R
-    end.
+-spec(store(file:name(), xl_string:iostring(), term()) -> error_m:monad(ok)).
+store(Location, Id, X) ->
+    xl_file:write_file(xl_string:join([Location, "/", Id, ".bin"]), term_to_binary(X)).
 
-read(#persistor{pid = Pid}, Fun) ->
-    Pid ! {read, Fun, self()},
-    receive
-        {result, R} -> R
-    end.
+-spec(delete(file:name(), xl_string:iostring()) -> error_m:monad(ok)).
+delete(Location, Id) ->
+    xl_file:delete(xl_string:join([Location, "/", Id, ".bin"])).
+
+

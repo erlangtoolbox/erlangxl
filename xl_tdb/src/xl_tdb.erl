@@ -1,0 +1,151 @@
+%%  Copyright (c) 2012-2013
+%%  StrikeAd LLC http://www.strikead.com
+%%
+%%  All rights reserved.
+%%
+%%  Redistribution and use in source and binary forms, with or without
+%%  modification, are permitted provided that the following conditions are met:
+%%
+%%      Redistributions of source code must retain the above copyright
+%%  notice, this list of conditions and the following disclaimer.
+%%      Redistributions in binary form must reproduce the above copyright
+%%  notice, this list of conditions and the following disclaimer in the
+%%  documentation and/or other materials provided with the distribution.
+%%      Neither the name of the StrikeAd LLC nor the names of its
+%%  contributors may be used to endorse or promote products derived from
+%%  this software without specific prior written permission.
+%%
+%%  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+%%  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+%%  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+%%  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+%%  HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+%%  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+%%  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+%%  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+%%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+%%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+%%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-module(xl_tdb).
+-author("volodymyr.kyrychenko@strikead.com").
+
+-compile({parse_transform, do}).
+
+%% API
+-export([open/3, close/1, store/2, get/2, delete/2, by_index/1, select/1]).
+-export_type([identify/0]).
+
+-type(identify() :: fun((term()) -> xl_string:iostring())).
+
+-record(xl_tdb_state, {
+    location :: file:name(),
+    identify :: identify(),
+    objects :: [term()],
+    updater_pid :: pid()
+}).
+
+-spec(open(file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(pid())).
+open(Location, Identify, _Options) ->
+    do([error_m ||
+        Objects <- xl_tdb_storage:load(Location),
+        Db <- return(#xl_tdb_state{
+            location = Location,
+            identify = Identify,
+            objects = Objects,
+            updater_pid = spawn_link(fun update/0)
+        }),
+        return(spawn_link(fun() -> loop(Db) end))
+    ]).
+
+
+-spec(close(pid()) -> error_m:monad(ok)).
+close(Pid) ->
+    Pid ! stop,
+    ok.
+
+-spec(store(pid(), [term()]) -> error_m:monad(ok)).
+store(Pid, Objects) ->
+    mutate(Pid, fun(State = #xl_tdb_state{location = Location, objects = StateObjects, identify = Id}) ->
+        do([error_m ||
+            xl_lists:eforeach(fun(O) -> xl_tdb_storage:store(Location, Id(O), {Id(O), O}) end, Objects),
+            return(State#xl_tdb_state{
+                    objects = lists:map(fun(O) -> {Id(O), O} end, Objects) ++
+                        lists:foldl(fun(O, FoldObjects) ->
+                            lists:keydelete(Id(O), 1, FoldObjects)
+                        end, StateObjects, Objects)})
+        ])
+
+    end).
+
+-spec(delete(pid(), xl_string:iostring()) -> error_m:monad(ok)).
+delete(Pid, Id) ->
+    mutate(Pid, fun(State = #xl_tdb_state{location = Location, objects = StateObjects}) ->
+        do([error_m ||
+            xl_tdb_storage:delete(Location, Id),
+            return(State#xl_tdb_state{
+                    objects = lists:keydelete(Id, 1, StateObjects)
+            })
+        ])
+    end).
+
+-spec(get(pid(), xl_string:iostring()) -> option_m:monad(term())).
+get(Pid, Id) ->
+    read(Pid, fun(#xl_tdb_state{objects = Objects}) ->
+        case xl_lists:keyfind(Id, 1, Objects) of
+            {ok, {_, O}} -> {ok, O};
+            undefined -> undefined
+        end
+    end).
+
+-spec(select(pid()) -> [term()]).
+select(Pid) ->
+    read(Pid, fun(#xl_tdb_state{objects = Objects}) ->
+        lists:map(fun({_, O}) -> O end, Objects)
+    end).
+
+-spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
+by_index(N) -> fun(X) -> element(N, X) end.
+
+%% Internal functions
+loop(State = #xl_tdb_state{updater_pid = Updater}) ->
+    receive
+        {mutate, Fun, CallingProcess} ->
+            Updater ! {update, Fun, CallingProcess, self(), State},
+            loop(State);
+        {updated, NewState} ->
+            loop(NewState);
+        {read, Fun, CallingProcess} ->
+            spawn(fun() ->
+                CallingProcess ! Fun(State)
+            end),
+            loop(State);
+        stop ->
+            Updater ! stop,
+            ok
+    end.
+
+update() ->
+    receive
+        stop -> ok;
+        {update, Fun, CallingProcess, MasterLoop, State} ->
+            case Fun(State) of
+                {ok, NewState} ->
+                    MasterLoop ! {updated, NewState},
+                    CallingProcess ! ok;
+                E -> CallingProcess ! E
+            end,
+            update()
+    end.
+
+mutate(Pid, Fun) ->
+    Pid ! {mutate, Fun, self()},
+    receive
+        R -> R
+    end.
+
+read(Pid, Fun) ->
+    Pid ! {read, Fun, self()},
+    receive
+        R -> R
+    end.
+
