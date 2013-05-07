@@ -54,18 +54,18 @@ memory_options_test() ->
     ?assertOk(xl_tdb:close(testtdb)).
 
 disk_storage_test() ->
-    {ok, Pid} = xl_tdb:open(testtdb, "/tmp/test/tdb", xl_tdb:by_index(#testobj.id), []),
+    {ok, Pid} = xl_tdb:open(testtdbds, "/tmp/test/tdb", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = "n1"},
     T2 = #testobj{id = "2", name = "n2"},
     xl_tdb:store(Pid, [T1, T2]),
     timer:sleep(500),
     ?assertEqual(ok, xl_tdb:close(Pid)),
-    {ok, Pid2} = xl_tdb:open(testtdb, "/tmp/test/tdb", xl_tdb:by_index(#testobj.id), []),
+    {ok, Pid2} = xl_tdb:open(testtdbds, "/tmp/test/tdb", xl_tdb:by_index(#testobj.id), []),
     ?assertEqual([T1, T2], xl_tdb:select(Pid2)),
     ?assertEqual(ok, xl_tdb:close(Pid2)).
 
 mapfind_test() ->
-    {ok, _Pid} = xl_tdb:open(testtdb, "/tmp/test/tdb", xl_tdb:by_index(#testobj.id), [
+    {ok, _Pid} = xl_tdb:open(testtdbmf, "/tmp/test/tdb", xl_tdb:by_index(#testobj.id), [
         {index_object, fun index_object/1},
         {index_query, fun index_query/1}
     ]),
@@ -73,9 +73,9 @@ mapfind_test() ->
     T2 = #testobj{id = "2", name = <<"n2">>},
     T3 = #testobj{id = "3", name = <<"n1">>},
     T4 = #testobj{id = "4", name = <<"n3">>},
-    ?assertOk(xl_tdb:store(testtdb, [T1, T2, T3, T4])),
-    ?assertEquals([T1, T3], xl_tdb:mapfilter(testtdb, [{name, <<"n1">>}], fun(O, _) -> {ok, O} end)),
-    ?assertOk(xl_tdb:close(testtdb)).
+    ?assertOk(xl_tdb:store(testtdbmf, [T1, T2, T3, T4])),
+    ?assertEquals([T1, T3], xl_tdb:mapfilter(testtdbmf, [{name, <<"n1">>}], fun(O, _) -> {ok, O} end)),
+    ?assertOk(xl_tdb:close(testtdbmf)).
 
 
 index_object(#testobj{id = Id, name = Name}) -> [{Name, {Id}}].
