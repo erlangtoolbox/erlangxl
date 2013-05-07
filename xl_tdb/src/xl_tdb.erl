@@ -112,10 +112,7 @@ get(Ref, Id) ->
     end).
 
 -spec(select(tdbref()) -> [term()]).
-select(Ref) ->
-    read(Ref, fun(#xl_tdb_state{objects = Objects}) ->
-        lists:map(fun({_, O}) -> O end, Objects)
-    end).
+select(Ref) -> read(Ref, fun(#xl_tdb_state{objects = Objects}) -> unwrap(Objects) end).
 
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.

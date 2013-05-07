@@ -39,6 +39,7 @@ load(Location) ->
         Files <- xl_file:list_dir(Location, "*.bin"),
         xl_lists:emap(fun(F) ->
             do([error_m ||
+                xl_eunit:format("loading ~p~n", [F]),
                 Content <- xl_file:read_file(filename:join(Location, F)),
                 return(binary_to_term(Content))
             ])
