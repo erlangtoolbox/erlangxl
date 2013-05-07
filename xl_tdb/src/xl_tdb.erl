@@ -91,11 +91,13 @@ store(Ref, Objects) ->
 
 -spec(delete(tdbref(), xl_string:iostring()) -> error_m:monad(ok)).
 delete(Ref, Id) ->
-    mutate(Ref, fun(State = #xl_tdb_state{location = Location, objects = StateObjects}) ->
+    mutate(Ref, fun(State = #xl_tdb_state{location = Location, objects = StateObjects, options = Options}) ->
         do([error_m ||
             xl_tdb_storage:delete(Location, Id),
+            NewObjects <- return(lists:keydelete(Id, 1, StateObjects)),
             return(State#xl_tdb_state{
-                    objects = lists:keydelete(Id, 1, StateObjects)
+                    objects = NewObjects,
+                    index = index_build(Options, NewObjects)
             })
         ])
     end).
@@ -190,8 +192,6 @@ index_build(Options, Objects) ->
 index_lookup(_Q, _Options, undefined) -> undefined;
 index_lookup(Q, Options, Tree) ->
     case xl_lists:kvfind(index_query, Options) of
-        {ok, F} ->
-            xl_eunit:format("~p: ~p~n", [F(Q), Tree]),
-            xl_uxekdtree:find(F(Q), Tree);
+        {ok, F} -> xl_uxekdtree:find(F(Q), Tree);
         undefined -> undefined
     end.
