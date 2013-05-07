@@ -132,7 +132,6 @@ find(Query, {?MODULE, Node, Options}) ->
         R -> {ok, R}
     end.
 
-find(_Query, [], _Compare, Acc) -> Acc;
 find(_Query, L, _Compare, Acc) when is_list(L) -> L ++ Acc;
 find(Query, {_Value, Plane, U, L, E, R, X}, Compare, Acc) when element(Plane, Query) == undefined ->
     UAcc = find(Query, U, Compare, Acc),

@@ -28,7 +28,7 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_lang).
 
--export([ifelse/3, record_to_proplist/2, safe_call/2]).
+-export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1]).
 
 ifelse(true, Then, _) -> result(Then);
 ifelse(false, _, Else) -> result(Else).
@@ -45,3 +45,19 @@ safe_call(F, R) when is_function(F, 0) ->
 
 result(R) when is_function(R, 0) -> R();
 result(R) -> R.
+
+-spec(register(atom(), pid() | port()) -> error_m:monad(ok)).
+register(Name, PidOrPort) ->
+    try erlang:register(Name, PidOrPort) of
+        true -> {ok, PidOrPort}
+    catch
+        _ : badarg -> {error, {cannot_register, Name, PidOrPort}}
+    end.
+
+-spec(unregister(atom()) -> error_m:monad(ok)).
+unregister(Name) ->
+    try erlang:unregister(Name) of
+        true -> ok
+    catch
+        _ : badarg -> {error, {cannot_unregister, Name}}
+    end.

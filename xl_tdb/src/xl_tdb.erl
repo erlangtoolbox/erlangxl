@@ -32,54 +32,66 @@
 -compile({parse_transform, do}).
 
 %% API
--export([open/3, close/1, store/2, get/2, delete/2, by_index/1, select/1]).
+-export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, mapfilter/3]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
+-type(tdbref() :: pid() | atom()).
 
 -record(xl_tdb_state, {
     location :: file:name(),
     identify :: identify(),
     objects :: [term()],
-    updater_pid :: pid()
+    updater_pid :: pid(),
+    index :: xl_uxekdtree:tree(),
+    options :: xl_lists:kvlist_at()
 }).
 
--spec(open(file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(pid())).
-open(Location, Identify, _Options) ->
+-spec(open(atom(), file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(pid())).
+open(Name, Location, Identify, Options) ->
     do([error_m ||
         Objects <- xl_tdb_storage:load(Location),
         Db <- return(#xl_tdb_state{
             location = Location,
             identify = Identify,
             objects = Objects,
-            updater_pid = spawn_link(fun update/0)
+            updater_pid = spawn_link(fun update/0),
+            index = index_build(Options, Objects),
+            options = Options
         }),
-        return(spawn_link(fun() -> loop(Db) end))
+        Pid <- return(spawn_link(fun() -> loop(Db) end)),
+        xl_lang:register(Name, Pid)
     ]).
 
 
--spec(close(pid()) -> error_m:monad(ok)).
-close(Pid) ->
-    Pid ! stop,
-    ok.
+-spec(close(tdbref()) -> error_m:monad(ok)).
+close(Ref) ->
+    Ref ! stop,
+    case is_atom(Ref) of
+        true -> xl_lang:unregister(Ref);
+        false -> ok
+    end.
 
--spec(store(pid(), [term()]) -> error_m:monad(ok)).
-store(Pid, Objects) ->
-    mutate(Pid, fun(State = #xl_tdb_state{location = Location, objects = StateObjects, identify = Id}) ->
+-spec(store(tdbref(), [term()]) -> error_m:monad(ok)).
+store(Ref, Objects) ->
+    mutate(Ref, fun(State = #xl_tdb_state{location = Location, objects = StateObjects, identify = Id, options = Options}) ->
         do([error_m ||
-            xl_lists:eforeach(fun(O) -> xl_tdb_storage:store(Location, Id(O), {Id(O), O}) end, Objects),
+            xl_lists:eforeach(fun(O) -> xl_tdb_storage:store(Location, Id(O), wrap(O, Id)) end, Objects),
+            NewObjects <- return(wrap(Objects, Id) ++
+                lists:foldl(fun(O, FoldObjects) ->
+                    lists:keydelete(Id(O), 1, FoldObjects)
+                end, StateObjects, Objects)),
             return(State#xl_tdb_state{
-                    objects = lists:map(fun(O) -> {Id(O), O} end, Objects) ++
-                        lists:foldl(fun(O, FoldObjects) ->
-                            lists:keydelete(Id(O), 1, FoldObjects)
-                        end, StateObjects, Objects)})
+                    objects = NewObjects,
+                    index = index_build(Options, NewObjects)
+            })
         ])
 
     end).
 
--spec(delete(pid(), xl_string:iostring()) -> error_m:monad(ok)).
-delete(Pid, Id) ->
-    mutate(Pid, fun(State = #xl_tdb_state{location = Location, objects = StateObjects}) ->
+-spec(delete(tdbref(), xl_string:iostring()) -> error_m:monad(ok)).
+delete(Ref, Id) ->
+    mutate(Ref, fun(State = #xl_tdb_state{location = Location, objects = StateObjects}) ->
         do([error_m ||
             xl_tdb_storage:delete(Location, Id),
             return(State#xl_tdb_state{
@@ -88,23 +100,36 @@ delete(Pid, Id) ->
         ])
     end).
 
--spec(get(pid(), xl_string:iostring()) -> option_m:monad(term())).
-get(Pid, Id) ->
-    read(Pid, fun(#xl_tdb_state{objects = Objects}) ->
+-spec(get(tdbref(), xl_string:iostring()) -> option_m:monad(term())).
+get(Ref, Id) ->
+    read(Ref, fun(#xl_tdb_state{objects = Objects}) ->
         case xl_lists:keyfind(Id, 1, Objects) of
             {ok, {_, O}} -> {ok, O};
             undefined -> undefined
         end
     end).
 
--spec(select(pid()) -> [term()]).
-select(Pid) ->
-    read(Pid, fun(#xl_tdb_state{objects = Objects}) ->
+-spec(select(tdbref()) -> [term()]).
+select(Ref) ->
+    read(Ref, fun(#xl_tdb_state{objects = Objects}) ->
         lists:map(fun({_, O}) -> O end, Objects)
     end).
 
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
+
+-spec(mapfilter(tdbref(), xl_lists:kvlist_at(), fun((term(), tuple()) -> option_m:monad(term()))) -> [term()]).
+mapfilter(Ref, Q, F) ->
+    read(Ref, fun(#xl_tdb_state{index = Index, options = Options, objects = Objects}) ->
+        case index_lookup(Q, Options, Index) of
+            {ok, Values} ->
+                monad:flatten(option_m, [
+                    F(unwrap(element(2, xl_lists:keyfind(element(1, IV), 1, Objects))), IV) ||
+                    IV <- Values
+                ]);
+            undefined -> []
+        end
+    end).
 
 %% Internal functions
 loop(State = #xl_tdb_state{updater_pid = Updater}) ->
@@ -149,3 +174,24 @@ read(Pid, Fun) ->
         R -> R
     end.
 
+wrap(Objects, Id) when is_list(Objects) -> lists:map(fun(O) -> wrap(O, Id) end, Objects);
+wrap(Object, Id) -> {Id(Object), Object}.
+
+unwrap(Objects) when is_list(Objects) -> lists:map(fun(O) -> unwrap(O) end, Objects);
+unwrap({_, O}) -> O.
+
+index_build(Options, Objects) ->
+    case xl_lists:kvfind(index_object, Options) of
+        {ok, F} ->
+            xl_uxekdtree:new(lists:foldl(fun(O, Points) -> F(unwrap(O)) ++ Points end, [], Objects));
+        undefined -> undefined
+    end.
+
+index_lookup(_Q, _Options, undefined) -> undefined;
+index_lookup(Q, Options, Tree) ->
+    case xl_lists:kvfind(index_query, Options) of
+        {ok, F} ->
+            xl_eunit:format("~p: ~p~n", [F(Q), Tree]),
+            xl_uxekdtree:find(F(Q), Tree);
+        undefined -> undefined
+    end.
