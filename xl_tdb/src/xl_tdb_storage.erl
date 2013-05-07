@@ -42,7 +42,7 @@ load(Location) ->
                 Content <- xl_file:read_file(filename:join(Location, F)),
                 return(binary_to_term(Content))
             ])
-        end, Files)
+        end, lists:sort(Files))
     ]).
 
 -spec(store(file:name(), xl_string:iostring(), term()) -> error_m:monad(ok)).
