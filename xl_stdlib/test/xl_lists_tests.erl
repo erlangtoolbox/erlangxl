@@ -128,8 +128,8 @@ random_test() ->
     ?assert(C3 >= 20),
     Results2 = [xl_lists:random([1, 2]) || _ <- lists:seq(1, 100)],
     [{_, C21}, {_, C22}] = xl_lists:count_unique(Results2),
-    ?assert(C21 >= 40),
-    ?assert(C22 >= 40).
+    ?assert(C21 >= 30),
+    ?assert(C22 >= 30).
 
 split_by_test() ->
     ?assertEqual([[1, 2], [4, 4, 5], [5, 6]], xl_lists:split_by([1, 2, 3, 4, 4, 5, 3, 5, 6], 3)),

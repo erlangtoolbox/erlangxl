@@ -37,6 +37,7 @@
 }).
 
 persist_test() ->
+    xl_file:delete("/tmp/test/test"),
     {ok, P} = open(),
     T1 = #testobj{id = "1", name = "n1"},
     T2 = #testobj{id = "2", name = "n2"},
@@ -57,6 +58,7 @@ persist_test() ->
 
 
 persiste_fsync_test() ->
+    xl_file:delete("/tmp/test/test"),
     {ok, P1} = open(),
     T1 = #testobj{id = "1", name = "n1"},
     T2 = #testobj{id = "2", name = "n2"},
@@ -80,8 +82,9 @@ open() ->
         ]).
 
 cursor_test() ->
+    xl_file:delete("/tmp/test/test"),
     {ok, P} = open(),
-    L = [_ | T] = lists:map(fun(I) -> #testobj{id = integer_to_list(I), name = "n1"} end, lists:seq(1, 9)),
+    L = [_ | T] = lists:map(fun(I) -> #testobj{id = xl_string:format_number(2, I), name = "n1"} end, lists:seq(1, 99)),
 
     [persist:store(P, X) || X <- L],
 
@@ -94,13 +97,14 @@ cursor_test() ->
     Compare = fun(#testobj{id = Id1}, #testobj{id = Id2}) -> Id1 < Id2 end,
     ?assertEquals(L, lists:sort(Compare, xl_stream:to_list(persist:cursor(P, [random])))),
 
-    persist:delete(P, "1"),
+    persist:delete(P, "01"),
     ?assertEquals(T, xl_stream:to_list(persist:cursor(P))),
 
     ?assertEquals(ok, persist:close(P)).
 
 
 indexed_lookup_test() ->
+    xl_file:delete("/tmp/test/test"),
     {ok, P} = open(),
     L = lists:map(fun(I) -> #testobj{id = integer_to_list(I), name = integer_to_list(I rem 3)} end, lists:seq(1, 9)),
 
