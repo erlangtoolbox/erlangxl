@@ -43,7 +43,6 @@
     identify :: identify(),
     objects :: [term()],
     updater_pid :: pid(),
-    index :: xl_uxekdtree:tree(),
     options :: xl_lists:kvlist_at()
 }).
 
@@ -51,15 +50,15 @@
 open(Name, Location, Identify, Options) ->
     do([error_m ||
         Objects <- xl_tdb_storage:load(Location),
+        Index <- return(index_build(Options, Objects)),
         Db <- return(#xl_tdb_state{
             location = Location,
             identify = Identify,
             objects = Objects,
             updater_pid = spawn_link(fun update/0),
-            index = index_build(Options, Objects),
             options = Options
         }),
-        Pid <- return(spawn_link(fun() -> loop(Db) end)),
+        Pid <- return(spawn_link(fun() -> loop(Index, Db) end)),
         xl_lang:register(Name, Pid)
     ]).
 
@@ -81,10 +80,7 @@ store(Ref, Objects) ->
                 lists:foldl(fun(O, FoldObjects) ->
                     lists:keydelete(Id(O), 1, FoldObjects)
                 end, StateObjects, Objects)),
-            return(State#xl_tdb_state{
-                    objects = NewObjects,
-                    index = index_build(Options, NewObjects)
-            })
+            return({index_build(Options, NewObjects), State#xl_tdb_state{objects = NewObjects}})
         ])
 
     end).
@@ -95,16 +91,13 @@ delete(Ref, Id) ->
         do([error_m ||
             xl_tdb_storage:delete(Location, Id),
             NewObjects <- return(lists:keydelete(Id, 1, StateObjects)),
-            return(State#xl_tdb_state{
-                    objects = NewObjects,
-                    index = index_build(Options, NewObjects)
-            })
+            return({index_build(Options, NewObjects), State#xl_tdb_state{objects = NewObjects}})
         ])
     end).
 
 -spec(get(tdbref(), xl_string:iostring()) -> option_m:monad(term())).
 get(Ref, Id) ->
-    read(Ref, fun(#xl_tdb_state{objects = Objects}) ->
+    read(Ref, fun(_Index, #xl_tdb_state{objects = Objects}) ->
         case xl_lists:keyfind(Id, 1, Objects) of
             {ok, {_, O}} -> {ok, O};
             undefined -> undefined
@@ -112,14 +105,14 @@ get(Ref, Id) ->
     end).
 
 -spec(select(tdbref()) -> [term()]).
-select(Ref) -> read(Ref, fun(#xl_tdb_state{objects = Objects}) -> unwrap(Objects) end).
+select(Ref) -> read(Ref, fun(_Index, #xl_tdb_state{objects = Objects}) -> unwrap(Objects) end).
 
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
 
 -spec(mapfilter(tdbref(), xl_lists:kvlist_at(), fun((term(), tuple()) -> option_m:monad(term()))) -> [term()]).
 mapfilter(Ref, Q, F) ->
-    read(Ref, fun(#xl_tdb_state{index = Index, options = Options}) ->
+    read(Ref, fun(Index, #xl_tdb_state{options = Options}) ->
         case index_lookup(Q, Options, Index) of
             {ok, Values} ->
                 xl_lists:mapfilter(fun(X) -> X end, [F(IV) || IV <- Values]) ;
@@ -128,18 +121,18 @@ mapfilter(Ref, Q, F) ->
     end).
 
 %% Internal functions
-loop(State = #xl_tdb_state{updater_pid = Updater}) ->
+loop(Index, State = #xl_tdb_state{updater_pid = Updater}) ->
     receive
         {mutate, Fun, CallingProcess} ->
             Updater ! {update, Fun, CallingProcess, self(), State},
-            loop(State);
-        {updated, NewState} ->
-            loop(NewState);
+            loop(Index, State);
+        {updated, {NewIndex, NewState}} ->
+            loop(NewIndex, NewState);
         {read, Fun, CallingProcess} ->
             spawn(fun() ->
-                CallingProcess ! Fun(State)
+                CallingProcess ! Fun(Index, State)
             end),
-            loop(State);
+            loop(Index, State);
         stop ->
             Updater ! stop,
             ok
@@ -150,8 +143,8 @@ update() ->
         stop -> ok;
         {update, Fun, CallingProcess, MasterLoop, State} ->
             case Fun(State) of
-                {ok, NewState} ->
-                    MasterLoop ! {updated, NewState},
+                {ok, UpdateResult} ->
+                    MasterLoop ! {updated, UpdateResult},
                     CallingProcess ! ok;
                 E -> CallingProcess ! E
             end,
