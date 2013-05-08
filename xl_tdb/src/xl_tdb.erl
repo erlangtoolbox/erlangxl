@@ -119,13 +119,10 @@ by_index(N) -> fun(X) -> element(N, X) end.
 
 -spec(mapfilter(tdbref(), xl_lists:kvlist_at(), fun((term(), tuple()) -> option_m:monad(term()))) -> [term()]).
 mapfilter(Ref, Q, F) ->
-    read(Ref, fun(#xl_tdb_state{index = Index, options = Options, objects = Objects}) ->
+    read(Ref, fun(#xl_tdb_state{index = Index, options = Options}) ->
         case index_lookup(Q, Options, Index) of
             {ok, Values} ->
-                monad:flatten(option_m, [
-                    F(unwrap(element(2, xl_lists:keyfind(element(1, IV), 1, Objects))), IV) ||
-                    IV <- Values
-                ]);
+                xl_lists:mapfilter(fun(X) -> X end, [F(IV) || IV <- Values]) ;
             undefined -> []
         end
     end).

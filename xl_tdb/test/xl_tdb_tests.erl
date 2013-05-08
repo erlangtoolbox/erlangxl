@@ -74,9 +74,9 @@ mapfind_test() ->
     T3 = #testobj{id = "3", name = <<"n1">>},
     T4 = #testobj{id = "4", name = <<"n3">>},
     ?assertOk(xl_tdb:store(testtdbmf, [T1, T2, T3, T4])),
-    ?assertEquals([T1, T3], xl_tdb:mapfilter(testtdbmf, [{name, <<"n1">>}], fun(O, _) -> {ok, O} end)),
+    ?assertEquals([T1, T3], xl_tdb:mapfilter(testtdbmf, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
     ?assertOk(xl_tdb:close(testtdbmf)).
 
 
-index_object(#testobj{id = Id, name = Name}) -> [{Name, {Id}}].
+index_object(O = #testobj{name = Name}) -> [{Name, O}].
 index_query([{name, Name}]) -> {Name}.
