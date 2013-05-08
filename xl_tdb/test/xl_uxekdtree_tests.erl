@@ -72,7 +72,7 @@ new_test() ->
                 []
             },
             []
-        }, []},
+        }},
     ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE)).
 
 new_with_excludes_test() ->
@@ -102,7 +102,7 @@ new_with_excludes_test() ->
                 []
             },
             {b, 2, [], [], [xb2], [], []}
-        }, []},
+        }},
     ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES)).
 
 new_with_undefs_test() ->
@@ -132,7 +132,7 @@ new_with_undefs_test() ->
                 []
             },
             []
-        }, []},
+        }},
     ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
 
 new_performance_test_() ->
@@ -273,7 +273,7 @@ extract_results(Points, Queries, Match) ->
 
 
 sorter_test() ->
-    Sorter = xl_uxekdtree:get_sorter(1, fun xl_uxekdtree:default_comparator/3),
+    Sorter = xl_uxekdtree:sorter(1),
     Expected = [
         {undefined, b, ub1}, {undefined, b, ub2}, {1, c, c}, {1, b, b}, {2, undefined, uc},
         {2, c, c}, {2, c, c}, {3, a, a}, {3, a, a}, {3, a, a}
