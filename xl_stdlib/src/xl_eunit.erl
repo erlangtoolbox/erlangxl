@@ -61,7 +61,7 @@ format(Format, Args) -> io:format(user, Format, Args).
 format(Format) -> format(Format, []).
 
 profile(Name, Fun, Count) ->
-    fprof:trace(start),
+    fprof:trace(start, [{procs, all}]),
     performance(Name, Fun, Count),
     fprof:trace(stop),
     fprof:profile(),
