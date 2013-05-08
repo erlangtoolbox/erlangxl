@@ -41,24 +41,28 @@
 -record(xl_tdb_state, {
     location :: file:name(),
     identify :: identify(),
-    objects :: [term()],
     updater_pid :: pid(),
-    options :: xl_lists:kvlist_at()
+    options :: xl_lists:kvlist_at(),
+    ets :: ets:tid()
 }).
 
 -spec(open(atom(), file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(pid())).
 open(Name, Location, Identify, Options) ->
+    ETS = ets:new(xl_convert:make_atom([Name, '_tdb']), [
+        ordered_set, {keypos, 1}, public
+    ]),
     do([error_m ||
         Objects <- xl_tdb_storage:load(Location),
         Index <- return(index_build(Options, Objects)),
-        Db <- return(#xl_tdb_state{
+        lists:foreach(fun(O) -> ets:insert(ETS, O) end, Objects),
+        TdbState <- return(#xl_tdb_state{
             location = Location,
             identify = Identify,
-            objects = Objects,
             updater_pid = spawn_link(fun update/0),
-            options = Options
+            options = Options,
+            ets = ETS
         }),
-        Pid <- return(spawn_link(fun() -> loop(Index, Db) end)),
+        Pid <- return(spawn_link(fun() -> loop(Index, TdbState) end)),
         xl_lang:register(Name, Pid)
     ]).
 
@@ -73,46 +77,45 @@ close(Ref) ->
 
 -spec(store(tdbref(), [term()]) -> error_m:monad(ok)).
 store(Ref, Objects) ->
-    mutate(Ref, fun(State = #xl_tdb_state{location = Location, objects = StateObjects, identify = Id, options = Options}) ->
+    call(mutate, Ref, fun(#xl_tdb_state{location = Location, identify = Id, options = Options, ets = ETS}) ->
         do([error_m ||
-            xl_lists:eforeach(fun(O) -> xl_tdb_storage:store(Location, Id(O), wrap(O, Id)) end, Objects),
-            NewObjects <- return(wrap(Objects, Id) ++
-                lists:foldl(fun(O, FoldObjects) ->
-                    lists:keydelete(Id(O), 1, FoldObjects)
-                end, StateObjects, Objects)),
-            return({index_build(Options, NewObjects), State#xl_tdb_state{objects = NewObjects}})
+            xl_lists:eforeach(fun(O) ->
+                Wrapped = wrap(O, Id),
+                ets:insert(ETS, Wrapped),
+                xl_tdb_storage:store(Location, Id(O), Wrapped)
+            end, Objects),
+            return(index_build(Options, ets:tab2list(ETS)))
         ])
-
     end).
 
 -spec(delete(tdbref(), xl_string:iostring()) -> error_m:monad(ok)).
 delete(Ref, Id) ->
-    mutate(Ref, fun(State = #xl_tdb_state{location = Location, objects = StateObjects, options = Options}) ->
+    call(mutate, Ref, fun(#xl_tdb_state{location = Location, options = Options, ets = ETS}) ->
         do([error_m ||
             xl_tdb_storage:delete(Location, Id),
-            NewObjects <- return(lists:keydelete(Id, 1, StateObjects)),
-            return({index_build(Options, NewObjects), State#xl_tdb_state{objects = NewObjects}})
+            return(ets:delete(ETS, Id)),
+            return(index_build(Options, ets:tab2list(ETS)))
         ])
     end).
 
 -spec(get(tdbref(), xl_string:iostring()) -> option_m:monad(term())).
 get(Ref, Id) ->
-    read(Ref, fun(_Index, #xl_tdb_state{objects = Objects}) ->
-        case xl_lists:keyfind(Id, 1, Objects) of
-            {ok, {_, O}} -> {ok, O};
-            undefined -> undefined
+    call(read, Ref, fun(#xl_tdb_state{ets = ETS}) ->
+        case ets:lookup(ETS, Id) of
+            [{_, O}] -> {ok, O};
+            _ -> undefined
         end
     end).
 
 -spec(select(tdbref()) -> [term()]).
-select(Ref) -> read(Ref, fun(_Index, #xl_tdb_state{objects = Objects}) -> unwrap(Objects) end).
+select(Ref) -> call(read, Ref, fun(#xl_tdb_state{ets = ETS}) -> unwrap(ets:tab2list(ETS)) end).
 
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
 
 -spec(mapfilter(tdbref(), xl_lists:kvlist_at(), fun((term(), tuple()) -> option_m:monad(term()))) -> [term()]).
 mapfilter(Ref, Q, F) ->
-    read(Ref, fun(Index, #xl_tdb_state{options = Options}) ->
+    call(read_index, Ref, fun(Index, #xl_tdb_state{options = Options}) ->
         case index_lookup(Q, Options, Index) of
             {ok, Values} ->
                 xl_lists:mapfilter(fun(X) -> X end, [F(IV) || IV <- Values]) ;
@@ -121,28 +124,34 @@ mapfilter(Ref, Q, F) ->
     end).
 
 %% Internal functions
-loop(Index, State = #xl_tdb_state{updater_pid = Updater}) ->
+loop(Index, Config = #xl_tdb_state{updater_pid = Updater, ets = ETS}) ->
     receive
         {mutate, Fun, CallingProcess} ->
-            Updater ! {update, Fun, CallingProcess, self(), State},
-            loop(Index, State);
-        {updated, {NewIndex, NewState}} ->
-            loop(NewIndex, NewState);
+            Updater ! {update, Fun, CallingProcess, self(), Config},
+            loop(Index, Config);
+        {updated, NewIndex} ->
+            loop(NewIndex, Config);
         {read, Fun, CallingProcess} ->
             spawn(fun() ->
-                CallingProcess ! Fun(Index, State)
+                CallingProcess ! Fun(Config)
             end),
-            loop(Index, State);
+            loop(Index, Config);
+        {read_index, Fun, CallingProcess} ->
+            spawn(fun() ->
+                CallingProcess ! Fun(Index, Config)
+            end),
+            loop(Index, Config);
         stop ->
             Updater ! stop,
+            ets:delete(ETS),
             ok
     end.
 
 update() ->
     receive
         stop -> ok;
-        {update, Fun, CallingProcess, MasterLoop, State} ->
-            case Fun(State) of
+        {update, Fun, CallingProcess, MasterLoop, Config} ->
+            case Fun(Config) of
                 {ok, UpdateResult} ->
                     MasterLoop ! {updated, UpdateResult},
                     CallingProcess ! ok;
@@ -151,14 +160,8 @@ update() ->
             update()
     end.
 
-mutate(Pid, Fun) ->
-    Pid ! {mutate, Fun, self()},
-    receive
-        R -> R
-    end.
-
-read(Pid, Fun) ->
-    Pid ! {read, Fun, self()},
+call(Msg, Pid, Fun) ->
+    Pid ! {Msg, Fun, self()},
     receive
         R -> R
     end.
