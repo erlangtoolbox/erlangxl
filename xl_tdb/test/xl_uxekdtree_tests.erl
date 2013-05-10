@@ -73,7 +73,7 @@ new_test() ->
             },
             []
         }},
-    ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE)).
+    ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE))).
 
 new_with_excludes_test() ->
     xl_application:start(xl_stdlib),
@@ -103,7 +103,7 @@ new_with_excludes_test() ->
             },
             {b, 2, [], [], [xb2], [], []}
         }},
-    ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES)).
+    ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES))).
 
 new_with_undefs_test() ->
     xl_application:start(xl_stdlib),
@@ -133,7 +133,7 @@ new_with_undefs_test() ->
             },
             []
         }},
-    ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
+    ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS))).
 
 new_performance_test_() ->
     xl_application:start(xl_stdlib),
@@ -333,3 +333,4 @@ real_space_test_() ->
             end, 1000)
         end, Qs)
     end}.
+

@@ -26,48 +26,21 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_lang).
+-module(xl_ref).
+-author("volodymyr.kyrychenko@strikead.com").
 
--export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1, find_nif/1]).
+-on_load(init / 0).
 
-ifelse(true, Then, _) -> result(Then);
-ifelse(false, _, Else) -> result(Else).
+%% API
+-export([new/1, value/1]).
+-export_type([ref/0]).
 
-record_to_proplist(Record, Fields) ->
-    xl_lists:imap(fun(Field, I) -> {Field, element(I + 1, Record)} end, Fields).
+-opaque(ref() :: term()).
 
-safe_call(F, R) when is_function(F, 0) ->
-    try
-        F()
-    catch
-        _:_ -> result(R)
-    end.
+init() -> erlang:load_nif(xl_lang:find_nif(?MODULE), 0).
 
-result(R) when is_function(R, 0) -> R();
-result(R) -> R.
+-spec(new(term()) -> ref()).
+new(_X) -> error(nif_not_loaded).
 
--spec(register(atom(), pid() | port()) -> error_m:monad(ok)).
-register(Name, PidOrPort) ->
-    try erlang:register(Name, PidOrPort) of
-        true -> {ok, PidOrPort}
-    catch
-        _ : badarg -> {error, {cannot_register, Name, PidOrPort}}
-    end.
-
--spec(unregister(atom()) -> error_m:monad(ok)).
-unregister(Name) ->
-    try erlang:unregister(Name) of
-        true -> ok
-    catch
-        _ : badarg -> {error, {cannot_unregister, Name}}
-    end.
-
-find_nif(Module) ->
-    PrivDir = case code:priv_dir(Module) of
-        {error, _} ->
-            EbinDir = filename:dirname(code:which(Module)),
-            AppPath = filename:dirname(EbinDir),
-            filename:join(AppPath, "priv");
-        Path -> Path
-    end,
-    filename:join(PrivDir, atom_to_list(Module)).
+-spec(value(ref()) -> term()).
+value(_R) -> error(nif_not_loaded).

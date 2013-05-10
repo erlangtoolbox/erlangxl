@@ -38,7 +38,9 @@
       <property name="caretWidth" class="java.lang.Integer" />
     </properties>
   </component>
-  <component name="CppTools.Loader" reportImplicitCastToBool="false" reportNameReferencedOnce="false" version="3" compilerSelect="AUTO" />
+  <component name="CppTools.Loader" reportImplicitCastToBool="false" reportNameReferencedOnce="false" warnedAboutFileOutOfSourceRoot="true" version="3" currentProject="$PROJECT_DIR$/lib/yaws-1.96/doc/Makefile" additionalPreprocessorDefs="" compilerSelect="GCC" javaIncludes="false">
+    <system-include-dir path="/usr/lib64/erlang/erts-5.9.3/include" />
+  </component>
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
   </component>

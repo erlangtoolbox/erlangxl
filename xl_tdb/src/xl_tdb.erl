@@ -137,9 +137,9 @@ loop(Index, Config = #xl_tdb_state{updater_pid = Updater, ets = ETS}) ->
             end),
             loop(Index, Config);
         {read_index, Fun, CallingProcess} ->
-%%             spawn(fun() ->
-                CallingProcess ! Fun(Index, Config),
-%%             end),
+            spawn(fun() ->
+                CallingProcess ! Fun(Index, Config)
+            end),
             loop(Index, Config);
         stop ->
             Updater ! stop,

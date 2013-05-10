@@ -32,7 +32,7 @@
 -compile({no_auto_import, [size/1]}).
 
 %% API
--export([size/1, depth/1, new/1, find/2, sorter/1, compare/2]).
+-export([size/1, depth/1, new/1, find/2, sorter/1, compare/2, dump/1]).
 
 -export_type([tree/0, tree_node/0, leaf/0, point/0, find_point/0]).
 
@@ -40,11 +40,11 @@
 -type(find_point() :: tuple()).
 -type(leaf() :: option_m:monad([point()])).
 -type(tree_node() :: {term(), pos_integer(), Undefined :: tree_node(), Less :: tree_node(), Equal :: tree_node(), Greater :: tree_node(), Excluded :: tree_node()} | leaf()).
--type(tree() :: {module(), tree_node(), xl_lists:kvlist_at()}).
+-type(tree() :: {module(), tree_node()}).
 
 
--spec(new([point()]) -> tree()).
-new(Points) -> {?MODULE, new_tree(Points, 1, planes(Points))}.
+-spec(new([point()]) -> xl_ref:ref()).
+new(Points) -> xl_ref:new({?MODULE, new_tree(Points, 1, planes(Points))}).
 
 new_tree([], _PlanePos, _Planes) -> [];
 new_tree(Points, _PlanePos, []) -> lists:map(fun(P) -> element(tuple_size(P), P) end, Points);
@@ -59,7 +59,7 @@ new_tree(Points, PlanePos, Planes) ->
             Median = lists:nth(round(length(Sorted) / 2), Sorted),
             MV = value(element(Plane, Median)),
             {L, Rest} = xl_lists:fastsplitwith(fun(X) -> compare(value(element(Plane, X)), MV) == lt end, Sorted),
-            {Eq, G} = xl_lists:fastsplitwith(fun(X) -> compare( value(element(Plane, X)), MV) == eq end, Rest),
+            {Eq, G} = xl_lists:fastsplitwith(fun(X) -> compare(value(element(Plane, X)), MV) == eq end, Rest),
             {E, X} = lists:partition(fun(X) -> case element(Plane, X) of {_, _} -> false; _ -> true end end, Eq),
             {MV, L, E, G, X}
     end,
@@ -93,8 +93,10 @@ data_mask(Points, Size) ->
         end, Mask, lists:seq(1, Size))
     end, 0, Points).
 
-- spec(size(tree()) -> pos_integer()).
-size({?MODULE, Node}) -> size(Node, 0).
+-spec(size(xl_ref:ref()) -> pos_integer()).
+size(Ref) ->
+    {?MODULE, Node} = xl_ref:value(Ref),
+    size(Node, 0).
 
 -spec(size(tree_node(), non_neg_integer()) -> non_neg_integer()).
 size([], Count) -> Count;
@@ -106,8 +108,10 @@ size({_, _, U, L, E, R, X}, Count) ->
     RNodes = size(R, ENodes),
     size(X, RNodes).
 
--spec(depth(tree()) -> non_neg_integer()).
-depth({?MODULE, Node}) -> depth(Node, 0).
+-spec(depth(xl_ref:ref()) -> non_neg_integer()).
+depth(Ref) ->
+    {?MODULE, Node} = xl_ref:value(Ref),
+    depth(Node, 0).
 
 -spec(depth(tree_node(), non_neg_integer()) -> non_neg_integer()).
 depth([], Depth) -> Depth;
@@ -121,8 +125,9 @@ depth({_, _, U, L, E, R, X}, Depth) ->
         depth(X, Depth + 1)
     ]).
 
--spec(find(find_point(), tree()) -> option_m:monad([term()])).
-find(Query, {?MODULE, Node}) ->
+-spec(find(find_point(), xl_ref:ref()) -> option_m:monad([term()])).
+find(Query, Ref) ->
+    {?MODULE, Node} = xl_ref:value(Ref),
     case find(Query, Node, []) of
         [] -> undefined;
         R -> {ok, R}
@@ -170,6 +175,9 @@ find(Query, {Value, Plane, U, L, E, R, X}, Acc) ->
             find(Query, X, RAcc)
     end.
 
+-spec(dump(xl_ref:ref()) -> tree()).
+dump(Ref) -> xl_ref:value(Ref).
+
 %% prebuild sorters
 sorter(Plane) ->
     fun(X, Y) ->
@@ -188,3 +196,4 @@ compare(_, undefined) -> gt;
 compare(X, X) -> eq;
 compare(X, Y) when X > Y -> gt;
 compare(_, _) -> lt.
+
