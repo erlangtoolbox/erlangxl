@@ -29,9 +29,10 @@ class Node: public TreeNode {
     TreeNode * excluded;
 
     public:
-        Node(ERL_NIF_TERM _value, int _plane, TreeNode * _undefined, TreeNode * _less, TreeNode * _equal, TreeNode * _greater, TreeNode * _excluded):
-             value(_value), plane(_plane), undefined(_undefined), less(_less), equal(_equal),
-             greater(_greater), excluded(_excluded) {};
+        Node(ERL_NIF_TERM _value, int _plane, TreeNode * _undefined, TreeNode * _less,
+            TreeNode * _equal, TreeNode * _greater, TreeNode * _excluded):
+            value(_value), plane(_plane), undefined(_undefined), less(_less), equal(_equal),
+            greater(_greater), excluded(_excluded) {};
 
         ~Node() {
             delete undefined;
@@ -52,7 +53,8 @@ class Node: public TreeNode {
         }
 
         virtual int size() {
-            return 1 + undefined->size() + less->size() + equal->size() + greater->size() + excluded->size();
+            return 1 + undefined->size() + less->size()
+                + equal->size() + greater->size() + excluded->size();
         }
 
         virtual int depth() {
@@ -160,7 +162,8 @@ struct sorter {
 };
 
 
-TreeNode* new_tree(ErlNifEnv* env, ERL_NIF_TERM undefined, Points::iterator begin, Points::iterator end, unsigned int plane_pos, std::vector<int> planes) {
+TreeNode* new_tree(ErlNifEnv* env, ERL_NIF_TERM undefined, Points::iterator begin, Points::iterator end,
+    unsigned int plane_pos, std::vector<int> planes) {
 
     if (begin == end) return new Leaf(begin, end);
 

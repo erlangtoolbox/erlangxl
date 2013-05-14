@@ -304,6 +304,14 @@ undefine(Tuple, Count, Length) ->
 %% PERFORMANCE xl_uxekdtree_real_space_find: 152928.6 op/s, time: 6.539 ms
 %% PERFORMANCE xl_uxekdtree_real_space_find: 161550.9 op/s, time: 6.19 ms
 %% PERFORMANCE xl_uxekdtree_real_space_find: 61984.8 op/s, time: 16.133 ms
+%%
+%% fixes(planes): points: 145250	size: 47971	depth: 20	construction time: 1660266 mcs
+%% PERFORMANCE xl_uxekdtree_real_space_find: 232558.1 op/s, time: 4.3 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 121403.4 op/s, time: 8.237 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 121713.7 op/s, time: 8.216 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 140944.3 op/s, time: 7.095 ms
+%% PERFORMANCE xl_uxekdtree_real_space_find: 45126.4 op/s, time: 22.16 ms
+
 real_space_test_() ->
     {timeout, 200, fun() ->
         {ok, Data} = xl_file:read_file(xl_eunit:resource(?MODULE, "space")),

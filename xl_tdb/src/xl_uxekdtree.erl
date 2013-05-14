@@ -30,9 +30,10 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 -compile({no_auto_import, [size/1]}).
+%% -on_load(init/0).
 
 %% API
--export([size/1, depth/1, new/1, find/2, sorter/1, compare/2, dump/1]).
+-export([size/1, depth/1, new/1, find/2, sorter/1, compare/2, dump/1, new/2]).
 
 -export_type([tree/0, tree_node/0, leaf/0, point/0, find_point/0]).
 
@@ -40,11 +41,16 @@
 -type(find_point() :: tuple()).
 -type(leaf() :: option_m:monad([point()])).
 -type(tree_node() :: {term(), pos_integer(), Undefined :: tree_node(), Less :: tree_node(), Equal :: tree_node(), Greater :: tree_node(), Excluded :: tree_node()} | leaf()).
--type(tree() :: {module(), tree_node()}).
+-type(tree() :: {?MODULE, tree_node()} | xl_ref:ref()).
 
+%% init() -> erlang:load_nif(xl_lang:find_nif(?MODULE), 0).
 
--spec(new([point()]) -> xl_ref:ref()).
-new(Points) -> xl_ref:new({?MODULE, new_tree(Points, 1, planes(Points))}).
+-spec(new([point()]) -> tree()).
+new(Points) -> new(Points, [shared]).
+
+-spec(new([point()], xl_lists:kvlist_at()) -> tree()).
+new(Points, [local]) -> {?MODULE, new_tree(Points, 1, planes(Points))};
+new(Points, [shared]) -> xl_ref:new(new(Points, [local])).
 
 new_tree([], _PlanePos, _Planes) -> [];
 new_tree(Points, _PlanePos, []) -> lists:map(fun(P) -> element(tuple_size(P), P) end, Points);
@@ -53,7 +59,7 @@ new_tree(Points, PlanePos, Planes) ->
     Plane = lists:nth(PlanePos, Planes),
     {Undefs, Defs} = xl_lists:keypartition(Plane, undefined, Points),
     {MedianValue, Less, Equal, Greater, Excluded} = case Defs of
-        [] -> {[], [], [], [], []};
+        [] -> {undefined, [], [], [], []};
         _ ->
             Sorted = lists:sort(sorter(Plane), Defs),
             Median = lists:nth(round(length(Sorted) / 2), Sorted),
@@ -63,19 +69,20 @@ new_tree(Points, PlanePos, Planes) ->
             {E, X} = lists:partition(fun(X) -> case element(Plane, X) of {_, _} -> false; _ -> true end end, Eq),
             {MV, L, E, G, X}
     end,
+    PlanesWOOne = lists:delete(Plane, Planes),
     {
         MedianValue,
         Plane,
-        new_tree(Undefs, PlanePos + 1, lists:delete(Plane, Planes)),
+        new_tree(Undefs, PlanePos, PlanesWOOne),
         new_tree(Less, PlanePos + 1, Planes),
-        new_tree(Equal, PlanePos + 1, lists:delete(Plane, Planes)),
+        new_tree(Equal, PlanePos, PlanesWOOne),
         new_tree(Greater, PlanePos + 1, Planes),
-        new_tree(Excluded, PlanePos + 1, lists:delete(Plane, Planes))
+        new_tree(Excluded, PlanePos, PlanesWOOne)
     }.
 
 planes([]) -> [];
 planes(Points = [H | _]) ->
-    Mask = data_mask(Points, tuple_size(H) - 1),
+    Mask = stat(Points, tuple_size(H) - 1),
     Planes = lists:filter(fun(Index) ->
         Bit = (1 bsl (Index - 1)),
         Bit band Mask == Bit
@@ -83,7 +90,7 @@ planes(Points = [H | _]) ->
 %%     xl_eunit:format("planes ~.2B, ~p~n", [Mask, Planes]),
     Planes.
 
-data_mask(Points, Size) ->
+stat(Points, Size) ->
     lists:foldl(fun(P, Mask) ->
         lists:foldl(fun(Index, IMask) ->
             case element(Index, P) of
@@ -93,13 +100,11 @@ data_mask(Points, Size) ->
         end, Mask, lists:seq(1, Size))
     end, 0, Points).
 
--spec(size(xl_ref:ref()) -> pos_integer()).
-size(Ref) ->
-    {?MODULE, Node} = xl_ref:value(Ref),
-    size(Node, 0).
+-spec(size(tree()) -> pos_integer()).
+size({?MODULE, Node}) -> size(Node, 0);
+size(Ref) -> size(xl_ref:value(Ref)).
 
 -spec(size(tree_node(), non_neg_integer()) -> non_neg_integer()).
-size([], Count) -> Count;
 size(L, Count) when is_list(L) -> Count;
 size({_, _, U, L, E, R, X}, Count) ->
     UNodes = size(U, Count + 1),
@@ -108,13 +113,11 @@ size({_, _, U, L, E, R, X}, Count) ->
     RNodes = size(R, ENodes),
     size(X, RNodes).
 
--spec(depth(xl_ref:ref()) -> non_neg_integer()).
-depth(Ref) ->
-    {?MODULE, Node} = xl_ref:value(Ref),
-    depth(Node, 0).
+-spec(depth(tree()) -> non_neg_integer()).
+depth({?MODULE, Node}) -> depth(Node, 0);
+depth(Ref) -> depth(xl_ref:value(Ref)).
 
 -spec(depth(tree_node(), non_neg_integer()) -> non_neg_integer()).
-depth([], Depth) -> Depth;
 depth(L, Depth) when is_list(L) -> Depth;
 depth({_, _, U, L, E, R, X}, Depth) ->
     lists:max([
@@ -126,12 +129,12 @@ depth({_, _, U, L, E, R, X}, Depth) ->
     ]).
 
 -spec(find(find_point(), xl_ref:ref()) -> option_m:monad([term()])).
-find(Query, Ref) ->
-    {?MODULE, Node} = xl_ref:value(Ref),
+find(Query, {?MODULE, Node}) ->
     case find(Query, Node, []) of
         [] -> undefined;
         R -> {ok, R}
-    end.
+    end;
+find(Query, Ref) -> find(Query, xl_ref:value(Ref)).
 
 find(_Query, L, Acc) when is_list(L) -> L ++ Acc;
 find(Query, {_Value, Plane, U, L, E, R, X}, Acc) when element(Plane, Query) == undefined ->
@@ -176,6 +179,7 @@ find(Query, {Value, Plane, U, L, E, R, X}, Acc) ->
     end.
 
 -spec(dump(xl_ref:ref()) -> tree()).
+dump(T = {?MODULE, _}) -> T;
 dump(Ref) -> xl_ref:value(Ref).
 
 %% prebuild sorters

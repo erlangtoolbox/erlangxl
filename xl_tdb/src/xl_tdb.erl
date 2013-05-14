@@ -124,17 +124,25 @@ mapfilter(Ref, Q, F) ->
     end).
 
 %% Internal functions
-loop(Index, Config = #xl_tdb_state{updater_pid = Updater, ets = ETS}) ->
+loop(Index, Config = #xl_tdb_state{updater_pid = Updater, ets = ETS, options = Options}) ->
+    SerialIndex = xl_lists:kvfind(serial_read_index, Options, false),
+    SerialRead = xl_lists:kvfind(serial_read, Options, false),
     receive
         {mutate, Fun, CallingProcess} ->
             Updater ! {update, Fun, CallingProcess, self(), Config},
             loop(Index, Config);
         {updated, NewIndex} ->
             loop(NewIndex, Config);
+        {read, Fun, CallingProcess} when SerialRead ->
+            CallingProcess ! Fun(Config),
+            loop(Index, Config);
         {read, Fun, CallingProcess} ->
             spawn(fun() ->
                 CallingProcess ! Fun(Config)
             end),
+            loop(Index, Config);
+        {read_index, Fun, CallingProcess} when SerialIndex ->
+            CallingProcess ! Fun(Index, Config),
             loop(Index, Config);
         {read_index, Fun, CallingProcess} ->
             spawn(fun() ->
@@ -175,7 +183,7 @@ unwrap({_, O}) -> O.
 index_build(Options, Objects) ->
     case xl_lists:kvfind(index_object, Options) of
         {ok, F} ->
-            xl_uxekdtree:new(lists:foldl(fun(O, Points) -> F(unwrap(O)) ++ Points end, [], Objects));
+            xl_uxekdtree:new(lists:foldl(fun(O, Points) -> F(unwrap(O)) ++ Points end, [], Objects), [xl_lists:kvfind(index_location, Options, shared)]);
         undefined -> undefined
     end.
 
