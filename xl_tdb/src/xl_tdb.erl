@@ -117,8 +117,7 @@ by_index(N) -> fun(X) -> element(N, X) end.
 mapfilter(Ref, Q, F) ->
     call(read_index, Ref, fun(Index, #xl_tdb_state{options = Options}) ->
         case index_lookup(Q, Options, Index) of
-            {ok, Values} ->
-                xl_lists:mapfilter(fun(X) -> X end, [F(IV) || IV <- Values]) ;
+            {ok, Values} -> [V || IV <- Values, Value <- [F(IV)], Value /= undefined, {ok, V} <- [Value]];
             undefined -> []
         end
     end).
