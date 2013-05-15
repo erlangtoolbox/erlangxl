@@ -30,7 +30,7 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([new/1, new/2, get/2, set/3, keys/1, start_link/0, value/2]).
+-export([new/1, new/2, get/2, set/3, keys/1, start_link/0, value/2, delete/1]).
 
 start_link() ->
     Pid = spawn_link(fun loop/0),
@@ -81,4 +81,9 @@ value(Name, Key) ->
 -spec(set(atom(), term(), term()) -> ok).
 set(Name, Key, Value) ->
     ets:insert(Name, {Key, Value}),
+    ok.
+
+-spec(delete(atom()) -> ok).
+delete(Name) ->
+    catch (ets:delete(Name)),
     ok.
