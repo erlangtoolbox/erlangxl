@@ -32,6 +32,11 @@
     day_of_week/1, datetime_to_ms/1, weekdays/0, weekdays_order/0, adjust/4, whole_day/0, diff_hours/4,
     daynum_of_week/1, diff_days/3, daynum/1, dayname/1, weekdays_member/2, weekdays_mask/1]).
 
+-export_type([weekday/0, hour_of_day/0]).
+
+-type(weekday() :: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun').
+-type(hour_of_day() :: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23).
+
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
 %
@@ -53,12 +58,7 @@
 % OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 % THE SOFTWARE.
 
-
 -spec(add(calendar:datetime(), integer(), seconds | minutes | hours | days | weeks | months | years) -> calendar:datetime()).
-
--type(weekday() :: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun').
--export_type([weekday/0]).
-
 add(DateTime, N, seconds) ->
     T1 = calendar:datetime_to_gregorian_seconds(DateTime),
     T2 = T1 + N,
