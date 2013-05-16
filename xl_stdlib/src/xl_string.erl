@@ -100,6 +100,7 @@ substitute(Str, Map, {Open, Close}) ->
 replace_macro(<<Open:8, T/binary>>, Map, {Open, _Close}) ->
     Key = binary:part(T, 0, byte_size(T) - 1),
     case xl_lists:kvfind(xl_convert:to(atom, Key), Map) of
+        {ok, undefined} -> "";
         {ok, V} -> V;
         undefined -> ""
     end;

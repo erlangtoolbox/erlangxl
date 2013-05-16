@@ -45,6 +45,8 @@ substitute_test() ->
     application:start(xl_stdlib),
     ?assertEqual(<<"xyz1">>,
         xl_string:substitute(<<"x@a_a@z@b-b@">>, [{a_a, "y"}, {'b-b', 1}], {$@, $@})),
+    ?assertEqual(<<"xz1">>,
+        xl_string:substitute(<<"x@a_a@z@b-b@">>, [{a_a, undefined}, {'b-b', 1}], {$@, $@})),
     ?assertEqual("xyz1",
         xl_string:substitute("x{a_a}z{b-b}", [{a_a, "y"}, {'b-b', 1}])),
     ?assertEqual("xyz1",
