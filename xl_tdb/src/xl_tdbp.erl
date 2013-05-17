@@ -119,10 +119,8 @@ mapfilter(Name, Q, F) ->
         undefined -> []
     end.
 
--spec(index(atom()) -> xl_uxekdtree:tree()).
-index(Name) ->
-    {ok, Index} = xl_state:value(Name, index),
-    xl_uxekdtree:dump(Index).
+-spec(index(atom()) -> option_m:monad(xl_uxekdtree:tree())).
+index(Name) -> xl_state:value(Name, index).
 
 update() ->
     receive
