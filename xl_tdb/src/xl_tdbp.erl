@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, mapfilter/3]).
+-export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, mapfilter/3, index/1]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -110,7 +110,7 @@ select(Name) ->
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
 
--spec(mapfilter(atom(), xl_lists:kvlist_at(), fun((term(), tuple()) -> option_m:monad(term()))) -> [term()]).
+-spec(mapfilter(atom(), xl_lists:kvlist_at(), fun((term(), term()) -> option_m:monad(term()))) -> [term()]).
 mapfilter(Name, Q, F) ->
     {ok, Index} = xl_state:value(Name, index),
     {ok, Options} = xl_state:value(Name, options),
@@ -119,6 +119,10 @@ mapfilter(Name, Q, F) ->
         undefined -> []
     end.
 
+-spec(index(atom()) -> xl_uxekdtree:tree()).
+index(Name) ->
+    {ok, Index} = xl_state:value(Name, index),
+    xl_uxekdtree:dump(Index).
 
 update() ->
     receive
