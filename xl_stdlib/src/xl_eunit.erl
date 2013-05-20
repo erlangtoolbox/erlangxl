@@ -30,7 +30,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--export([resource/2, explode/3, performance/3, format/2, format/1, profile/3]).
+-export([resource/2, explode/3, performance/3, format/2, format/1, profile/3, performance/5]).
 
 resource(Module, Name) -> within(Module, fun(Path) -> filename:join(Path, Name) end).
 
@@ -46,13 +46,33 @@ within(Module, Fun) ->
         X -> Fun(filename:dirname(X))
     end.
 
-performance(Name, Fun, Count) ->
-    {Time, _} = timer:tc(fun() ->
-        xl_lists:times(Fun, Count)
-    end),
-    Xps = Count / Time * 1000000,
-    xl_eunit:format("PERFORMANCE ~s: ~.1f op/s, time: ~p ms~n", [Name, Count * 1000000 / Time, Time / 1000]),
-    Xps.
+performance(Name, Fun, Count) -> performance(Name, Fun, Count, 1, 10000000).
+
+performance(Name, Fun, Count, Threads, Timeout) ->
+    case timer:tc(fun perform_test/4, [Fun, Count, Threads, Timeout]) of
+        {_, timeout} -> error(timeout);
+        {Time, _} ->
+            Xps = Count / Time * 1000000,
+            xl_eunit:format("PERFORMANCE ~s: ~.1f op/s, time: ~p ms, threads: ~p~n", [Name, Count * 1000000 / Time, Time / 1000, Threads]),
+            Xps
+    end.
+
+perform_test(Fun, Count, Threads, Timeout) ->
+    Self = self(),
+    xl_lists:times(fun() ->
+        spawn(fun() ->
+            xl_lists:times(Fun, Count),
+            Self ! done
+        end)
+    end, Threads),
+    wait(Threads, Timeout).
+
+wait(0, _Timeout) -> ok;
+wait(Threads, Timeout) ->
+    receive
+        done -> wait(Threads - 1, Timeout)
+    after Timeout -> timeout
+    end.
 
 -spec(format(string(), [term()]) -> ok).
 format(Format, Args) -> io:format(user, Format, Args).
