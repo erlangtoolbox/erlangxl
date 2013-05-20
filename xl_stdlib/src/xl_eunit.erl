@@ -57,6 +57,7 @@ performance(Name, Fun, Count, Threads, Timeout) ->
             Xps
     end.
 
+perform_test(Fun, Count, 1, _Timeout) -> xl_lists:times(Fun, Count);
 perform_test(Fun, Count, Threads, Timeout) ->
     Self = self(),
     xl_lists:times(fun() ->
