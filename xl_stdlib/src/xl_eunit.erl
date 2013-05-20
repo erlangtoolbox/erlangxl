@@ -80,9 +80,11 @@ format(Format, Args) -> io:format(user, Format, Args).
 -spec(format(string()) -> ok).
 format(Format) -> format(Format, []).
 
-profile(Name, Fun, Count) ->
+profile(Name, Fun, Count) -> profile(Name, Fun, Count, 1, 1000000).
+
+profile(Name, Fun, Count, Threads, Timeout) ->
     fprof:trace([start, {procs, all}]),
-    performance(Name, Fun, Count),
+    performance(Name, Fun, Count, Threads, Timeout),
     fprof:trace(stop),
     fprof:profile(),
     fprof:analyse(dest, xl_string:format("/tmp/~s.analysis", [Name])).
