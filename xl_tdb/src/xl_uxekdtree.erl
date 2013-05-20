@@ -43,7 +43,7 @@
 -type(tree_node() :: {term(), pos_integer(), Undefined :: tree_node(), Less :: tree_node(), Equal :: tree_node(), Greater :: tree_node(), Excluded :: tree_node()} | leaf()).
 -type(tree() :: {?MODULE, tree_node()} | xl_ref:ref()).
 
-%% init() -> erlang:load_nif(xl_lang:find_nif(?MODULE), 0).
+%% init() -> erlang:load_nif(xl_lang:find_nif(xl_tdb, ?MODULE), 0).
 
 -spec(new([point()]) -> tree()).
 new(Points) -> new(Points, [shared]).

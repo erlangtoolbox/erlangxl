@@ -37,7 +37,7 @@
 
 -opaque(ref() :: term()).
 
-init() -> erlang:load_nif(xl_lang:find_nif(?MODULE), 0).
+init() -> erlang:load_nif(xl_lang:find_nif(xl_stdlib, ?MODULE), 0).
 
 -spec(new(term()) -> ref()).
 new(_X) -> error(nif_not_loaded).
