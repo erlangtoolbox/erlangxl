@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, mapfilter/3, index/1]).
+-export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -110,12 +110,14 @@ select(Name) ->
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
 
--spec(mapfilter(atom(), xl_lists:kvlist_at(), fun((term(), term()) -> option_m:monad(term()))) -> [term()]).
-mapfilter(Name, Q, F) ->
+-spec(nmapfilter(atom(), non_neg_integer(), xl_lists:kvlist_at(), xl_lists:mapping_predicate(term(), term())) -> [term()]).
+nmapfilter(Name, N, Q, F) ->
     {ok, Index} = xl_state:value(Name, index),
     {ok, Options} = xl_state:value(Name, options),
+    Random = xl_lists:kvfind(random, Options, false),
     case index_lookup(Q, Options, Index) of
-        {ok, Values} -> [V || IV <- Values, Value <- [F(IV)], Value /= undefined, {ok, V} <- [Value]];
+        {ok, Values} when Random -> xl_lists:nshufflemapfilter(N, F, Values);
+        {ok, Values} -> xl_lists:nmapfilter(N, F, Values);
         undefined -> []
     end.
 

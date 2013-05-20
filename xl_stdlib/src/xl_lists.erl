@@ -33,11 +33,12 @@
     kvfind/3, keyreplace_or_add/3, eflatten/1, insert_before/3, random/1,
     count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2,
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
-    compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3, keypartition/3, fastsplitwith/2]).
+    compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3, keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3]).
+-export_type([kvlist/2, kvlist_at/0, mapping_predicate/2]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
--export_types([kvlist/2, kvlist_at/0]).
+-type(mapping_predicate(A, B) :: fun((A) -> option_m:monad(B))).
 
 -spec(find(fun((term()) -> boolean()), [term()]) -> option_m:monad(term())).
 find(_Pred, []) -> undefined;
@@ -88,16 +89,8 @@ efoldl(F, Acc, [H | T]) ->
     end.
 
 
--spec(mapfilter(fun((term()) -> false | term()), [term()]) -> [term()]).
-mapfilter(F, L) -> mapfilter([], F, L).
-
--spec(mapfilter([term()], fun((term()) -> option_m:monad(term())), [term()]) -> [term()]).
-mapfilter(Acc, _F, []) -> lists:reverse(Acc);
-mapfilter(Acc, F, [H | T]) ->
-    case F(H) of
-        undefined -> mapfilter(Acc, F, T);
-        {ok, X} -> mapfilter([X | Acc], F, T)
-    end.
+-spec(mapfilter(mapping_predicate(term(), term()), [term()]) -> [term()]).
+mapfilter(F, L) -> lists:reverse(nmapfilter(undefined, F, [], L, [])).
 
 -spec(keypsort([term()], integer(), kvlist(term(), term())) -> [{term(), term()}]).
 keypsort(Keys, N, L) ->
@@ -343,10 +336,10 @@ keymerge(Fun, Pos, List1, List2) ->
 
 -spec(shuffle([term()]) -> [term()]).
 shuffle([]) -> [];
-shuffle(List) -> shuffle(xl_random:uniform(length(List)) - 1, List, []).
-
-shuffle(0, L, R) -> L ++ R;
-shuffle(N, [H | T], R) -> shuffle(N - 1, T, [H | R]).
+shuffle(List) ->
+    N = xl_random:uniform(length(List)) - 1,
+    {L, R} = fastsplit(N, [], List),
+    L ++ R.
 
 init(Fun, Count) -> [Fun() || _ <- lists:seq(1, Count)].
 
@@ -359,3 +352,24 @@ fastsplitwith(Pred, [Hd | Tail], Taken) ->
         false -> {Taken, [Hd | Tail]}
     end;
 fastsplitwith(Pred, [], Taken) when is_function(Pred, 1) -> {Taken, []}.
+
+fastsplit(0, Acc, L) -> {L, Acc};
+fastsplit(N, Acc, [H | T]) -> fastsplit(N - 1, [H | Acc], T).
+
+-spec(nshufflemapfilter(non_neg_integer(), mapping_predicate(term(), term()), [term()]) -> [term()]).
+nshufflemapfilter(Limit, F, List) ->
+    N = xl_random:uniform(length(List)) - 1,
+    {L, R} = fastsplit(N, [], List),
+    nmapfilter(Limit, F, [], L, R).
+
+-spec(nmapfilter(non_neg_integer(), mapping_predicate(term(), term()), [term()]) -> [term()]).
+nmapfilter(Limit, F, List) -> nmapfilter(Limit, F, [], List, []).
+
+nmapfilter(Limit, _F, Acc, _L, _R) when Limit == length(Acc) -> Acc;
+nmapfilter(_Limit, _F, Acc, [], []) -> Acc;
+nmapfilter(Limit, F, Acc, [], R) -> nmapfilter(Limit, F, Acc, R, []);
+nmapfilter(Limit, F, Acc, [H | T], R) ->
+    case F(H) of
+        undefined -> nmapfilter(Limit, F, Acc, T, R);
+        {ok, X} -> nmapfilter(Limit, F, [X | Acc], T, R)
+    end.

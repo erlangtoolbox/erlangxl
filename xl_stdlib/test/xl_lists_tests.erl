@@ -206,3 +206,12 @@ shuffle_test() ->
             xl_lists:shuffle(T)
         end, 1000)
     end, Counts).
+
+
+nshufflemapfilter_test() ->
+    L = lists:seq(1, 100),
+    R = xl_lists:nshufflemapfilter(10, fun(X) when X rem 2 == 0 -> {ok, X * X}; (_) -> undefined end, L),
+    ?assertEqual(10, length(R)),
+    lists:foreach(fun(E) ->
+        ?assertEqual(0, E rem 2)
+    end, R).

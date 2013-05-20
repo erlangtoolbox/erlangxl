@@ -66,7 +66,7 @@ disk_storage_test() ->
     ?assertEqual([T1, T2], xl_tdbp:select(testtdbpds)),
     ?assertEqual(ok, xl_tdbp:close(testtdbpds)).
 
-mapfind_test() ->
+mapfilter_test() ->
     xl_application:start(xl_stdlib),
     xl_tdbp:open(testtdbpmf, "/tmp/test/tdbp", xl_tdbp:by_index(#testobj.id), [
         {index_object, fun index_object/1},
@@ -77,7 +77,9 @@ mapfind_test() ->
     T3 = #testobj{id = "3", name = <<"n1">>},
     T4 = #testobj{id = "4", name = <<"n3">>},
     ?assertOk(xl_tdbp:store(testtdbpmf, [T1, T2, T3, T4])),
-    ?assertEquals([T1, T3], xl_tdbp:mapfilter(testtdbpmf, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
+    ?assertEquals([T3, T1], xl_tdbp:nmapfilter(testtdbpmf, 2, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
+    ?assertOk(xl_tdbp:close(testtdbpmf)),
+    ?assertEquals([T1], xl_tdbp:nmapfilter(testtdbpmf, 1, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
     ?assertOk(xl_tdbp:close(testtdbpmf)).
 
 
