@@ -69,7 +69,8 @@ matchfilter_test() ->
             [{1, 3}, {2, 3}, {3, 3}, {5, 3}, {7, 3}]
         ])
     )),
-    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]], xl_stream:to_list(xl_stream:matchfilter(fun xl_lists:compare_key/2, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]]))),
+    ?assertEqual([[{1, 1}], [{3, 1}], [{7, 1}], [{8, 1}]],
+        xl_stream:to_list(xl_stream:matchfilter(fun xl_lists:compare_key/2, [[{1, 1}, {3, 1}, {7, 1}, {8, 1}]]))),
     ?assertEqual([], xl_stream:to_list(xl_stream:matchfilter(fun xl_lists:compare_key/2, [[], []]))).
 
 concat_test() ->
@@ -79,4 +80,10 @@ concat_test() ->
         xl_stream:to_stream([4, 5, 6])
     ]))).
 
-
+listn_test() ->
+    R = xl_stream:listn(3, xl_stream:to_stream(lists:seq(1, 10))),
+    xl_eunit:format("~p~n", [R]),
+    ?assertEqual([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]],
+        xl_stream:to_list(R)),
+    ?assertEqual([[1, 2]], xl_stream:to_list(xl_stream:listn(3, xl_stream:to_stream([1, 2])))),
+    ?assertEqual([], xl_stream:to_list(xl_stream:listn(3, xl_stream:empty()))).

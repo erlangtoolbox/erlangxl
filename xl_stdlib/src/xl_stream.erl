@@ -29,7 +29,7 @@
 -module(xl_stream).
 
 -export([stream/2, map/2, foreach/2, seq/2, foldl/3, filter/2, to_list/1, ifoldl/3, to_stream/1, to_pair/1, mapfind/2,
-    empty/0, to_random_stream/1, keyfilter/3, eforeach/2, to_rpc_stream/1, to_rpc_stream/2, matchfilter/2, concat/1, flatmap/2]).
+    empty/0, to_random_stream/1, keyfilter/3, eforeach/2, to_rpc_stream/1, to_rpc_stream/2, matchfilter/2, concat/1, flatmap/2, listn/2]).
 
 -type(stream(A) :: {?MODULE, fun(() -> [A | stream(A)])}).
 -export_type([stream/1]).
@@ -141,7 +141,7 @@ keyfilter(Keys, KeyPos, S) -> {?MODULE, fun() -> keyfilter_next(Keys, KeyPos, S)
 keyfilter_next([], _KeyPos, _S) -> [];
 keyfilter_next(Keys = [K | KT], KeyPos, S) ->
     case to_pair(S) of
-        [] -> {?MODULE, []};
+        [] -> [];
         [H | T] when K == element(KeyPos, H) -> [H | keyfilter(KT, KeyPos, T)];
         [H | T] when K > element(KeyPos, H) -> keyfilter_next(Keys, KeyPos, T);
         _ -> keyfilter_next(KT, KeyPos, S)
@@ -156,6 +156,18 @@ to_rpc_stream(Node, S) ->
             E -> {E, []}
         end
     end).
+
+listn(N, S) -> {?MODULE, fun() -> listn_next(N, [], S) end}.
+
+listn_next(N, Acc, S) when length(Acc) == N -> [lists:reverse(Acc) | listn(N, S)];
+listn_next(N, Acc, S) ->
+    case to_pair(S) of
+        [] when length(Acc) == 0 -> [];
+        [] -> [lists:reverse(Acc) | empty()];
+        [H | T] -> listn_next(N, [H | Acc], T)
+    end.
+
+
 
 matchfilter(_F, [X]) -> map(fun(E) -> [E] end, to_stream(X));
 matchfilter(F, Lists) -> {?MODULE, fun() -> matchfilter_next(F, Lists) end}.
