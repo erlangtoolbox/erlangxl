@@ -64,6 +64,7 @@ disk_storage_test() ->
     ?assertEqual(ok, xl_tdbp:close(testtdbpds)),
     xl_tdbp:open(testtdbpds, "/tmp/test/tdbp", xl_tdbp:by_index(#testobj.id), []),
     ?assertEqual([T1, T2], xl_tdbp:select(testtdbpds)),
+    ?assertEqual([T1, T2], xl_stream:to_list(xl_tdbp:cursor(testtdbpds))),
     ?assertEqual(ok, xl_tdbp:close(testtdbpds)).
 
 mapfilter_test() ->

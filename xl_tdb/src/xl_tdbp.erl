@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1]).
+-export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -96,10 +96,7 @@ delete(Name, Id) ->
 get(Name, Id) ->
     do([option_m ||
         ETS <- xl_state:value(Name, ets),
-        case ets:lookup(ETS, Id) of
-            [{_, O}] -> {ok, O};
-            _ -> undefined
-        end
+        ets_lookup(ETS, Id)
     ]).
 
 -spec(select(atom()) -> [term()]).
@@ -120,6 +117,18 @@ nmapfilter(Name, N, Q, F) ->
         {ok, Values} -> xl_lists:nmapfilter(N, F, Values);
         undefined -> []
     end.
+
+-spec(cursor(atom()) -> xl_stream:stream()).
+cursor(Name) ->
+    {ok, ETS} = xl_state:value(Name, ets),
+    xl_stream:stream(ets:first(ETS), fun
+        ('$end_of_table') -> empty;
+        (Key) ->
+            case ets_lookup(ETS, Key) of
+                {ok, O} -> {O, ets:next(ETS, Key)};
+                _ -> empty
+            end
+    end).
 
 -spec(index(atom()) -> option_m:monad(xl_uxekdtree:tree())).
 index(Name) -> xl_state:value(Name, index).
@@ -156,4 +165,10 @@ index_lookup(Q, Options, Tree) ->
     case xl_lists:kvfind(index_query, Options) of
         {ok, F} -> xl_uxekdtree:find(F(Q), Tree);
         undefined -> undefined
+    end.
+
+ets_lookup(ETS, Key) ->
+    case ets:lookup(ETS, Key) of
+        [{_, O}] -> {ok, O};
+        _ -> undefined
     end.
