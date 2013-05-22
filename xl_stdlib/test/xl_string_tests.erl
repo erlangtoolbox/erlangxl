@@ -120,3 +120,13 @@ replace_test() ->
 format_record_test() ->
     R = #r{a = 1, b = 2, c = c},
     ?assertEqual("#r{a = 1, b = 2, c = c}", ?FORMAT_RECORD(R, r)).
+
+lcs_vs_regexp_test() ->
+    Bin1 = <<"asdasdasdasdasd">>,
+    Bin2 = <<"asdasdasdasdasd">>,
+    xl_eunit:performance(match_larget_common_suffix, fun() ->
+        binary:longest_common_suffix([Bin1, Bin2])
+    end, 1000000),
+    xl_eunit:performance(match_regexp, fun() ->
+        binary:match(Bin1, Bin2) /= nomatch
+    end, 1000000).
