@@ -47,7 +47,7 @@ open(Name, Location, Identify, Options) ->
     do([error_m ||
         Objects <- xl_tdb_storage:load(Location),
         lists:foreach(fun(O) -> ets:insert(ETS, O) end, Objects),
-        xl_state:set(Name, index, index_build(Options, Objects)),
+        xl_state:set(Name, index, index_build(Options, ETS)),
         xl_state:set(Name, location, Location),
         xl_state:set(Name, identify, Identify),
         xl_state:set(Name, updater_pid, spawn_link(fun update/0)),
@@ -75,7 +75,7 @@ store(Name, Objects) ->
                 ets:insert(ETS, Wrapped),
                 xl_tdb_storage:store(Location, Id(O), Wrapped)
             end, Objects),
-            xl_state:set(Name, index, index_build(Options, ets:tab2list(ETS)))
+            xl_state:set(Name, index, index_build(Options, ETS))
         ])
     end).
 
@@ -88,7 +88,7 @@ delete(Name, Id) ->
             Options <- option_m:to_error_m(xl_state:value(Name, options), no_options),
             xl_tdb_storage:delete(Location, Id),
             return(ets:delete(ETS, Id)),
-            xl_state:set(Name, index, index_build(Options, ets:tab2list(ETS)))
+            xl_state:set(Name, index, index_build(Options, ETS))
         ])
     end).
 
@@ -154,7 +154,8 @@ wrap(Object, Id) -> {Id(Object), Object}.
 unwrap(Objects) when is_list(Objects) -> lists:map(fun(O) -> unwrap(O) end, Objects);
 unwrap({_, O}) -> O.
 
-index_build(Options, Objects) ->
+index_build(Options, ETS) ->
+    Objects = ets:tab2list(ETS),
     case xl_lists:kvfind(index_object, Options) of
         {ok, F} -> xl_uxekdtree:new(lists:foldl(fun(O, Points) -> F(unwrap(O)) ++ Points end, [], Objects), [shared]);
         undefined -> undefined
