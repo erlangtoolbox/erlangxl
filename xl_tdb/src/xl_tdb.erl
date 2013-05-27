@@ -170,6 +170,6 @@ index_lookup(Q, Options, Tree) ->
 
 ets_lookup(ETS, Key) ->
     case ets:lookup(ETS, Key) of
-        [{_, O}] -> {ok, O};
+        [O] -> {ok, unwrap(O)};
         _ -> undefined
     end.

@@ -51,5 +51,3 @@ register_test() ->
     ?assertEqual({error, {cannot_register, xxx, yyy}}, xl_lang:register(xxx, yyy)),
     Pid = spawn_link(fun safe_call_fail_test/0),
     ?assertEqual({ok, Pid}, xl_lang:register(xxx, Pid)).
-
-

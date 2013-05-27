@@ -28,7 +28,7 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_lang).
 
--export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1, find_nif/2]).
+-export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1, find_nif/2, priv_dir/2, priv_path/3]).
 
 ifelse(true, Then, _) -> result(Then);
 ifelse(false, _, Else) -> result(Else).
@@ -63,11 +63,15 @@ unregister(Name) ->
     end.
 
 find_nif(App, Module) ->
-    PrivDir = case code:priv_dir(App) of
+    filename:join(priv_dir(App, Module), atom_to_list(Module)).
+
+priv_dir(App, Module) ->
+    case code:priv_dir(App) of
         {error, _} ->
             EbinDir = filename:dirname(code:which(Module)),
             AppPath = filename:dirname(EbinDir),
             filename:join(AppPath, "priv");
         Path -> Path
-    end,
-    filename:join(PrivDir, atom_to_list(Module)).
+    end.
+
+priv_path(App, Module, Path) -> filename:join(priv_dir(App, Module), Path).
