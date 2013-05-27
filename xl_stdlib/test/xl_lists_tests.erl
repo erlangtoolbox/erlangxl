@@ -210,8 +210,16 @@ shuffle_test() ->
 
 nshufflemapfilter_test() ->
     L = lists:seq(1, 100),
-    R = xl_lists:nshufflemapfilter(10, fun(X) when X rem 2 == 0 -> {ok, X * X}; (_) -> undefined end, L),
-    ?assertEqual(10, length(R)),
-    lists:foreach(fun(E) ->
-        ?assertEqual(0, E rem 2)
-    end, R).
+    xl_lists:times(fun() ->
+        R = xl_lists:nshufflemapfilter(10, fun(X) when X rem 2 == 0 -> {ok, X}; (_) -> undefined end, L),
+        ?assertEqual(10, length(R)),
+        lists:foreach(fun(E) -> ?assertEqual(0, E rem 2) end, R)
+    end, 10).
+
+nshufflemapfilter_random_test() ->
+    L = lists:seq(1, 100),
+    Unique = xl_lists:count_unique(lists:map(fun(_) ->
+        [H | _] = xl_lists:nshufflemapfilter(100, fun(X) -> {ok, X} end, L),
+        H
+    end, lists:seq(1, 10))),
+    ?assert(length(Unique) > 5).

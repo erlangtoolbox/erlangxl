@@ -341,6 +341,7 @@ shuffle(List) ->
     {L, R} = lists:split(N, List),
     R ++ L.
 
+
 init(Fun, Count) -> [Fun() || _ <- lists:seq(1, Count)].
 
 -spec(fastsplitwith(fun((term()) -> boolean()), [term()]) -> {[term()], [term()]}).
