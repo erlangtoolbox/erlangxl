@@ -339,7 +339,7 @@ shuffle([]) -> [];
 shuffle(List) ->
     N = xl_random:uniform(length(List)) - 1,
     {L, R} = lists:split(N, List),
-    L ++ R.
+    R ++ L.
 
 init(Fun, Count) -> [Fun() || _ <- lists:seq(1, Count)].
 
@@ -357,7 +357,7 @@ fastsplitwith(Pred, [], Taken) when is_function(Pred, 1) -> {Taken, []}.
 nshufflemapfilter(Limit, F, List) ->
     N = xl_random:uniform(length(List)) - 1,
     {L, R} = lists:split(N, List),
-    nmapfilter(Limit, F, [], L, R).
+    nmapfilter(Limit, F, [], R, L).
 
 -spec(nmapfilter(non_neg_integer(), mapping_predicate(term(), term()), [term()]) -> [term()]).
 nmapfilter(Limit, F, List) -> nmapfilter(Limit, F, [], List, []).
