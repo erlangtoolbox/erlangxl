@@ -338,7 +338,7 @@ keymerge(Fun, Pos, List1, List2) ->
 shuffle([]) -> [];
 shuffle(List) ->
     N = xl_random:uniform(length(List)) - 1,
-    {L, R} = fastsplit(N, [], List),
+    {L, R} = lists:split(N, List),
     L ++ R.
 
 init(Fun, Count) -> [Fun() || _ <- lists:seq(1, Count)].
@@ -353,13 +353,10 @@ fastsplitwith(Pred, [Hd | Tail], Taken) ->
     end;
 fastsplitwith(Pred, [], Taken) when is_function(Pred, 1) -> {Taken, []}.
 
-fastsplit(0, Acc, L) -> {L, Acc};
-fastsplit(N, Acc, [H | T]) -> fastsplit(N - 1, [H | Acc], T).
-
 -spec(nshufflemapfilter(non_neg_integer(), mapping_predicate(term(), term()), [term()]) -> [term()]).
 nshufflemapfilter(Limit, F, List) ->
     N = xl_random:uniform(length(List)) - 1,
-    {L, R} = fastsplit(N, [], List),
+    {L, R} = lists:split(N, List),
     nmapfilter(Limit, F, [], L, R).
 
 -spec(nmapfilter(non_neg_integer(), mapping_predicate(term(), term()), [term()]) -> [term()]).
