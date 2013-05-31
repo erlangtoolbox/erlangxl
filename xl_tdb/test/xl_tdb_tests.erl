@@ -54,6 +54,17 @@ memory_options_test() ->
 
     ?assertOk(xl_tdb:close(testtdbp)).
 
+update_test() ->
+    xl_application:start(xl_stdlib),
+    xl_tdb:open(testtdbpup, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    T1 = #testobj{id = "1", name = "n1"},
+
+    ?assertOk(xl_tdb:store(testtdbpup, [T1])),
+    ?assertEqual({ok, T1}, xl_tdb:get(testtdbpup, "1")),
+    ?assertEqual({ok, #testobj{id = "1", name = "updated"}},
+        xl_tdb:update(testtdbpup, "1", fun(X) -> X#testobj{name = "updated"} end)),
+    ?assertOk(xl_tdb:close(testtdbpup)).
+
 disk_storage_test() ->
     xl_application:start(xl_stdlib),
     xl_tdb:open(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),

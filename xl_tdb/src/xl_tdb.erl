@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1]).
+-export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -94,6 +94,24 @@ delete(Name, Id) ->
                     ets:insert(ETS, wrap(O, Identify, true)),
                     xl_state:set(Name, index, index_build(Options, ETS));
                 _ -> ok
+            end
+        ])
+    end).
+
+-spec(update(atom(), xl_string:iostring(), fun((term()) -> term())) -> error_m:monad(term())).
+update(Name, Id, F) ->
+    mutate(Name, fun() ->
+        do([option_m ||
+            ETS <- xl_state:evalue(Name, ets),
+            Identify <- xl_state:evalue(Name, identify),
+            Options <- xl_state:evalue(Name, options),
+            case ets_lookup(ETS, Id) of
+                {ok, {_Id, O, _LastUpdate, _Deleted}} ->
+                    R = F(O),
+                    ets:insert(ETS, wrap(R, Identify)),
+                    xl_state:set(Name, index, index_build(Options, ETS)),
+                    return(R);
+                _ -> return(undefined)
             end
         ])
     end).
