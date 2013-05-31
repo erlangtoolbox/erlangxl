@@ -37,6 +37,8 @@
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
 
+-define(is_deleted(O), element(4, O)).
+
 -spec(open(atom(), file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(ok)).
 open(Name, Location, Identify, Options) ->
     ETS = ets:new(xl_convert:make_atom([Name, '_tdb']), [
@@ -51,14 +53,20 @@ open(Name, Location, Identify, Options) ->
         xl_state:set(Name, location, Location),
         xl_state:set(Name, identify, Identify),
         xl_state:set(Name, updater_pid, spawn_link(fun update/0)),
-        xl_state:set(Name, options, Options)
+        xl_state:set(Name, options, Options),
+        xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
+        Timer <- timer:apply_interval(xl_lists:kvfind(fsync, Options, 5000), ?MODULE, fsync, [Name]),
+        xl_state:set(Name, timer, Timer)
     ]).
 
 
 -spec(close(atom()) -> error_m:monad(ok)).
 close(Name) ->
+    {ok, Timer} = xl_state:value(Name, timer),
+    timer:cancel(Timer),
     {ok, Pid} = xl_state:value(Name, updater_pid),
     Pid ! stop,
+    fsync(Name),
     ok.
 
 
@@ -66,15 +74,10 @@ close(Name) ->
 store(Name, Objects) ->
     mutate(Name, fun() ->
         do([error_m ||
-            ETS <- option_m:to_error_m(xl_state:value(Name, ets), no_ets),
-            Location <- option_m:to_error_m(xl_state:value(Name, location), no_location),
-            Id <- option_m:to_error_m(xl_state:value(Name, identify), no_identify),
-            Options <- option_m:to_error_m(xl_state:value(Name, options), no_options),
-            xl_lists:eforeach(fun(O) ->
-                Wrapped = wrap(O, Id),
-                ets:insert(ETS, Wrapped),
-                xl_tdb_storage:store(Location, Id(O), Wrapped)
-            end, Objects),
+            ETS <- xl_state:evalue(Name, ets),
+            Identify <- xl_state:evalue(Name, identify),
+            Options <- xl_state:evalue(Name, options),
+            lists:foreach(fun(O) -> ets:insert(ETS, wrap(O, Identify)) end, Objects),
             xl_state:set(Name, index, index_build(Options, ETS))
         ])
     end).
@@ -83,12 +86,15 @@ store(Name, Objects) ->
 delete(Name, Id) ->
     mutate(Name, fun() ->
         do([error_m ||
-            ETS <- option_m:to_error_m(xl_state:value(Name, ets), no_ets),
-            Location <- option_m:to_error_m(xl_state:value(Name, location), no_location),
-            Options <- option_m:to_error_m(xl_state:value(Name, options), no_options),
-            xl_tdb_storage:delete(Location, Id),
-            return(ets:delete(ETS, Id)),
-            xl_state:set(Name, index, index_build(Options, ETS))
+            ETS <- xl_state:evalue(Name, ets),
+            Identify <- xl_state:evalue(Name, identify),
+            Options <- xl_state:evalue(Name, options),
+            case ets_lookup(ETS, Id) of
+                {ok, {_Id, O, _LastUpdate, _Deleted}} ->
+                    ets:insert(ETS, wrap(O, Identify, true)),
+                    xl_state:set(Name, index, index_build(Options, ETS));
+                _ -> ok
+            end
         ])
     end).
 
@@ -96,7 +102,10 @@ delete(Name, Id) ->
 get(Name, Id) ->
     do([option_m ||
         ETS <- xl_state:value(Name, ets),
-        ets_lookup(ETS, Id)
+        case ets_lookup(ETS, Id) of
+            {ok, O} when not ?is_deleted(O) -> return(unwrap(O));
+            _ -> undefined
+        end
     ]).
 
 -spec(select(atom()) -> [term()]).
@@ -121,14 +130,18 @@ nmapfilter(Name, N, Q, F) ->
 -spec(cursor(atom()) -> xl_stream:stream()).
 cursor(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
-    xl_stream:stream(ets:first(ETS), fun
-        ('$end_of_table') -> empty;
-        (Key) ->
-            case ets_lookup(ETS, Key) of
-                {ok, O} -> {O, ets:next(ETS, Key)};
-                _ -> empty
-            end
-    end).
+    xl_stream:mapfilter(
+        fun({_Id, O, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end,
+        xl_stream:stream(ets:first(ETS),
+            fun
+                ('$end_of_table') -> empty;
+                (Key) ->
+                    case ets_lookup(ETS, Key) of
+                        {ok, O} -> {O, ets:next(ETS, Key)};
+                        _ -> empty
+                    end
+            end)
+    ).
 
 -spec(index(atom()) -> option_m:monad(xl_uxekdtree:tree())).
 index(Name) -> xl_state:value(Name, index).
@@ -149,15 +162,19 @@ mutate(Name, Fun) ->
     end.
 
 wrap(Objects, Id) when is_list(Objects) -> lists:map(fun(O) -> wrap(O, Id) end, Objects);
-wrap(Object, Id) -> {Id(Object), Object}.
+wrap(Object, Id) -> wrap(Object, Id, false).
+
+wrap(Object, Id, Deleted) -> {Id(Object), Object, xl_calendar:now_micros(), Deleted}.
 
 unwrap(Objects) when is_list(Objects) -> lists:map(fun(O) -> unwrap(O) end, Objects);
-unwrap({_, O}) -> O.
+unwrap({_Id, O, _LastUpdate, _Deleted}) -> O.
 
 index_build(Options, ETS) ->
-    Objects = ets:tab2list(ETS),
     case xl_lists:kvfind(index_object, Options) of
-        {ok, F} -> xl_uxekdtree:new(lists:foldl(fun(O, Points) -> F(unwrap(O)) ++ Points end, [], Objects), [shared]);
+        {ok, F} -> xl_uxekdtree:new(ets:foldl(fun
+            (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
+            (_O, Points) -> Points
+        end, [], ETS), [shared]);
         undefined -> undefined
     end.
 
@@ -170,6 +187,21 @@ index_lookup(Q, Options, Tree) ->
 
 ets_lookup(ETS, Key) ->
     case ets:lookup(ETS, Key) of
-        [O] -> {ok, unwrap(O)};
+        [O] -> {ok, O};
         _ -> undefined
     end.
+
+fsync(Name) ->
+    do([error_m ||
+        ETS <- xl_state:evalue(Name, ets),
+        Location <- xl_state:evalue(Name, location),
+        LastFSync <- xl_state:evalue(Name, last_fsync),
+        xl_lists:eforeach(fun
+            (Wrapped = {Id, _O, _LastUpdate, false}) -> xl_tdb_storage:store(Location, Id, Wrapped);
+            ({Id, _O, _LastUpdate, true}) ->
+                do([error_m ||
+                    xl_tdb_storage:delete(Location, Id),
+                    return(ets:delete(ETS, Id))
+                ])
+        end, ets:select(ETS, [{{'$1', '$2', '$3', '$4'}, [{'=<', LastFSync, '$3'}], ['$_']}]))
+    ]).

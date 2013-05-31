@@ -30,7 +30,7 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([new/1, new/2, get/2, set/3, keys/1, start_link/0, value/2, delete/1]).
+-export([new/1, new/2, get/2, set/3, keys/1, start_link/0, value/2, delete/1, evalue/2]).
 
 start_link() ->
     Pid = spawn_link(fun loop/0),
@@ -77,6 +77,9 @@ value(Name, Key) ->
         {ok, [V]} -> {ok, V};
         _ -> undefined
     end.
+
+-spec(evalue(atom(), term()) -> error_m:monad(term())).
+evalue(Name, Key) -> option_m:to_error_m(value(Name, Key), {no, Key}).
 
 -spec(set(atom(), term(), term()) -> ok).
 set(Name, Key, Value) ->

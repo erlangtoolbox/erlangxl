@@ -59,7 +59,9 @@ disk_storage_test() ->
     xl_tdb:open(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = "n1"},
     T2 = #testobj{id = "2", name = "n2"},
-    xl_tdb:store(testtdbpds, [T1, T2]),
+    xl_eunit:performance(tdb_store, fun() ->
+        xl_tdb:store(testtdbpds, [T1, T2])
+    end, 100000),
     timer:sleep(500),
     ?assertEqual(ok, xl_tdb:close(testtdbpds)),
     xl_tdb:open(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
