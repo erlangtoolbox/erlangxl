@@ -111,7 +111,7 @@ update(Name, Id, F) ->
                     ets:insert(ETS, wrap(R, Identify)),
                     xl_state:set(Name, index, index_build(Options, ETS)),
                     return(R);
-                _ -> return(undefined)
+                _ -> {error, undefined}
             end
         ])
     end).

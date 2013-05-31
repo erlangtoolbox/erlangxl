@@ -38,6 +38,7 @@
 }).
 
 memory_options_test() ->
+    xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
     xl_tdb:open(testtdbp, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = "n1"},
@@ -55,6 +56,7 @@ memory_options_test() ->
     ?assertOk(xl_tdb:close(testtdbp)).
 
 update_test() ->
+    xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
     xl_tdb:open(testtdbpup, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = "n1"},
@@ -63,9 +65,12 @@ update_test() ->
     ?assertEqual({ok, T1}, xl_tdb:get(testtdbpup, "1")),
     ?assertEqual({ok, #testobj{id = "1", name = "updated"}},
         xl_tdb:update(testtdbpup, "1", fun(X) -> X#testobj{name = "updated"} end)),
+    ?assertEqual({error, undefined},
+        xl_tdb:update(testtdbpup, "x", fun(X) -> X#testobj{name = "updated"} end)),
     ?assertOk(xl_tdb:close(testtdbpup)).
 
 disk_storage_test() ->
+    xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
     xl_tdb:open(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = "n1"},
@@ -81,6 +86,7 @@ disk_storage_test() ->
     ?assertEqual(ok, xl_tdb:close(testtdbpds)).
 
 mapfilter_test() ->
+    xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
     xl_tdb:open(testtdbpmf, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [
         {index_object, fun index_object/1},
