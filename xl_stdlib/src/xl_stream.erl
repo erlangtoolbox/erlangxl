@@ -165,7 +165,7 @@ to_rpc_stream(Node, S) ->
         case xl_rpc:call(Node, xl_stream, to_pair, [Stream]) of
             {ok, []} -> empty;
             {ok, [H | T]} -> {{ok, H}, T};
-            E -> {E, []}
+            E -> {E, empty()}
         end
     end).
 

@@ -102,6 +102,29 @@ mapfilter_test() ->
     ?assertEquals([T1], xl_tdb:nmapfilter(testtdbpmf, 1, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
     ?assertOk(xl_tdb:close(testtdbpmf)).
 
+rsync_test() ->
+    xl_file:delete("/tmp/test/tdbp"),
+    xl_application:start(xl_stdlib),
+    xl_tdb:open(testrsync_master, "/tmp/test/tdbp/master", xl_tdb:by_index(#testobj.id), []),
+    T1 = #testobj{id = "1", name = <<"n1">>},
+    T2 = #testobj{id = "2", name = <<"n2">>},
+    T3 = #testobj{id = "3", name = <<"n1">>},
+    T4 = #testobj{id = "4", name = <<"n3">>},
+    ?assertOk(xl_tdb:store(testrsync_master, [T1, T2, T3, T4])),
+    xl_tdb:open(testrsync_slave, "/tmp/test/tdbp/slave", xl_tdb:by_index(#testobj.id), [
+        {rsync_master_node, node()},
+        {rsync_master_db, testrsync_master},
+        {rsync_treshold, 2}
+    ]),
+    ?assertOk(xl_tdb:rsync(testrsync_slave)),
+    ?assertEquals([T1, T2, T3, T4], xl_tdb:select(testrsync_slave)),
+    ?assertEqual({ok, TU = #testobj{id = "1", name = "updated"}},
+        xl_tdb:update(testrsync_master, "1", fun(X) -> X#testobj{name = "updated"} end)),
+    ?assertOk(xl_tdb:rsync(testrsync_slave)),
+    ?assertEquals([TU, T2, T3, T4], xl_tdb:select(testrsync_slave)),
+    ?assertOk(xl_tdb:close(testrsync_slave)),
+    ?assertOk(xl_tdb:close(testrsync_master)).
+
 
 index_object(O = #testobj{name = Name}) -> [{Name, O}].
 index_query([{name, Name}]) -> {Name}.

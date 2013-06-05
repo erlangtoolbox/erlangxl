@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, fsync/1]).
+-export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, fsync/1, rsync/1, updates/2]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -55,20 +55,25 @@ open(Name, Location, Identify, Options) ->
         xl_state:set(Name, updater_pid, spawn_link(fun update/0)),
         xl_state:set(Name, options, Options),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
-        Timer <- timer:apply_interval(xl_lists:kvfind(fsync, Options, 5000), ?MODULE, fsync, [Name]),
-        xl_state:set(Name, timer, Timer)
+        xl_state:set(Name, last_rsync, xl_calendar:now_micros()),
+        FSyncTimer <- timer:apply_interval(xl_lists:kvfind(fsync, Options, 5000), ?MODULE, fsync, [Name]),
+        xl_state:set(Name, fsync_timer, FSyncTimer),
+        RSyncTimer <- timer:apply_interval(xl_lists:kvfind(rsync, Options, 5000), ?MODULE, rsync, [Name]),
+        xl_state:set(Name, rsync_timer, RSyncTimer)
     ]).
 
 
 -spec(close(atom()) -> error_m:monad(ok)).
 close(Name) ->
-    {ok, Timer} = xl_state:value(Name, timer),
-    timer:cancel(Timer),
-    {ok, Pid} = xl_state:value(Name, updater_pid),
-    Pid ! stop,
-    fsync(Name),
-    ok.
-
+    do([error_m ||
+        FSyncTimer <- xl_state:value(Name, fsync_timer),
+        return(timer:cancel(FSyncTimer)),
+        RSyncTimer <- xl_state:value(Name, rsync_timer),
+        return(timer:cancel(RSyncTimer)),
+        Pid <- xl_state:value(Name, updater_pid),
+        return(Pid ! stop),
+        fsync(Name)
+    ]).
 
 -spec(store(atom(), [term()]) -> error_m:monad(ok)).
 store(Name, Objects) ->
@@ -164,6 +169,50 @@ cursor(Name) ->
 -spec(index(atom()) -> option_m:monad(xl_uxekdtree:tree())).
 index(Name) -> xl_state:value(Name, index).
 
+-spec(fsync(atom()) -> error_m:monad(ok)).
+fsync(Name) ->
+    do([error_m ||
+        ETS <- xl_state:evalue(Name, ets),
+        Location <- xl_state:evalue(Name, location),
+        LastFSync <- xl_state:evalue(Name, last_fsync),
+        xl_lists:eforeach(
+            fun(Wrapped = {Id, _O, _LastUpdate, _Deleted}) -> xl_tdb_storage:store(Location, Id, Wrapped) end,
+            ets_changes(ETS, LastFSync)
+        )
+    ]).
+
+-spec(rsync(atom()) -> error_m:monad(ok)).
+rsync(Name) ->
+    NewLastRSync = xl_calendar:now_micros(),
+    do([error_m ||
+        Options <- xl_state:evalue(Name, options),
+        LastRSync <- xl_state:evalue(Name, last_rsync),
+        MasterNode <- xl_lists:ekvfind(rsync_master_node, Options),
+        MasterDb <- xl_lists:ekvfind(rsync_master_db, Options),
+        Treshold <- return(xl_lists:kvfind(rsync_treshold, Options, 20)),
+        SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 1000000)),
+        S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync - SafeInterval]),
+        xl_stream:eforeach(fun(Items) ->
+            case lists:all(fun(X) -> element(1, X) == ok end, Items) of
+                true ->
+                    mutate(Name, fun() ->
+                        do([error_m ||
+                            ETS <- xl_state:evalue(Name, ets),
+                            lists:foreach(fun(O) -> ets:insert(ETS, O) end, monad:flatten(error_m, Items)),
+                            xl_state:set(Name, index, index_build(Options, ETS))
+                        ])
+                    end);
+                false -> lists:last(Items)
+            end
+        end, xl_stream:listn(Treshold, xl_stream:to_rpc_stream(MasterNode, S))),
+        xl_state:set(Name, last_rsync, NewLastRSync)
+    ]).
+
+-spec(updates(atom(), pos_integer()) -> [term()]).
+updates(Name, Since) ->
+    {ok, ETS} = xl_state:evalue(Name, ets),
+    xl_stream:to_stream(ets_changes(ETS, Since)).
+
 update() ->
     receive
         stop -> ok;
@@ -209,18 +258,4 @@ ets_lookup(ETS, Key) ->
         _ -> undefined
     end.
 
--spec(fsync(atom()) -> error_m:monad(ok)).
-fsync(Name) ->
-    do([error_m ||
-        ETS <- xl_state:evalue(Name, ets),
-        Location <- xl_state:evalue(Name, location),
-        LastFSync <- xl_state:evalue(Name, last_fsync),
-        xl_lists:eforeach(fun
-            (Wrapped = {Id, _O, _LastUpdate, false}) -> xl_tdb_storage:store(Location, Id, Wrapped);
-            ({Id, _O, _LastUpdate, true}) ->
-                do([error_m ||
-                    xl_tdb_storage:delete(Location, Id),
-                    return(ets:delete(ETS, Id))
-                ])
-        end, ets:select(ETS, [{{'$1', '$2', '$3', '$4'}, [{'=<', LastFSync, '$3'}], ['$_']}]))
-    ]).
+ets_changes(ETS, Since) -> ets:select(ETS, [{{'$1', '$2', '$3', '$4'}, [{'=<', Since, '$3'}], ['$_']}]).
