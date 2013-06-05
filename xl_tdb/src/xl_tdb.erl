@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3]).
+-export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, fsync/1]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -209,6 +209,7 @@ ets_lookup(ETS, Key) ->
         _ -> undefined
     end.
 
+-spec(fsync(atom()) -> error_m:monad(ok)).
 fsync(Name) ->
     do([error_m ||
         ETS <- xl_state:evalue(Name, ets),
