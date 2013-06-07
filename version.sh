@@ -1,3 +1,3 @@
 #!/bin/sh
 
-echo -n `printf "1.2.0.%d" $BUILD_NUMBER`
+echo -n `printf "1.2.1.%d" $BUILD_NUMBER`

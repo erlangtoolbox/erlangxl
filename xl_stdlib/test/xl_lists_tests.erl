@@ -29,6 +29,7 @@
 -module(xl_lists_tests).
 
 -include_lib("eunit/include/eunit.hrl").
+-include("xl_eunit.hrl").
 
 find_test() ->
     L = [1, 2, 3, 4],
@@ -81,7 +82,7 @@ sublistmatch_perf_test() ->
     xl_eunit:performance(atom, fun() -> xl_lists:sublistmatch(Pattern2, List) end, Count).
 
 substitute_test() ->
-    xl_application:start(xl_stdlib),
+    ?assertOk(xl_application:start(xl_stdlib)),
     Pattern = [a, 1, "c{b}c", "c"],
     List = [{a, "1"}, {b, "x"}, {"c", 2}],
     ?assertEqual(["1", 1, "cxc", 2],

@@ -32,15 +32,15 @@
 -compile({parse_transform, do}).
 
 %% API
--export([open/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, fsync/1, rsync/1, updates/2]).
+-export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, fsync/1, rsync/1, updates/2]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
 
 -define(is_deleted(O), element(4, O)).
 
--spec(open(atom(), file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(ok)).
-open(Name, Location, Identify, Options) ->
+-spec(start_link(atom(), file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(ok)).
+start_link(Name, Location, Identify, Options) ->
     ETS = ets:new(xl_convert:make_atom([Name, '_tdb']), [
         ordered_set, {keypos, 1}, public
     ]),
@@ -52,28 +52,32 @@ open(Name, Location, Identify, Options) ->
         xl_state:set(Name, index, index_build(Options, ETS)),
         xl_state:set(Name, location, Location),
         xl_state:set(Name, identify, Identify),
-        xl_state:set(Name, updater_pid, spawn_link(fun update/0)),
+        Pid <- return(spawn_link(fun() ->
+            process_flag(trap_exit, true),
+            update(Name)
+        end)),
+        xl_state:set(Name, updater_pid, Pid),
         xl_state:set(Name, options, Options),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
         xl_state:set(Name, last_rsync, xl_calendar:now_micros()),
         FSyncTimer <- timer:apply_interval(xl_lists:kvfind(fsync, Options, 5000), ?MODULE, fsync, [Name]),
         xl_state:set(Name, fsync_timer, FSyncTimer),
         RSyncTimer <- timer:apply_interval(xl_lists:kvfind(rsync, Options, 5000), ?MODULE, rsync, [Name]),
-        xl_state:set(Name, rsync_timer, RSyncTimer)
+        xl_state:set(Name, rsync_timer, RSyncTimer),
+        return(Pid)
     ]).
 
 
 -spec(close(atom()) -> error_m:monad(ok)).
 close(Name) ->
-    do([error_m ||
-        FSyncTimer <- xl_state:value(Name, fsync_timer),
-        return(timer:cancel(FSyncTimer)),
-        RSyncTimer <- xl_state:value(Name, rsync_timer),
-        return(timer:cancel(RSyncTimer)),
-        Pid <- xl_state:value(Name, updater_pid),
-        return(Pid ! stop),
-        fsync(Name)
-    ]).
+    case xl_state:evalue(Name, updater_pid) of
+        {ok, Pid} ->
+            exit(Pid, normal),
+            receive
+                X -> X
+            end;
+        E -> E
+    end.
 
 -spec(store(atom(), [term()]) -> error_m:monad(ok)).
 store(Name, Objects) ->
@@ -213,17 +217,25 @@ updates(Name, Since) ->
     {ok, ETS} = xl_state:evalue(Name, ets),
     xl_stream:to_stream(ets_changes(ETS, Since)).
 
-update() ->
+update(Name) ->
     receive
-        stop -> ok;
-        {mutate, Fun, CallingProcess} ->
-            CallingProcess ! Fun(),
-            update()
+        {'EXIT', From, _Reason} ->
+            From ! do([error_m ||
+                FSyncTimer <- xl_state:value(Name, fsync_timer),
+                return(timer:cancel(FSyncTimer)),
+                RSyncTimer <- xl_state:value(Name, rsync_timer),
+                return(timer:cancel(RSyncTimer)),
+                fsync(Name),
+                xl_state:delete(Name)
+            ]);
+        {mutate, From, Fun} ->
+            From ! Fun(),
+            update(Name)
     end.
 
 mutate(Name, Fun) ->
     {ok, Pid} = xl_state:value(Name, updater_pid),
-    Pid ! {mutate, Fun, self()},
+    Pid ! {mutate, self(), Fun},
     receive
         R -> R
     end.

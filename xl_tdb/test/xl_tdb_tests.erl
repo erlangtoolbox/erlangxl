@@ -40,7 +40,7 @@
 memory_options_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:open(testtdbp, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    xl_tdb:start_link(testtdbp, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = "n1"},
     T2 = #testobj{id = "2", name = "n2"},
 
@@ -58,7 +58,7 @@ memory_options_test() ->
 update_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:open(testtdbpup, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    xl_tdb:start_link(testtdbpup, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = "n1"},
 
     ?assertOk(xl_tdb:store(testtdbpup, [T1])),
@@ -72,7 +72,7 @@ update_test() ->
 disk_storage_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:open(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    xl_tdb:start_link(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = "n1"},
     T2 = #testobj{id = "2", name = "n2"},
     xl_eunit:performance(tdb_store, fun() ->
@@ -80,7 +80,7 @@ disk_storage_test() ->
     end, 100000),
     timer:sleep(500),
     ?assertEqual(ok, xl_tdb:close(testtdbpds)),
-    xl_tdb:open(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    xl_tdb:start_link(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
     ?assertEqual([T1, T2], xl_tdb:select(testtdbpds)),
     ?assertEqual([T1, T2], xl_stream:to_list(xl_tdb:cursor(testtdbpds))),
     ?assertEqual(ok, xl_tdb:close(testtdbpds)).
@@ -88,7 +88,7 @@ disk_storage_test() ->
 mapfilter_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:open(testtdbpmf, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [
+    xl_tdb:start_link(testtdbpmf, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [
         {index_object, fun index_object/1},
         {index_query, fun index_query/1}
     ]),
@@ -98,20 +98,19 @@ mapfilter_test() ->
     T4 = #testobj{id = "4", name = <<"n3">>},
     ?assertOk(xl_tdb:store(testtdbpmf, [T1, T2, T3, T4])),
     ?assertEquals([T3, T1], xl_tdb:nmapfilter(testtdbpmf, 2, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
-    ?assertOk(xl_tdb:close(testtdbpmf)),
     ?assertEquals([T1], xl_tdb:nmapfilter(testtdbpmf, 1, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
     ?assertOk(xl_tdb:close(testtdbpmf)).
 
 rsync_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:open(testrsync_master, "/tmp/test/tdbp/master", xl_tdb:by_index(#testobj.id), []),
+    xl_tdb:start_link(testrsync_master, "/tmp/test/tdbp/master", xl_tdb:by_index(#testobj.id), []),
     T1 = #testobj{id = "1", name = <<"n1">>},
     T2 = #testobj{id = "2", name = <<"n2">>},
     T3 = #testobj{id = "3", name = <<"n1">>},
     T4 = #testobj{id = "4", name = <<"n3">>},
     ?assertOk(xl_tdb:store(testrsync_master, [T1, T2, T3, T4])),
-    xl_tdb:open(testrsync_slave, "/tmp/test/tdbp/slave", xl_tdb:by_index(#testobj.id), [
+    xl_tdb:start_link(testrsync_slave, "/tmp/test/tdbp/slave", xl_tdb:by_index(#testobj.id), [
         {rsync_master_node, node()},
         {rsync_master_db, testrsync_master},
         {rsync_treshold, 2}

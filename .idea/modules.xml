@@ -4,7 +4,6 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/epath/epath.iml" filepath="$PROJECT_DIR$/epath/epath.iml" />
       <module fileurl="file://$PROJECT_DIR$/erlangxl.iml" filepath="$PROJECT_DIR$/erlangxl.iml" />
-      <module fileurl="file://$PROJECT_DIR$/persist/persist.iml" filepath="$PROJECT_DIR$/persist/persist.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_csv/xl_csv.iml" filepath="$PROJECT_DIR$/xl_csv/xl_csv.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_io/xl_io.iml" filepath="$PROJECT_DIR$/xl_io/xl_io.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_json/xl_json.iml" filepath="$PROJECT_DIR$/xl_json/xl_json.iml" />
