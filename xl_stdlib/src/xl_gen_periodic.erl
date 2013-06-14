@@ -31,54 +31,49 @@
 
 -behaviour(gen_server).
 
--callback init/1 :: (Args :: term()) ->
+-callback(init/1 :: (Args :: term()) ->
     {ok, State :: term()} | {ok, State :: term(), timeout() | hibernate} |
-    {stop, Reason :: term()} | ignore.
+    {stop, Reason :: term()} | ignore).
 
--callback handle_action/2 :: (LastAction :: pos_integer(), State :: term()) ->
-    {ok, NewState :: term()} | {ok, NewState :: term(), hibernate} | {error, term()}.
+-callback(handle_action/2 :: (LastAction :: pos_integer(), State :: term()) ->
+    {ok, NewState :: term()} | {ok, NewState :: term(), hibernate} | {error, term()}).
 
--callback terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
-        LastAction :: pos_integer(), State :: term()) -> term().
+-callback(terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
+        LastAction :: pos_integer(), State :: term()) -> term()).
 
 %% API
--export([start_link/5, start_link/4, stop/1, status/1]).
+-export([start_link/5, start_link/4, stop/1, status/1, call/2]).
+
+-type(nameref() :: Name :: atom() | {Name :: atom(), Node :: node()} | {global, GlobalName :: atom()} | {via, Module :: module(), ViaName :: atom()} | pid()).
 
 %% gen_server
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
     terminate/2, code_change/3]).
 
--spec start_link/5 :: (Name, Mod :: atom(), Args :: term(), Interval :: timer:time(), Options) ->
+-spec(start_link/5 :: (Name, Mod :: atom(), Args :: term(), Interval :: timer:time(), Options) ->
     {ok, Pid} | {error, {already_started, Pid}} | {error, Reason} when
     Name :: {local, atom()} | {global, atom()} | {via, atom(), term()},
     Options :: [{timeout, timeout()} | {debug, [Flag]}],
     Flag :: trace | log | {logfile, file:name()} | statistics | debug,
-    Reason :: {already_started, Pid} | term().
+    Reason :: {already_started, Pid} | term()).
 start_link(Name, Mod, Args, Interval, Options) ->
     gen_server:start_link(Name, xl_gen_periodic, {Mod, Args, Interval}, Options).
 
--spec start_link/4 :: (Mod :: atom(), Args :: term(), Interval :: timer:time(), Options) ->
+-spec(start_link/4 :: (Mod :: atom(), Args :: term(), Interval :: timer:time(), Options) ->
     {ok, Pid} | {error, {already_started, Pid}} | {error, Reason} when
     Options :: [{timeout, timeout()} | {debug, [Flag]}],
     Flag :: trace | log | {logfile, file:name()} | statistics | debug,
-    Reason :: {already_started, Pid} | term().
+    Reason :: {already_started, Pid} | term()).
 start_link(Mod, Args, Interval, Options) ->
     gen_server:start_link(xl_gen_periodic, {Mod, Args, Interval}, Options).
 
--spec stop/1 :: (Name) -> term() when
-    Name :: atom() |
-    {Name :: atom(), Node :: node()} |
-    {global, GlobalName :: atom()} |
-    {via, Module :: module(), ViaName :: atom()} |
-    pid().
+-spec(stop/1 :: (nameref()) -> term()).
 stop(Name) -> gen_server:call(Name, stop).
 
--spec status/1 :: (Name) -> term() when
-    Name :: atom() |
-    {Name :: atom(), Node :: node()} |
-    {global, GlobalName :: atom()} |
-    {via, Module :: module(), ViaName :: atom()} |
-    pid().
+-spec(call(nameref(), term()) -> term()).
+call(Name, Event) -> gen_server:call(Name, Event).
+
+-spec(status/1 :: (nameref()) -> term()).
 status(Name) -> gen_server:call(Name, status).
 
 %% gen_server callbacks
@@ -120,7 +115,10 @@ new_internal_state(LastAction, Mod, Interval, State) ->
 handle_call(status, _From, InternalState) ->
     {reply, InternalState, InternalState};
 handle_call(stop, _From, InternalState) ->
-    {stop, normal, ok, InternalState}.
+    {stop, normal, ok, InternalState};
+handle_call(Event, _From, InternalState = #internal_state{module = Mod, state = State}) ->
+    {reply, Result, NewState} = Mod:handle_call(Event, _From, State),
+    {reply, Result, InternalState#internal_state{state = NewState}}.
 
 handle_cast(_Msg, InternalState) ->
     {noreply, InternalState}.
