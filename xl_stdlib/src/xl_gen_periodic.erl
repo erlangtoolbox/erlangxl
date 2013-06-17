@@ -112,16 +112,18 @@ new_internal_state(LastAction, Mod, Interval, State) ->
         {error, E} -> {stop, E}
     end.
 
-handle_call(status, _From, InternalState) ->
-    {reply, InternalState, InternalState};
-handle_call(stop, _From, InternalState) ->
-    {stop, normal, ok, InternalState};
-handle_call(Event, From, InternalState = #internal_state{module = Mod, state = State}) ->
-    {reply, Result, NewState} = Mod:handle_call(Event, From, State),
-    {reply, Result, InternalState#internal_state{state = NewState}}.
+handle_call(status, _From, InternalState) -> {reply, InternalState, InternalState};
+handle_call(stop, _From, InternalState) -> {stop, normal, ok, InternalState};
+handle_call(Event, _From, InternalState = #internal_state{module = Mod, state = State}) ->
+    case Mod:handle_call(Event, State) of
+        {ok, {Result, NewState}} -> {reply, Result, InternalState#internal_state{state = NewState}};
+        {ok, NewState} -> {noreply, InternalState#internal_state{state = NewState}};
+        {error, Error} ->
+            error_logger:error_report(Error),
+            {noreply, InternalState}
+    end.
 
-handle_cast(_Msg, InternalState) ->
-    {noreply, InternalState}.
+handle_cast(_Msg, InternalState) -> {noreply, InternalState}.
 
 handle_info(action, InternalState = #internal_state{module = Mod, interval = Interval, state = State, last_action = LA}) ->
     Now = xl_calendar:now_millis(),
