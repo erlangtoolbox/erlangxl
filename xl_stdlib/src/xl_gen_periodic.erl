@@ -116,8 +116,8 @@ handle_call(status, _From, InternalState) ->
     {reply, InternalState, InternalState};
 handle_call(stop, _From, InternalState) ->
     {stop, normal, ok, InternalState};
-handle_call(Event, _From, InternalState = #internal_state{module = Mod, state = State}) ->
-    {reply, Result, NewState} = Mod:handle_call(Event, _From, State),
+handle_call(Event, From, InternalState = #internal_state{module = Mod, state = State}) ->
+    {reply, Result, NewState} = Mod:handle_call(Event, From, State),
     {reply, Result, InternalState#internal_state{state = NewState}}.
 
 handle_cast(_Msg, InternalState) ->
