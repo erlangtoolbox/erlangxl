@@ -42,7 +42,7 @@
         LastAction :: pos_integer(), State :: term()) -> term()).
 
 %% API
--export([start_link/5, start_link/4, stop/1, status/1, call/2]).
+-export([start_link/5, start_link/4, stop/1, status/1, call/2, call/3]).
 
 -type(nameref() :: Name :: atom() | {Name :: atom(), Node :: node()} | {global, GlobalName :: atom()} | {via, Module :: module(), ViaName :: atom()} | pid()).
 
@@ -72,6 +72,9 @@ stop(Name) -> gen_server:call(Name, stop).
 
 -spec(call(nameref(), term()) -> term()).
 call(Name, Event) -> gen_server:call(Name, Event).
+
+-spec(call(nameref(), term(), pos_integer() | infinity) -> term()).
+call(Name, Event, Timeout) -> gen_server:call(Name, Event, Timeout).
 
 -spec(status/1 :: (nameref()) -> term()).
 status(Name) -> gen_server:call(Name, status).
