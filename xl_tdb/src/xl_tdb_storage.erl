@@ -70,7 +70,7 @@ prepare_migrations(VersionFile, Version, Migrations) ->
         [{version, OldVersion}] <-
             case Exists of
                 true -> xl_file:read_terms(VersionFile);
-                false -> return([{version, Version}])
+                false -> return([{version, 0}])
             end,
         return(lists:dropwhile(fun({V, _M}) -> V =< OldVersion end, Migrations))
     ]).
