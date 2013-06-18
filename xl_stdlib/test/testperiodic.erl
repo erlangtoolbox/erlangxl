@@ -32,7 +32,7 @@
 -behaviour(xl_gen_periodic).
 
 %% API
--export([start_link/1, stop/0, testcall/1]).
+-export([start_link/1, stop/0, testcall/0]).
 
 %% xl_gen_periodic callbacks
 -export([init/1, handle_action/2, terminate/3, handle_call/2]).
@@ -45,7 +45,7 @@ start_link(Interval) ->
 -spec(stop() -> ok).
 stop() -> xl_gen_periodic:stop(?MODULE).
 
-testcall(Value) -> xl_gen_periodic:call(?MODULE, {test, Value}).
+testcall() -> xl_gen_periodic:call(?MODULE, deactivate).
 
 % xl_gen_periodic callbacks
 -record(state, {}).
@@ -54,6 +54,6 @@ init([]) -> {ok, #state{}}.
 
 handle_action(_LastAction, State) -> {ok, State}.
 
-handle_call({test, Value}, State) -> {ok, {Value, State}}.
+handle_call(deactivate, State) -> {ok, State}.
 
 terminate(_Reason, _LastAction, _State) -> ok.

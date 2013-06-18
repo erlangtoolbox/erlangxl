@@ -33,6 +33,6 @@
 
 call_test() ->
     testperiodic:start_link(100000),
-    ?assertEqual(x, testperiodic:testcall(x)),
+    ?assertEqual(ok, testperiodic:testcall()),
     testperiodic:stop().
 

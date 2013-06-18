@@ -120,10 +120,8 @@ handle_call(stop, _From, InternalState) -> {stop, normal, ok, InternalState};
 handle_call(Event, _From, InternalState = #internal_state{module = Mod, state = State}) ->
     case Mod:handle_call(Event, State) of
         {ok, {Result, NewState}} -> {reply, Result, InternalState#internal_state{state = NewState}};
-        {ok, NewState} -> {noreply, InternalState#internal_state{state = NewState}};
-        {error, Error} ->
-            error_logger:error_report(Error),
-            {noreply, InternalState}
+        {ok, NewState} -> {reply, ok, InternalState#internal_state{state = NewState}};
+        E = {error, _} -> {reply, E, InternalState}
     end.
 
 handle_cast(_Msg, InternalState) -> {noreply, InternalState}.
