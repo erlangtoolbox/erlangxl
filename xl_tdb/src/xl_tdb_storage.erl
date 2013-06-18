@@ -36,7 +36,7 @@
 load(Location, Version, Migrations) ->
     VersionFile = filename:join(Location, ".version"),
     do([error_m ||
-        ApplicableMigrations <- prepare_migrations(VersionFile, Version, Migrations),
+        ApplicableMigrations <- prepare_migrations(VersionFile, Migrations),
         xl_file:mkdirs(Location),
         Files <- xl_file:list_dir(Location, "*.tdb"),
         Objects <- xl_lists:emap(fun(F) ->
@@ -64,7 +64,7 @@ delete(Location, Id) ->
 migrate(Term, Migrations) -> lists:foldl(fun({_, M}, T) -> M(T) end, Term, Migrations).
 
 %% @hidden
-prepare_migrations(VersionFile, Version, Migrations) ->
+prepare_migrations(VersionFile, Migrations) ->
     do([error_m ||
         Exists <- xl_file:exists(VersionFile),
         [{version, OldVersion}] <-
