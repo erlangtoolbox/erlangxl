@@ -130,7 +130,7 @@ get(Name, Id) ->
     do([option_m ||
         ETS <- xl_state:value(Name, ets),
         case ets_lookup(ETS, Id) of
-            {ok, O} when not ?is_deleted(O) -> return(unwrap(O));
+            {ok, O} when not ?is_deleted(O) -> {ok, unwrap(O)};
             _ -> undefined
         end
     ]).
@@ -138,7 +138,10 @@ get(Name, Id) ->
 -spec(select(atom()) -> [term()]).
 select(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
-    unwrap(ets:tab2list(ETS)).
+    xl_lists:mapfilter(fun
+        (O) when not ?is_deleted(O) -> {ok, unwrap(O)};
+        (_) -> undefined
+    end, ets:tab2list(ETS)).
 
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
