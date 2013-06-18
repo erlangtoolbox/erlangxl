@@ -162,15 +162,14 @@ cursor(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
     xl_stream:mapfilter(
         fun({_Id, O, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end,
-        xl_stream:stream(ets:first(ETS),
-            fun
-                ('$end_of_table') -> empty;
-                (Key) ->
-                    case ets_lookup(ETS, Key) of
-                        {ok, O} -> {O, ets:next(ETS, Key)};
-                        _ -> empty
-                    end
-            end)
+        xl_stream:stream(ets:first(ETS), fun
+            ('$end_of_table') -> empty;
+            (Key) ->
+                case ets_lookup(ETS, Key) of
+                    {ok, O} -> {O, ets:next(ETS, Key)};
+                    _ -> empty
+                end
+        end)
     ).
 
 -spec(index(atom()) -> option_m:monad(xl_uxekdtree:tree())).
