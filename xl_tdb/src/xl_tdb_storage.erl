@@ -30,27 +30,47 @@
 
 -compile({parse_transform, do}).
 
--export([load/1, store/3, delete/2]).
+-export([load/3, store/3, delete/2]).
 
--spec(load(file:name()) -> error_m:monad([term()])).
-load(Location) ->
+-spec(load(file:name(), pos_integer(), [{pos_integer(), fun((term()) -> term())}]) -> error_m:monad([term()])).
+load(Location, Version, Migrations) ->
+    VersionFile = filename:join(Location, ".version"),
     do([error_m ||
+        ApplicableMigrations <- prepare_migrations(VersionFile, Version, Migrations),
         xl_file:mkdirs(Location),
-        Files <- xl_file:list_dir(Location, "*.bin"),
-        xl_lists:emap(fun(F) ->
+        Files <- xl_file:list_dir(Location, "*.tdb"),
+        Objects <- xl_lists:emap(fun(F) ->
+            Filename = filename:join(Location, F),
             do([error_m ||
-                Content <- xl_file:read_file(filename:join(Location, F)),
-                return(binary_to_term(Content))
+                Content <- xl_file:read_file(Filename),
+                Object <- return(migrate(binary_to_term(Content), ApplicableMigrations)),
+                xl_file:write_file(Filename, term_to_binary(Object)),
+                return(Object)
             ])
-        end, lists:sort(Files))
+        end, lists:sort(Files)),
+        xl_file:write_term(VersionFile, {version, Version}),
+        return(Objects)
     ]).
 
 -spec(store(file:name(), xl_string:iostring(), term()) -> error_m:monad(ok)).
 store(Location, Id, X) ->
-    xl_file:write_file(xl_string:join([Location, "/", Id, ".bin"]), term_to_binary(X)).
+    xl_file:write_file(xl_string:join([Location, "/", Id, ".tdb"]), term_to_binary(X)).
 
 -spec(delete(file:name(), xl_string:iostring()) -> error_m:monad(ok)).
 delete(Location, Id) ->
-    xl_file:delete(xl_string:join([Location, "/", Id, ".bin"])).
+    xl_file:delete(xl_string:join([Location, "/", Id, ".tdb"])).
 
+%% @hidden
+migrate(Term, Migrations) -> lists:foldl(fun({_, M}, T) -> M(T) end, Term, Migrations).
 
+%% @hidden
+prepare_migrations(VersionFile, Version, Migrations) ->
+    do([error_m ||
+        Exists <- xl_file:exists(VersionFile),
+        [{version, OldVersion}] <-
+            case Exists of
+                true -> xl_file:read_terms(VersionFile);
+                false -> return([{version, Version}])
+            end,
+        return(lists:dropwhile(fun({V, _M}) -> V =< OldVersion end, Migrations))
+    ]).

@@ -127,3 +127,24 @@ rsync_test() ->
 
 index_object(O = #testobj{name = Name}) -> [{Name, O}].
 index_query([{name, Name}]) -> {Name}.
+
+migration_test() ->
+    xl_file:delete("/tmp/test/tdb"),
+    xl_application:start(xl_stdlib),
+    xl_tdb:start_link(tdb_migration, "/tmp/test/tdb", xl_tdb:by_index(1), [{version, 1}]),
+    T1 = {"1", <<"n1">>},
+    T2 = {"2", <<"n2">>},
+    ?assertOk(xl_tdb:store(tdb_migration, [T1, T2])),
+    ?assertOk(xl_tdb:close(tdb_migration)),
+    xl_tdb:start_link(tdb_migration, "/tmp/test/tdb", xl_tdb:by_index(1), [
+        {version, 3},
+        {migrations, [
+            {2, fun migrate2/1},
+            {3, fun migrate3/1}
+        ]}
+    ]),
+    ?assertEquals([{"1", "Comment"}, {"2", "Comment"}], xl_tdb:select(tdb_migration)),
+    ?assertOk(xl_tdb:close(tdb_migration)).
+
+migrate2({Id, {Id, Name}, LastModified, Deleted}) -> {Id, {Id, Name, "Comment"}, LastModified, Deleted}.
+migrate3({Id, {Id, _Name, Comment}, LastModified, Deleted}) -> {Id, {Id, Comment}, LastModified, Deleted}.

@@ -47,7 +47,11 @@ start_link(Name, Location, Identify, Options) ->
     xl_state:new(Name),
     xl_state:set(Name, ets, ETS),
     do([error_m ||
-        Objects <- xl_tdb_storage:load(Location),
+        Objects <- xl_tdb_storage:load(
+            Location,
+            xl_lists:kvfind(version, Options, 1),
+            xl_lists:kvfind(migrations, Options, [])
+        ),
         lists:foreach(fun(O) -> ets:insert(ETS, O) end, Objects),
         xl_state:set(Name, index, index_build(Options, ETS)),
         xl_state:set(Name, location, Location),
@@ -223,9 +227,9 @@ update(Name) ->
     receive
         {'EXIT', From, _Reason} ->
             From ! do([error_m ||
-                FSyncTimer <- xl_state:value(Name, fsync_timer),
+                FSyncTimer <- xl_state:evalue(Name, fsync_timer),
                 return(timer:cancel(FSyncTimer)),
-                RSyncTimer <- xl_state:value(Name, rsync_timer),
+                RSyncTimer <- xl_state:evalue(Name, rsync_timer),
                 return(timer:cancel(RSyncTimer)),
                 fsync(Name),
                 xl_state:delete(Name)
