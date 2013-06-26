@@ -1,4 +1,6 @@
 #include <erl_nif.h>
+
+
 ERL_NIF_TERM xl_ref_new(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM xl_ref_value(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
 
@@ -36,12 +38,12 @@ ERL_NIF_TERM xl_ref_value(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 }
 
 void xl_ref_dtor(ErlNifEnv* env, void* arg) {
-  ref_t* ref = (ref_t*) arg;
-  enif_free_env(ref->env);
+    ref_t* ref = (ref_t*) arg;
+    enif_free_env(ref->env);
 }
 
 int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
-  ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
-  XL_REF_RESOURCE = enif_open_resource_type(env, NULL, "xl_ref_resource", &xl_ref_dtor, flags, 0);
-  return 0;
+    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER);
+    XL_REF_RESOURCE = enif_open_resource_type(env, NULL, "xl_ref_resource", &xl_ref_dtor, flags, 0);
+    return 0;
 }
