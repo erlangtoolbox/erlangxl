@@ -1,3 +1,3 @@
 #!/bin/sh
-
-echo -n `printf "1.2.1.%d" $BUILD_NUMBER`
+VSN=`git describe --tags --abbrev=0`
+echo -n `printf "$VSN.%d" $BUILD_NUMBER`
