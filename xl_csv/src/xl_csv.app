@@ -5,8 +5,7 @@
     {applications, [
         kernel,
         stdlib,
-        xl_stdlib,
-        xl_io
+        xl_stdlib
     ]}
 ]}.
 

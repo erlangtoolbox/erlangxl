@@ -6,7 +6,6 @@
         kernel,
         stdlib,
         xl_stdlib,
-        xl_io,
         jiffy
     ]}
 ]}.
