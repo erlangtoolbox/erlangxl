@@ -40,4 +40,5 @@ getenv_test() ->
     end, Env).
 
 exec_test() ->
-    ?assertEqual(ok, xl_shell:exec("ls")).
+    ?assertEqual(ok, xl_shell:exec("ls")),
+    ?assertEqual({error, 2}, xl_shell:exec("ls /aa")).
