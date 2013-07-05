@@ -38,3 +38,6 @@ getenv_test() ->
         ?assert(is_atom(K)),
         ?assert(is_list(V))
     end, Env).
+
+exec_test() ->
+    ?assertEqual(ok, xl_shell:exec("ls")).

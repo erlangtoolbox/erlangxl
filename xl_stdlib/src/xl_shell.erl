@@ -28,7 +28,7 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_shell).
 
--export([command/1, command/2, getenv/0]).
+-export([command/1, command/2, getenv/0, exec/2, exec/1]).
 
 -spec(command(string()) -> error_m:monad(string())).
 command(Command) ->
@@ -50,3 +50,26 @@ getenv() ->
         {H, [_ | T]} = lists:splitwith(fun(X) -> X /= $= end, V),
         {list_to_atom(H), T}
     end, os:getenv()).
+
+-spec(exec(string()) -> error_m:monad(string())).
+exec(Command) ->
+    Port = erlang:open_port({spawn, Command}, [exit_status, {line, 1000}]),
+    exec_read(Port).
+
+-spec(exec(string(), file:name()) -> error_m:monad(string())).
+exec(Command, Dir) ->
+    Port = erlang:open_port({spawn, Command}, [{cd, Dir}, exit_status, {line, 1000}]),
+    exec_read(Port).
+
+exec_read(Port) ->
+    receive
+        {Port, {data, {eol, Line}}} ->
+            io:format("~s~n", [Line]),
+            exec_read(Port);
+        {Port, {data, {noeol, Line}}} ->
+            io:format("~s", [Line]),
+            exec_read(Port);
+        {Port, {exit_status, 0}} -> ok;
+        {Port, {exit_status, X}} -> {error, X}
+    end.
+
