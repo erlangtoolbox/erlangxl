@@ -28,7 +28,7 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_lang).
 
--export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1, find_nif/2, priv_dir/2, priv_path/3]).
+-export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1, find_nif/2, priv_dir/2, priv_path/3, delete_element/2]).
 
 ifelse(true, Then, _) -> result(Then);
 ifelse(false, _, Else) -> result(Else).
@@ -75,3 +75,10 @@ priv_dir(App, Module) ->
     end.
 
 priv_path(App, Module, Path) -> filename:join(priv_dir(App, Module), Path).
+
+
+-spec(delete_element(pos_integer(), tuple()) -> tuple()).
+delete_element(N, Tuple) ->
+    L = tuple_to_list(Tuple),
+    {H, [_ | T]} = lists:split(N - 1, L),
+    list_to_tuple(H ++ T).
