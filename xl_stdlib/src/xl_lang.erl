@@ -28,7 +28,8 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_lang).
 
--export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1, find_nif/2, priv_dir/2, priv_path/3, delete_element/2]).
+-export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1, find_nif/2, priv_dir/2, priv_path/3,
+    delete_element/2, insert_element/3]).
 
 ifelse(true, Then, _) -> result(Then);
 ifelse(false, _, Else) -> result(Else).
@@ -82,3 +83,10 @@ delete_element(N, Tuple) ->
     L = tuple_to_list(Tuple),
     {H, [_ | T]} = lists:split(N - 1, L),
     list_to_tuple(H ++ T).
+
+-spec(insert_element(pos_integer(), term(), tuple()) -> tuple()).
+insert_element(N, Value, Tuple) ->
+    L = tuple_to_list(Tuple),
+    {H, T} = lists:split(N - 1, L),
+    list_to_tuple(lists:append([H, [Value], T])).
+
