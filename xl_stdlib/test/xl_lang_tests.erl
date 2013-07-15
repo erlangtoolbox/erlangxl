@@ -56,4 +56,4 @@ delete_element_test() ->
     ?assertEqual({1, 3}, xl_lang:delete_element(2, {1, 2, 3})).
 
 insert_element_test() ->
-    ?assertEqual({1, x, 2, 3}, xl_lang:insert_element(2, x, {1, 2, 3})).
+    ?assertEqual({1, x, 2, 3}, xl_lang:insert_element(2, {1, 2, 3}, x)).

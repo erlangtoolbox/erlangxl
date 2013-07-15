@@ -85,7 +85,7 @@ delete_element(N, Tuple) ->
     list_to_tuple(H ++ T).
 
 -spec(insert_element(pos_integer(), term(), tuple()) -> tuple()).
-insert_element(N, Value, Tuple) ->
+insert_element(N, Tuple, Value) ->
     L = tuple_to_list(Tuple),
     {H, T} = lists:split(N - 1, L),
     list_to_tuple(lists:append([H, [Value], T])).
