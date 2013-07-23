@@ -87,3 +87,12 @@ listn_test() ->
         xl_stream:to_list(R)),
     ?assertEqual([[1, 2]], xl_stream:to_list(xl_stream:listn(3, xl_stream:to_stream([1, 2])))),
     ?assertEqual([], xl_stream:to_list(xl_stream:listn(3, xl_stream:empty()))).
+
+efoldl_test() ->
+    F = fun(3, _) -> {error, 3}; (X, A) -> {ok, X + A} end,
+    ?assertEqual({ok, 3}, xl_stream:efoldl(F, 0, xl_stream:to_stream([1, 1, 1]))),
+    ?assertEqual({error, 3}, xl_stream:efoldl(F, 0, xl_stream:to_stream([1, 3, 1]))).
+
+zip_with_index_test() ->
+    ?assertEqual([{1, 1}, {3, 2}, {1, 3}], xl_stream:to_list(xl_stream:zip_with_index(xl_stream:to_stream([1, 3, 1])))).
+

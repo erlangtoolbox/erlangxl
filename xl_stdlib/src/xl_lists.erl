@@ -35,11 +35,13 @@
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
     compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3,
     keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2]).
--export_type([kvlist/2, kvlist_at/0, mapping_predicate/2]).
+-export_type([kvlist/2, kvlist_at/0, mapping_predicate/2, fold_function/2, efold_function/2]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
 -type(mapping_predicate(A, B) :: fun((A) -> option_m:monad(B))).
+-type(fold_function(A, Acc) :: fun((A, Acc) -> Acc)).
+-type(efold_function(A, Acc) :: fun((A, Acc) -> error_m:monad(Acc))).
 
 -spec(find(fun((term()) -> boolean()), [term()]) -> option_m:monad(term())).
 find(_Pred, []) -> undefined;
