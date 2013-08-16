@@ -45,6 +45,7 @@ binary_to_hex_(<<N1:4, N2:4, Bin/binary>>) -> [num_to_hex(N1), num_to_hex(N2) | 
 num_to_hex(N) when N < 10 -> N + $0;
 num_to_hex(N) when N > 9 -> N - 10 + $a.
 
+hex_to_binary(<<"0x", S/binary>>) -> hex_to_binary(binary_to_list(S));
 hex_to_binary(S) when is_binary(S) -> hex_to_binary(binary_to_list(S));
 hex_to_binary(S) -> list_to_binary(hex_to_list(S)).
 

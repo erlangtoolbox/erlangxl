@@ -42,4 +42,5 @@ md5_as_string_hex_test() ->
     ?assertEqual(xl_convert:to(string, ?DATAMD5), xl_codec:list_to_hex(crypto:md5(xl_convert:to(string, ?DATA)))).
 
 hex_to_bin_test() ->
-    ?assertEqual(<<10>>, xl_codec:hex_to_binary(<<"0A">>)).
+    ?assertEqual(<<10>>, xl_codec:hex_to_binary(<<"0A">>)),
+    ?assertEqual(<<10>>, xl_codec:hex_to_binary(<<"0x0A">>)).
