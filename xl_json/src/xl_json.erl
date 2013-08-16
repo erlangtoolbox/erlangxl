@@ -28,9 +28,10 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_json).
 
+-compile({parse_transform, do}).
 -behaviour(xl_json_api).
 
--export([to_json/1, from_json/1, to_abstract/1, get_value/2, bind/3, field_name_presentation/1]).
+-export([to_json/1, from_json/1, to_abstract/1, get_value/2, bind/3, field_name_presentation/1, parse_file/1]).
 
 -define(BACKEND_JSON_API, xl_json_jiffy).
 
@@ -68,3 +69,10 @@ to_abstract(Doc) -> Doc.
 
 -spec(field_name_presentation(atom()) -> term()).
 field_name_presentation(Name) -> Name.
+
+-spec(parse_file(file:name()) -> error_m:monad(xl_json_api:json_document())).
+parse_file(Path) ->
+    do([error_m ||
+        Data <- xl_file:read_file(Path),
+        from_json(Data)
+    ]).

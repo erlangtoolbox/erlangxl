@@ -35,8 +35,11 @@
 -define(DATAMD5, <<"098f6bcd4621d373cade4e832627b4f6">>).
 
 md5_as_bin_hex_test() ->
-	?assertEqual(?DATAMD5, xl_codec:md5(?DATA)).
+    ?assertEqual(?DATAMD5, xl_codec:md5(?DATA)).
 
 md5_as_string_hex_test() ->
-	erlang:display({test, (catch xl_codec:list_to_hex(crypto:md5(xl_convert:to(string, ?DATA))))}),
-	?assertEqual(xl_convert:to(string, ?DATAMD5), xl_codec:list_to_hex(crypto:md5(xl_convert:to(string, ?DATA)))).
+    erlang:display({test, (catch xl_codec:list_to_hex(crypto:md5(xl_convert:to(string, ?DATA))))}),
+    ?assertEqual(xl_convert:to(string, ?DATAMD5), xl_codec:list_to_hex(crypto:md5(xl_convert:to(string, ?DATA)))).
+
+hex_to_bin_test() ->
+    ?assertEqual(<<10>>, xl_codec:hex_to_binary(<<"0A">>)).
