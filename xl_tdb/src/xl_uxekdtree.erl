@@ -33,7 +33,7 @@
 %% -on_load(init/0).
 
 %% API
--export([size/1, depth/1, new/1, find/2, sorter/1, compare/2, dump/1, new/2]).
+-export([size/1, depth/1, new/1, find/2, dump/1, new/2]).
 
 -export_type([tree/0, tree_node/0, leaf/0, point/0, find_point/0]).
 
@@ -43,13 +43,15 @@
 -type(tree_node() :: {term(), pos_integer(), Undefined :: tree_node(), Less :: tree_node(), Equal :: tree_node(), Greater :: tree_node(), Excluded :: tree_node()} | leaf()).
 -type(tree() :: {?MODULE, tree_node()} | xl_ref:ref()).
 
+-define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
+
 %% init() -> erlang:load_nif(xl_lang:find_nif(xl_tdb, ?MODULE), 0).
 
 -spec(new([point()]) -> tree()).
 new(Points) -> new(Points, [shared]).
 
 -spec(new([point()], xl_lists:kvlist_at()) -> tree()).
-new(Points, [local]) -> {?MODULE, new_tree(Points, 1, planes(Points))};
+new(Points, [local]) -> {?MODULE, new_tree(xl_uxekdtree_lib:expand(Points), 1, xl_uxekdtree_lib:planes(Points))};
 new(Points, [shared]) -> xl_ref:new(new(Points, [local])).
 
 new_tree([], _PlanePos, _Planes) -> [];
@@ -61,14 +63,15 @@ new_tree(Points, PlanePos, Planes) ->
     {MedianValue, Less, Equal, Greater, Excluded} = case Defs of
         [] -> {undefined, [], [], [], []};
         _ ->
-            Sorted = lists:sort(sorter(Plane), Defs),
+            Sorted = lists:sort(xl_uxekdtree_lib:sorter(Plane), Defs),
             Median = lists:nth(round(length(Sorted) / 2), Sorted),
-            MV = value(element(Plane, Median)),
-            {L, Rest} = xl_lists:fastsplitwith(fun(X) -> compare(value(element(Plane, X)), MV) == lt end, Sorted),
-            {Eq, G} = xl_lists:fastsplitwith(fun(X) -> compare(value(element(Plane, X)), MV) == eq end, Rest),
-            {E, X} = lists:partition(fun(X) -> case element(Plane, X) of {_, _} -> false; _ -> true end end, Eq),
+            MV = xl_uxekdtree_lib:node_value(element(Plane, Median)),
+            {L, Rest} = xl_lists:fastsplitwith(fun(X) -> xl_uxekdtree_lib:compare(xl_uxekdtree_lib:node_value(element(Plane, X)), MV) == lt end, Sorted),
+            {Eq, G} = xl_lists:fastsplitwith(fun(X) -> xl_uxekdtree_lib:compare(xl_uxekdtree_lib:node_value(element(Plane, X)), MV) == eq end, Rest),
+            {X, E} = lists:partition(fun(X) -> ?is_exclude(element(Plane, X)) end, Eq),
             {MV, L, E, G, X}
     end,
+    xl_eunit:format("X:~p~n", [Excluded]),
     PlanesWOOne = lists:delete(Plane, Planes),
     {
         MedianValue,
@@ -77,28 +80,12 @@ new_tree(Points, PlanePos, Planes) ->
         new_tree(Less, PlanePos + 1, Planes),
         new_tree(Equal, PlanePos, PlanesWOOne),
         new_tree(Greater, PlanePos + 1, Planes),
-        new_tree(Excluded, PlanePos, PlanesWOOne)
+        new_exclude_tree(Excluded, Plane, PlanePos, PlanesWOOne)
     }.
 
-planes([]) -> [];
-planes(Points = [H | _]) ->
-    Mask = stat(Points, tuple_size(H) - 1),
-    Planes = lists:filter(fun(Index) ->
-        Bit = (1 bsl (Index - 1)),
-        Bit band Mask == Bit
-    end, lists:seq(1, tuple_size(H) - 1)),
-%%     xl_eunit:format("planes ~.2B, ~p~n", [Mask, Planes]),
-    Planes.
-
-stat(Points, Size) ->
-    lists:foldl(fun(P, Mask) ->
-        lists:foldl(fun(Index, IMask) ->
-            case element(Index, P) of
-                undefined -> IMask;
-                _ -> IMask bor (1 bsl (Index - 1))
-            end
-        end, Mask, lists:seq(1, Size))
-    end, 0, Points).
+new_exclude_tree(Excluded, Plane, PlanePos, Planes) ->
+    Dict = xl_lists:transform(dict, fun(Point) -> {element(3, element(Plane, Point)), Point} end, Excluded),
+    [{XCheck, new_tree(Pts, PlanePos, Planes)} || {XCheck, Pts} <- dict:to_list(Dict)].
 
 -spec(size(tree()) -> pos_integer()).
 size({?MODULE, Node}) -> size(Node, 0);
@@ -127,7 +114,7 @@ depth({_, _, U, L, E, R, X}, Depth) ->
         depth(R, Depth + 1),
         depth(X, Depth + 1)
     ]).
-
+%% todo presort lists in query and replace partition with efficient split
 -spec(find(find_point(), xl_ref:ref()) -> option_m:monad([term()])).
 find(Query, {?MODULE, Node}) ->
     case find(Query, Node, []) of
@@ -146,10 +133,10 @@ find(Query, {_Value, Plane, U, L, E, R, X}, Acc) when element(Plane, Query) == u
 find(Query, {Value, Plane, U, L, E, R, X}, Acc) when is_list(element(Plane, Query)) ->
     UAcc = find(Query, U, Acc),
     QL = element(Plane, Query),
-    {QLess, QRest} = lists:partition(fun(QV) -> compare(QV, Value) == lt end, QL),
-    {QEq, QGreater} = lists:partition(fun(QV) -> compare(QV, Value) == eq end, QRest),
-    EAcc = case QEq of [_ | _] ->
-        find(Query, E, UAcc);
+    {QLess, QRest} = lists:partition(fun(QV) -> xl_uxekdtree_lib:compare(QV, Value) == lt end, QL),
+    {QEq, QGreater} = lists:partition(fun(QV) -> xl_uxekdtree_lib:compare(QV, Value) == eq end, QRest),
+    EAcc = case QEq of
+        [_ | _] -> find(Query, E, UAcc);
         _ -> UAcc
     end,
     XAcc = case {QLess, QGreater} of
@@ -168,7 +155,7 @@ find(Query, {Value, Plane, U, L, E, R, X}, Acc) when is_list(element(Plane, Quer
     end;
 find(Query, {Value, Plane, U, L, E, R, X}, Acc) ->
     UAcc = find(Query, U, Acc),
-    case compare(element(Plane, Query), Value) of
+    case xl_uxekdtree_lib:compare(element(Plane, Query), Value) of
         eq -> find(Query, E, UAcc);
         lt ->
             LAcc = find(Query, L, UAcc),
@@ -178,26 +165,7 @@ find(Query, {Value, Plane, U, L, E, R, X}, Acc) ->
             find(Query, X, RAcc)
     end.
 
--spec(dump(xl_ref:ref()) -> tree()).
+-spec(dump(tree()) -> tree_node()).
 dump(T = {?MODULE, _}) -> T;
 dump(Ref) -> xl_ref:value(Ref).
-
-%% prebuild sorters
-sorter(Plane) ->
-    fun(X, Y) ->
-        case compare(value(element(Plane, X)), value(element(Plane, Y))) of
-            gt -> false;
-            _ -> true
-        end
-    end.
-
-value({x, V}) -> V;
-value(V) -> V.
-
-compare(undefined, undefined) -> eq;
-compare(undefined, _) -> lt;
-compare(_, undefined) -> gt;
-compare(X, X) -> eq;
-compare(X, Y) when X > Y -> gt;
-compare(_, _) -> lt.
 

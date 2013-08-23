@@ -283,9 +283,11 @@ etimes(Fun, Count) -> eforeach(Fun, lists:seq(1, Count)).
 transform(TargetStruct, NodeFun, List) ->
     lists:foldl(fun(X, S) -> transform_add(TargetStruct, NodeFun(X), S) end, transform_init(TargetStruct), List).
 
-transform_init(gb_tree) -> gb_trees:empty().
+transform_init(gb_tree) -> gb_trees:empty();
+transform_init(dict) -> dict:new().
 
-transform_add(gb_tree, {Key, Value}, Tree) -> gb_trees:insert(Key, Value, Tree).
+transform_add(gb_tree, {Key, Value}, Tree) -> gb_trees:insert(Key, Value, Tree);
+transform_add(dict, {Key, Value}, Dict) -> dict:append(Key, Value, Dict).
 
 seq(Start, Stop, Step, F) when Start =< Stop -> [F(Start) | seq(Start + Step, Stop, Step, F)];
 seq(_Start, _Stop, _Step, _F) -> [].

@@ -164,6 +164,10 @@ transform_gb_tree_test() ->
     Expected = gb_trees:insert(3, c, gb_trees:insert(2, b, gb_trees:insert(1, a, gb_trees:empty()))),
     ?assertEqual(Expected, xl_lists:transform(gb_tree, fun(X) -> X end, [{1, a}, {2, b}, {3, c}])).
 
+transform_dict_test() ->
+    Expected = dict:append([1, 2], x, dict:append([1, 2], y, dict:append([3, 3], z, dict:new()))),
+    ?assertEqual(Expected, xl_lists:transform(dict, fun(X) -> X end, [{[3, 3], z}, {[1, 2], y}, {[1, 2], x}])).
+
 gb_tree_vs_random_access_list_test() ->
     Counts = xl_lists:seq(1, 10, 0.5, fun(X) -> round(math:exp(X)) end),
     lists:foreach(fun(Count) ->
