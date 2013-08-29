@@ -231,3 +231,6 @@ nshufflemapfilter_random_test() ->
         H
     end, lists:seq(1, 10))),
     ?assert(length(Unique) > 5).
+
+flatte1_test() ->
+    ?assertEquals([[1], [2]], xl_lists:flatten1([[[1]], [[2]]])).

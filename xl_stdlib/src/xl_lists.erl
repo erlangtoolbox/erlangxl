@@ -34,7 +34,7 @@
     count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2,
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
     compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3,
-    keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2]).
+    keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2, flatten1/1]).
 -export_type([kvlist/2, kvlist_at/0, mapping_predicate/2, fold_function/2, efold_function/2]).
 
 -type(kvlist(A, B) :: [{A, B}]).
@@ -379,3 +379,8 @@ nmapfilter(Limit, F, Acc, [H | T], R) ->
         undefined -> nmapfilter(Limit, F, Acc, T, R);
         {ok, X} -> nmapfilter(Limit, F, [X | Acc], T, R)
     end.
+
+-spec(flatten1([[term()]]) -> [term()]).
+flatten1([]) -> [];
+flatten1([H | T]) -> H ++ flatten1(T).
+
