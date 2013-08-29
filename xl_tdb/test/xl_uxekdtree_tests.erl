@@ -298,6 +298,7 @@ find_with_mx_test() ->
         {3, b3}
     ]),
     ?assertEquals({ok, [xb1]}, xl_uxekdtree:find({4}, SimpleTree)),
+    ?assertEquals(undefined, xl_uxekdtree:find({[1,4]}, SimpleTree)),
     Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_MULTI_EXCLUDES),
     ?assertEquals([b, xb2], lists:sort(element(2, xl_uxekdtree:find({1, b}, Tree)))),
     ?assertEquals([xc], lists:sort(element(2, xl_uxekdtree:find({2, b}, Tree)))),

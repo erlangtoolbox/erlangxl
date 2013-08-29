@@ -130,35 +130,31 @@ find(Query, {_Value, Plane, U, L, E, R, XL}, Acc) when element(Plane, Query) == 
     EAcc = find(Query, E, LAcc),
     RAcc = find(Query, R, EAcc),
     lists:foldl(fun({_, X}, A) -> find(Query, X, A) end, RAcc, XL);
-find(Query, T = {_Value, Plane, _U, _L, _E, _R, _XL}, Acc) when is_list(element(Plane, Query)) ->
-    lists:foldl(fun(QX, FoldAcc) ->
-        find(setelement(Plane, Query, QX), T, FoldAcc)
-    end, Acc, element(Plane, Query));
-%%     UAcc = find(Query, U, Acc),
-%%     {QLess, QRest} = lists:partition(fun(QV) -> xl_uxekdtree_lib:compare(QV, Value) == lt end, QL),
-%%     {QEq, QGreater} = lists:partition(fun(QV) -> xl_uxekdtree_lib:compare(QV, Value) == eq end, QRest),
-%%     EAcc = case QEq of
-%%         [_ | _] -> find(Query, E, UAcc);
-%%         _ -> UAcc
-%%     end,
-%%     XAcc = case {QLess, QGreater} of
-%%         {[], []} -> EAcc;
-%%         _ ->
-%%             case QEq of
-%%                 [QValue | _] -> findx(QValue, XL, Query, EAcc);
-%% %%                 _ -> lists:foldl(fun(X, A) -> find(Query, X, A) end, EAcc, XL)
-%% %%             end
-%% %%     end,
-%%     LAcc = case QLess of
-%%         [] -> EAcc;
-%%         [LV] -> find(setelement(Plane, Query, LV), L, EAcc);
-%%         _ -> find(setelement(Plane, Query, QLess), L, EAcc)
-%%     end,
-%%     case QGreater of
-%%         [] -> LAcc;
-%%         [GV] -> find(setelement(Plane, Query, GV), R, LAcc);
-%%         _ -> find(setelement(Plane, Query, QGreater), R, LAcc)
-%%     end;
+find(Query, _T = {Value, Plane, U, L, E, R, XL}, Acc) when is_list(element(Plane, Query)) ->
+    UAcc = find(Query, U, Acc),
+    QL = element(Plane, Query),
+    {QLess, QRest} = lists:partition(fun(QV) -> xl_uxekdtree_lib:compare(QV, Value) == lt end, QL),
+    {QEq, QGreater} = lists:partition(fun(QV) -> xl_uxekdtree_lib:compare(QV, Value) == eq end, QRest),
+    EAcc = case QEq of
+        [_ | _] -> find(Query, E, UAcc);
+        _ -> UAcc
+    end,
+    XAcc = lists:foldl(fun({Bloom, X}, FoldAcc) ->
+        case lists:all(fun(QValue) -> not xl_ebloom:contains(QValue, Bloom) end, QL) of
+            true -> find(Query, X, FoldAcc);
+            false -> FoldAcc
+        end
+    end, EAcc, XL),
+    LAcc = case QLess of
+        [] -> XAcc;
+        [LV] -> find(setelement(Plane, Query, LV), L, XAcc);
+        _ -> find(setelement(Plane, Query, QLess), L, XAcc)
+    end,
+    case QGreater of
+        [] -> LAcc;
+        [GV] -> find(setelement(Plane, Query, GV), R, LAcc);
+        _ -> find(setelement(Plane, Query, QGreater), R, LAcc)
+    end;
 find(Query, {Value, Plane, U, L, E, R, XL}, Acc) ->
     UAcc = find(Query, U, Acc),
     QValue = element(Plane, Query),
