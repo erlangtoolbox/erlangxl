@@ -26,39 +26,26 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_uxekdtree_lib_tests).
+-module(xl_ebloom_tests).
 -author("volodymyr.kyrychenko@strikead.com").
 
 -include_lib("xl_stdlib/include/xl_eunit.hrl").
 
-expand_test() ->
-    Points = [
-        {[1, 2], [3, 4], ctx},
-        {{x, x}, {x, y}, ctx},
-        {{x, [1, 2]}, {x, 1}, ctx},
-        {{x, [a, b, c]}, {x, [d, e]}, ctx}
-    ],
-    ExpectedPoints = [
-        {1, 3, ctx},
-        {2, 3, ctx},
-        {1, 4, ctx},
-        {2, 4, ctx},
-        {{x, [x]}, {x, [y]}, ctx},
-        {{x, [1, 2]}, {x, [1]}, ctx},
-        {{x, [a, b, c]}, {x, [d, e]}, ctx}
-    ],
-    ?assertEquals(ExpectedPoints, xl_uxekdtree_lib:expand(Points)).
-
-
-sorter_test() ->
-    Sorter = xl_uxekdtree_lib:sorter(1),
-    Points = [
-        {1, c, c}, {undefined, b, ub1}, {3, a, a}, {2, undefined, uc}, {undefined, b, ub2},
-        {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}
-    ],
-    Expected = [
-        {undefined, b, ub1}, {undefined, b, ub2}, {1, c, c}, {1, b, b}, {2, undefined, uc},
-        {2, c, c}, {2, c, c}, {3, a, a}, {3, a, a}, {3, a, a}
-    ],
-    ?assertEquals(Expected, lists:sort(Sorter, Points)).
+ebloom_test() ->
+    {ok, [{values, BinValues}]} = xl_json:to_abstract(xl_json:parse_file(xl_eunit:resource(?MODULE, "4.json"))),
+    Values = [{xxx, binary_to_atom(V, utf8)} || V <- BinValues],
+    {ok, F} = xl_ebloom:new(length(Values)),
+    lists:foreach(fun(X) -> xl_ebloom:insert(X, F) end, Values),
+    xl_lists:times(fun() ->
+        Value = lists:nth(random:uniform(length(Values)), Values),
+        xl_eunit:performance(ebloom, fun() ->
+            true = xl_ebloom:contains(Value, F)
+        end, 10000)
+    end, 10),
+    xl_lists:times(fun() ->
+        Value = lists:nth(random:uniform(length(Values)), Values),
+        xl_eunit:performance(list, fun() ->
+            true = lists:member(Value, Values)
+        end, 10000)
+    end, 10).
 

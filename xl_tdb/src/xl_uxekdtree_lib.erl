@@ -30,7 +30,7 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([expand/1, planes/1, sorter/1, compare/2, node_value/1]).
+-export([expand/1, planes/1, sorter/1, compare/2, contains/2]).
 
 -define(is_mexclude(X), is_tuple(X) andalso element(1, X) == x andalso is_list(element(2, X))).
 -define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
@@ -44,14 +44,10 @@ expand_point(Point, N) when is_list(element(N, Point)) ->
     lists:flatmap(fun(V) ->
         expand_point(setelement(N, Point, V), N - 1)
     end, L);
-expand_point(Point, N) when ?is_mexclude(element(N, Point)) ->
-    {x, XL} = element(N, Point),
-    lists:flatmap(fun(XV) ->
-        expand_point(setelement(N, Point, {x, XV, lists:delete(XV, XL)}), N - 1)
-    end, XL);
+expand_point(Point, N) when ?is_mexclude(element(N, Point)) -> expand_point(Point, N - 1);
 expand_point(Point, N) when ?is_exclude(element(N, Point)) ->
     {x, X} = element(N, Point),
-    expand_point(setelement(N, Point, {x, X, []}), N - 1);
+    expand_point(setelement(N, Point, {x, [X]}), N - 1);
 expand_point(Point, N) -> expand_point(Point, N - 1).
 
 
@@ -64,7 +60,6 @@ planes(Points = [H | _]) ->
         Bit = (1 bsl (Index - 1)),
         Bit band Mask == Bit
     end, lists:seq(1, tuple_size(H) - 1)),
-%%     xl_eunit:format("planes ~.2B, ~p~n", [Mask, Planes]),
     Planes.
 
 %% todo refactor using early exit if all planes are present
@@ -82,15 +77,11 @@ stat(Points, Size) ->
 %% prebuild sorters
 sorter(Plane) ->
     fun(X, Y) ->
-        case compare(node_value(element(Plane, X)), node_value(element(Plane, Y))) of
+        case compare(element(Plane, X), element(Plane, Y)) of
             gt -> false;
             _ -> true
         end
     end.
-
-node_value({x, V, _}) -> V;
-node_value({x, V}) -> V;
-node_value(V) -> V.
 
 compare(undefined, undefined) -> eq;
 compare(undefined, _) -> lt;
@@ -99,6 +90,5 @@ compare(X, X) -> eq;
 compare(X, Y) when X > Y -> gt;
 compare(_, _) -> lt.
 
-
-
-
+-spec(contains(term(), [term()]) -> boolean()).
+contains(K, L) when is_list(L) -> lists:member(K, L).

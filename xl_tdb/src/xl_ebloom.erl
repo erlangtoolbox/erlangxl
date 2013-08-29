@@ -26,39 +26,33 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_uxekdtree_lib_tests).
+-module(xl_ebloom).
 -author("volodymyr.kyrychenko@strikead.com").
 
--include_lib("xl_stdlib/include/xl_eunit.hrl").
+%% API
+-export([new/1, insert/2, contains/2]).
+-export_type([ref/0]).
 
-expand_test() ->
-    Points = [
-        {[1, 2], [3, 4], ctx},
-        {{x, x}, {x, y}, ctx},
-        {{x, [1, 2]}, {x, 1}, ctx},
-        {{x, [a, b, c]}, {x, [d, e]}, ctx}
-    ],
-    ExpectedPoints = [
-        {1, 3, ctx},
-        {2, 3, ctx},
-        {1, 4, ctx},
-        {2, 4, ctx},
-        {{x, [x]}, {x, [y]}, ctx},
-        {{x, [1, 2]}, {x, [1]}, ctx},
-        {{x, [a, b, c]}, {x, [d, e]}, ctx}
-    ],
-    ?assertEquals(ExpectedPoints, xl_uxekdtree_lib:expand(Points)).
+-opaque(ref() :: reference()).
 
+-spec(new(pos_integer() | [term()]) -> {ok, ref()}).
+new(Size) when is_integer(Size) -> ebloom:new(Size, 0.01, element(3, now()));
+new(List) ->
+    case new(length(List)) of
+        {ok, Ref} ->
+            lists:foreach(fun(X) ->
+                ok = insert(X, Ref)
+            end, List),
+            {ok, Ref};
+        E -> E
+    end.
 
-sorter_test() ->
-    Sorter = xl_uxekdtree_lib:sorter(1),
-    Points = [
-        {1, c, c}, {undefined, b, ub1}, {3, a, a}, {2, undefined, uc}, {undefined, b, ub2},
-        {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}
-    ],
-    Expected = [
-        {undefined, b, ub1}, {undefined, b, ub2}, {1, c, c}, {1, b, b}, {2, undefined, uc},
-        {2, c, c}, {2, c, c}, {3, a, a}, {3, a, a}, {3, a, a}
-    ],
-    ?assertEquals(Expected, lists:sort(Sorter, Points)).
+-spec(insert(term(), ref()) -> ok).
+insert(X, Bloom) when is_binary(X) -> ebloom:insert(Bloom, X);
+insert(X, Bloom) -> insert(term_to_binary(X), Bloom).
+
+-spec(contains(term(), ref()) -> boolean()).
+contains(X, Bloom) when is_binary(X) -> ebloom:contains(Bloom, X);
+contains(X, Bloom) -> contains(term_to_binary(X), Bloom).
+
 

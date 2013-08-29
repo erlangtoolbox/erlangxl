@@ -81,35 +81,159 @@ new_test() ->
         }},
     ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE))).
 
-new_with_excludes_test() ->
-    xl_application:start(xl_stdlib),
-    ExpectedTree = {xl_uxekdtree,
-        {2, 1,
-            [],
-            {b, 2,
-                [],
-                [],
-                {1, 1, [], [], [b], [], [xb1]},
-                {1, 1,
-                    [],
-                    [],
-                    {c, 2, [], [], [c], [], []},
-                    [],
-                    []
-                },
-                []
-            },
-            {c, 2, [], [], [c, c], [], [xc]},
-            {a, 2,
-                [],
-                [],
-                {3, 1, [], [], [a, a, a], [], []},
-                [],
-                []
-            },
-            {b, 2, [], [], [xb2], [], []}
-        }},
-    ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES))).
+%% new_with_excludes_test() ->
+%%     xl_application:start(xl_stdlib),
+%%     ExpectedTree = {xl_uxekdtree,
+%%         {2, 1,
+%%             [],
+%%             {b, 2,
+%%                 [],
+%%                 [],
+%%                 {1, 1,
+%%                     [],
+%%                     [],
+%%                     [b],
+%%                     [],
+%%                     [{[], [xb1]}]
+%%                 },
+%%                 {1, 1,
+%%                     [],
+%%                     [],
+%%                     {c, 2,
+%%                         [],
+%%                         [],
+%%                         [c],
+%%                         [],
+%%                         []
+%%                     },
+%%                     [],
+%%                     []
+%%                 },
+%%                 []
+%%             },
+%%             {c, 2,
+%%                 [],
+%%                 [],
+%%                 [c, c],
+%%                 [],
+%%                 [{[], [xc]}]
+%%             },
+%%             {a, 2,
+%%                 [],
+%%                 [],
+%%                 {3, 1,
+%%                     [],
+%%                     [],
+%%                     [a, a, a],
+%%                     [],
+%%                     []
+%%                 },
+%%                 [],
+%%                 []
+%%             },
+%%             [
+%%                 {[],
+%%                     {b, 2,
+%%                         [],
+%%                         [],
+%%                         [xb2],
+%%                         [],
+%%                         []
+%%                     }
+%%                 }
+%%             ]
+%%         }
+%%     },
+%%     ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES))).
+%%
+%% new_with_mx_test() ->
+%%     xl_application:start(xl_stdlib),
+%%     ExpectedTree = {xl_uxekdtree,
+%%         {2, 1,
+%%             [],
+%%             {b, 2,
+%%                 [],
+%%                 [],
+%%                 {1, 1,
+%%                     [],
+%%                     [],
+%%                     [b],
+%%                     [],
+%%                     [{[2, 3], [xb1]}]
+%%                 },
+%%                 {1, 1,
+%%                     [],
+%%                     [],
+%%                     {c, 2,
+%%                         [],
+%%                         [],
+%%                         [c],
+%%                         [],
+%%                         []
+%%                     },
+%%                     [],
+%%                     []
+%%                 },
+%%                 []
+%%             },
+%%             {c, 2,
+%%                 [],
+%%                 [],
+%%                 [c, c],
+%%                 [],
+%%                 [{[], [xc]}]
+%%             },
+%%             {a, 2,
+%%                 [],
+%%                 [],
+%%                 {3, 1,
+%%                     [],
+%%                     [],
+%%                     [a, a, a],
+%%                     [],
+%%                     []
+%%                 },
+%%                 {3, 1,
+%%                     [],
+%%                     [],
+%%                     [],
+%%                     [],
+%%                     [{[1, 2],
+%%                         {b, 2,
+%%                             [],
+%%                             [],
+%%                             [xb1],
+%%                             [],
+%%                             []
+%%                         }
+%%                     }]
+%%                 },
+%%                 []
+%%             },
+%%             [
+%%                 {[],
+%%                     {b, 2,
+%%                         [],
+%%                         [],
+%%                         [xb2],
+%%                         [],
+%%                         []
+%%                     }
+%%                 },
+%%                 {[1, 3],
+%%                     {b, 2,
+%%                         [],
+%%                         [],
+%%                         [xb1],
+%%                         [],
+%%                         []
+%%                     }
+%%                 }
+%%             ]
+%%         }
+%%     },
+%%
+%%     ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_MULTI_EXCLUDES))).
 
 new_with_undefs_test() ->
     xl_application:start(xl_stdlib),
@@ -168,11 +292,16 @@ find_with_x_test() ->
 
 find_with_mx_test() ->
     xl_application:start(xl_stdlib),
+    SimpleTree = xl_uxekdtree:new([
+        {{x, 1}, xb1},
+        {2, b2},
+        {3, b3}
+    ]),
+    ?assertEquals({ok, [xb1]}, xl_uxekdtree:find({4}, SimpleTree)),
     Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_MULTI_EXCLUDES),
-xl_eunit:format("~p~n", [xl_uxekdtree:dump(Tree)]),
     ?assertEquals([b, xb2], lists:sort(element(2, xl_uxekdtree:find({1, b}, Tree)))),
     ?assertEquals([xc], lists:sort(element(2, xl_uxekdtree:find({2, b}, Tree)))),
-    ?assertEquals([xb2, xb1], lists:sort(element(2, xl_uxekdtree:find({4, b}, Tree)))).
+    ?assertEquals([xb1, xb2], lists:sort(element(2, xl_uxekdtree:find({4, b}, Tree)))).
 
 find_with_variance_test() ->
     xl_application:start(xl_stdlib),
@@ -180,121 +309,121 @@ find_with_variance_test() ->
     Q = {1, [b, c]},
     ?assertEquals([b, c, xb2], lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
 
-%% new_performance_test_() ->
-%%     xl_application:start(xl_stdlib),
-%%     {timeout, 2000, fun() ->
-%%         xl_eunit:performance(uxekdtree, fun() ->
-%%             prepare_space(10, 1000)
-%%         end, 5)
-%%     end}.
-%%
+new_performance_test_() ->
+    xl_application:start(xl_stdlib),
+    {timeout, 2000, fun() ->
+        xl_eunit:performance(uxekdtree, fun() ->
+            prepare_space(10, 1000)
+        end, 5)
+    end}.
 
-%% find_test_() ->
-%%     xl_application:start(xl_stdlib),
-%%     {timeout, 2000, fun() ->
-%%         {Tree, Points} = prepare_space(10, 1000),
-%%         Queries = make_random_queries(Points, 10),
-%%         ExpectedResuts = extract_results(Points, Queries, fun erlang:'=='/2),
-%%         xl_lists:times(fun() ->
-%%             {ok, Q} = xl_lists:random(Queries),
-%%             Expected = xl_lists:kvfind(Q, ExpectedResuts),
-%%             ?assertEquals(Expected, xl_uxekdtree:find(Q, Tree)),
-%%             xl_eunit:performance(uxekdtree_find, fun() ->
-%%                 xl_uxekdtree:find(Q, Tree)
-%%             end, 1000)
-%%         end, 10)
-%%     end}.
-%%
-%% find_undefined_test_() ->
-%%     xl_application:start(xl_stdlib),
-%%     {timeout, 2000, fun() ->
-%%         {Tree, Points} = prepare_space(10, 1000),
-%%         Queries = [undefine(Q, 8, 10) || Q <- make_random_queries(Points, 10)],
-%%         ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
-%%         xl_eunit:format("muplitple results expected: ~p~n", [
-%%             length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
-%%         ]),
-%%         xl_lists:times(fun() ->
-%%             {ok, Q} = xl_lists:random(Queries),
-%%             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-%%             ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))),
-%%             xl_eunit:performance(xl_uxekdtree_find_undef_q, fun() ->
-%%                 xl_uxekdtree:find(Q, Tree)
-%%             end, 1000)
-%%         end, 10)
-%%     end}.
-%%
-%% find_with_any_test_() ->
-%%     xl_application:start(xl_stdlib),
-%%     {timeout, 2000, fun() ->
-%%         {Tree, Points} = prepare_space(10, 1000, 5),
-%%         Queries = make_random_queries(Points, 10),
-%%         ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
-%%         xl_eunit:format("muplitple results expected: ~p~n", [
-%%             length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
-%%         ]),
-%%         xl_lists:times(fun() ->
-%%             {ok, Q} = xl_lists:random(Queries),
-%%             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-%%             ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))),
-%%             xl_eunit:performance(xl_uxekdtree_find_w_any, fun() ->
-%%                 xl_uxekdtree:find(Q, Tree)
-%%             end, 1000)
-%%         end, 10)
-%%     end}.
-%%
-%% undefined_match(P, Q) when is_tuple(P) -> undefined_match(tuple_to_list(P), tuple_to_list(Q));
-%% undefined_match([], []) -> true;
-%% undefined_match([undefined | PT], [_ | QT]) -> undefined_match(PT, QT);
-%% undefined_match([_ | PT], [undefined | QT]) -> undefined_match(PT, QT);
-%% undefined_match([H | PT], [H | QT]) -> undefined_match(PT, QT);
-%% undefined_match(_, _) -> false.
-%%
-%% generate_points(PlaneSizes, Count, Undefined) ->
-%%     Planes = lists:map(fun(Size) -> lists:seq(1, Size) end, PlaneSizes),
-%%     [undefine(list_to_tuple([element(2, xl_lists:random(P)) || P <- Planes] ++ [V]), Undefined, length(Planes)) || V <- lists:seq(1, Count)].
-%%
-%% generate_planes(Variabililty, Count) ->
-%%     [element(2, xl_lists:random(Variabililty)) || _ <- lists:seq(1, Count)].
-%%
-%% prepare_space(Dimensions, TotalPoints) -> prepare_space(Dimensions, TotalPoints, 0).
-%% prepare_space(Dimensions, TotalPoints, Undefined) ->
-%%     Planes = generate_planes([100, 50, 10], Dimensions),
-%%     Points = generate_points(Planes, TotalPoints, Undefined),
-%%     {Time, Tree} = timer:tc(xl_uxekdtree, new, [Points]),
-%%     xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\t'any' positions: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
-%%         length(Planes),
-%%         list_to_tuple(Planes),
-%%         TotalPoints,
-%%         Undefined,
-%%         xl_uxekdtree:size(Tree),
-%%         xl_uxekdtree:depth(Tree),
-%%         Time
-%%     ]),
-%%     {Tree, Points}.
-%%
-%%
-%% point_to_query(P) -> list_to_tuple(element(1, lists:split(tuple_size(P) - 1, tuple_to_list(P)))).
-%%
-%% make_random_queries(Points, Count) ->
-%%     [point_to_query(element(2, xl_lists:random(Points))) || _ <- lists:seq(1, Count)].
-%%
-%% extract_results(Points, Queries, Match) ->
-%%     [{Q, lists:sort(lists:map(
-%%         fun(T) -> element(tuple_size(T), T) end,
-%%         lists:filter(fun(P) -> Match(point_to_query(P), Q) end, Points)
-%%     ))} || Q <- Queries].
-%%
-%%
-%% undefine(Tuple, Count, Length) ->
-%%     {Positions, _} = lists:foldl(fun(_, {R, L}) ->
-%%         {ok, E} = xl_lists:random(L),
-%%         {[E | R], lists:delete(E, L)}
-%%     end, {[], lists:seq(1, Length)}, lists:seq(1, Count)),
-%%     lists:foldl(fun(P, Q) ->
-%%         setelement(P, Q, undefined)
-%%     end, Tuple, Positions).
-%%
+
+find_test_() ->
+    xl_application:start(xl_stdlib),
+    {timeout, 2000, fun() ->
+        {Tree, Points} = prepare_space(10, 1000),
+        Queries = make_random_queries(Points, 10),
+        ExpectedResuts = extract_results(Points, Queries, fun erlang:'=='/2),
+        xl_lists:times(fun() ->
+            {ok, Q} = xl_lists:random(Queries),
+            Expected = xl_lists:kvfind(Q, ExpectedResuts),
+            ?assertEquals(Expected, xl_uxekdtree:find(Q, Tree)),
+            xl_eunit:performance(uxekdtree_find, fun() ->
+                xl_uxekdtree:find(Q, Tree)
+            end, 1000)
+        end, 10)
+    end}.
+
+find_undefined_test_() ->
+    xl_application:start(xl_stdlib),
+    {timeout, 2000, fun() ->
+        {Tree, Points} = prepare_space(10, 1000),
+        Queries = [undefine(Q, 8, 10) || Q <- make_random_queries(Points, 10)],
+        ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
+        xl_eunit:format("muplitple results expected: ~p~n", [
+            length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
+        ]),
+        xl_lists:times(fun() ->
+            {ok, Q} = xl_lists:random(Queries),
+            {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
+            ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))),
+            xl_eunit:performance(xl_uxekdtree_find_undef_q, fun() ->
+                xl_uxekdtree:find(Q, Tree)
+            end, 1000)
+        end, 10)
+    end}.
+
+find_with_any_test_() ->
+    xl_application:start(xl_stdlib),
+    {timeout, 2000, fun() ->
+        {Tree, Points} = prepare_space(10, 1000, 5),
+        Queries = make_random_queries(Points, 10),
+        ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
+        xl_eunit:format("muplitple results expected: ~p~n", [
+            length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
+        ]),
+        xl_lists:times(fun() ->
+            {ok, Q} = xl_lists:random(Queries),
+            {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
+            ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))),
+            xl_eunit:performance(xl_uxekdtree_find_w_any, fun() ->
+                xl_uxekdtree:find(Q, Tree)
+            end, 1000)
+        end, 10)
+    end}.
+
+undefined_match(P, Q) when is_tuple(P) -> undefined_match(tuple_to_list(P), tuple_to_list(Q));
+undefined_match([], []) -> true;
+undefined_match([undefined | PT], [_ | QT]) -> undefined_match(PT, QT);
+undefined_match([_ | PT], [undefined | QT]) -> undefined_match(PT, QT);
+undefined_match([H | PT], [H | QT]) -> undefined_match(PT, QT);
+undefined_match(_, _) -> false.
+
+generate_points(PlaneSizes, Count, Undefined) ->
+    Planes = lists:map(fun(Size) -> lists:seq(1, Size) end, PlaneSizes),
+    [undefine(list_to_tuple([element(2, xl_lists:random(P)) || P <- Planes] ++ [V]), Undefined, length(Planes)) || V <- lists:seq(1, Count)].
+
+generate_planes(Variabililty, Count) ->
+    [element(2, xl_lists:random(Variabililty)) || _ <- lists:seq(1, Count)].
+
+prepare_space(Dimensions, TotalPoints) -> prepare_space(Dimensions, TotalPoints, 0).
+prepare_space(Dimensions, TotalPoints, Undefined) ->
+    Planes = generate_planes([100, 50, 10], Dimensions),
+    Points = generate_points(Planes, TotalPoints, Undefined),
+    {Time, Tree} = timer:tc(xl_uxekdtree, new, [Points]),
+    xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\t'any' positions: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+        length(Planes),
+        list_to_tuple(Planes),
+        TotalPoints,
+        Undefined,
+        xl_uxekdtree:size(Tree),
+        xl_uxekdtree:depth(Tree),
+        Time
+    ]),
+    {Tree, Points}.
+
+
+point_to_query(P) -> list_to_tuple(element(1, lists:split(tuple_size(P) - 1, tuple_to_list(P)))).
+
+make_random_queries(Points, Count) ->
+    [point_to_query(element(2, xl_lists:random(Points))) || _ <- lists:seq(1, Count)].
+
+extract_results(Points, Queries, Match) ->
+    [{Q, lists:sort(lists:map(
+        fun(T) -> element(tuple_size(T), T) end,
+        lists:filter(fun(P) -> Match(point_to_query(P), Q) end, Points)
+    ))} || Q <- Queries].
+
+
+undefine(Tuple, Count, Length) ->
+    {Positions, _} = lists:foldl(fun(_, {R, L}) ->
+        {ok, E} = xl_lists:random(L),
+        {[E | R], lists:delete(E, L)}
+    end, {[], lists:seq(1, Length)}, lists:seq(1, Count)),
+    lists:foldl(fun(P, Q) ->
+        setelement(P, Q, undefined)
+    end, Tuple, Positions).
+
 %% basic: points: 145250 size: 52344 depth: 26	construction time: 1628181 mcs
 %% PERFORMANCE xl_uxekdtree_real_space_find: 126823.1 op/s, time: 7.885 ms
 %% PERFORMANCE xl_uxekdtree_real_space_find: 104231.8 op/s, time: 9.594 ms
@@ -316,33 +445,33 @@ find_with_variance_test() ->
 %% PERFORMANCE xl_uxekdtree_real_space_find: 140944.3 op/s, time: 7.095 ms
 %% PERFORMANCE xl_uxekdtree_real_space_find: 45126.4 op/s, time: 22.16 ms
 
-%% real_space_test_() ->
-%%     {timeout, 200, fun() ->
-%%         {ok, Data} = xl_file:read_file(xl_eunit:resource(?MODULE, "space")),
-%%         Points = binary_to_term(Data),
-%%         {Time, Tree} = timer:tc(xl_uxekdtree, new, [Points]),
-%%         xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
-%%             length(Points),
-%%             xl_uxekdtree:size(Tree),
-%%             xl_uxekdtree:depth(Tree),
-%%             Time
-%%         ]),
-%%         Qs = [{6, {false, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
-%%             'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
-%%             {263, {false, <<"US">>, <<"IAB-19">>, undefined, 1, undefined, site, nexage,
-%%                 'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
-%%             {263, {false, <<"US">>, [<<"IAB-19">>, <<"IAB-20">>], undefined, 1, undefined, site, nexage,
-%%                 'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
-%%             {111, {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
-%%                 'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
-%%             {381, {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
-%%                 'Mon', 1, ['300x250', '320x50'], <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}}
-%%         ],
-%%         lists:foreach(fun({R, Q}) ->
-%%             ?assertEquals(R, length(element(2, xl_uxekdtree:find(Q, Tree)))),
-%%             xl_eunit:performance(xl_uxekdtree_real_space_find, fun() ->
-%%                 xl_uxekdtree:find(Q, Tree)
-%%             end, 1000)
-%%         end, Qs)
-%%     end}.
-%%
+real_space_test_() ->
+    {timeout, 200, fun() ->
+        {ok, Data} = xl_file:read_file(xl_eunit:resource(?MODULE, "space")),
+        Points = binary_to_term(Data),
+        {Time, Tree} = timer:tc(xl_uxekdtree, new, [Points]),
+        xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+            length(Points),
+            xl_uxekdtree:size(Tree),
+            xl_uxekdtree:depth(Tree),
+            Time
+        ]),
+        Qs = [{6, {false, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
+            'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {263, {false, <<"US">>, <<"IAB-19">>, undefined, 1, undefined, site, nexage,
+                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {263, {false, <<"US">>, [<<"IAB-19">>, <<"IAB-20">>], undefined, 1, undefined, site, nexage,
+                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {111, {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
+                'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {381, {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
+                'Mon', 1, ['300x250', '320x50'], <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}}
+        ],
+        lists:foreach(fun({R, Q}) ->
+            ?assertEquals(R, length(element(2, xl_uxekdtree:find(Q, Tree)))),
+            xl_eunit:profile(xl_uxekdtree_real_space_find, fun() ->
+                xl_uxekdtree:find(Q, Tree)
+            end, 100)
+        end, Qs)
+    end}.
+
