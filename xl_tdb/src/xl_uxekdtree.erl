@@ -59,7 +59,7 @@ new_tree(Points, PlanePos, Planes) ->
     Plane = lists:nth(PlanePos, Planes),
     {Undefs, Defs} = xl_lists:keypartition(Plane, undefined, Points),
     {Excluded, Included} = lists:partition(fun(XE) -> ?is_exclude(element(Plane, XE)) end, Defs),
-    {MedianValue, Less, Equal, Greater} = case Defs of
+    {MedianValue, Less, Equal, Greater} = case Included of
         [] -> {undefined, [], [], []};
         _ ->
             Sorted = lists:sort(xl_uxekdtree_lib:sorter(Plane), Included),
