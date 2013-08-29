@@ -469,9 +469,9 @@ real_space_test_() ->
         ],
         lists:foreach(fun({R, Q}) ->
             ?assertEquals(R, length(element(2, xl_uxekdtree:find(Q, Tree)))),
-            xl_eunit:profile(xl_uxekdtree_real_space_find, fun() ->
+            xl_eunit:performance(xl_uxekdtree_real_space_find, fun() ->
                 xl_uxekdtree:find(Q, Tree)
-            end, 100)
+            end, 1000)
         end, Qs)
     end}.
 
