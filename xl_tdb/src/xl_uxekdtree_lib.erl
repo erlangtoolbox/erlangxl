@@ -41,9 +41,10 @@ expand(Points) -> lists:flatmap(fun(Point) -> expand_point(Point, tuple_size(Poi
 expand_point(Point, 0) -> [Point];
 expand_point(Point, N) when is_list(element(N, Point)) ->
     L = element(N, Point),
-    lists:flatmap(fun(V) ->
-        expand_point(setelement(N, Point, V), N - 1)
-    end, L);
+    case L of
+        [] -> expand_point(setelement(N, Point, undefined), N - 1);
+        _ -> lists:flatmap(fun(V) -> expand_point(setelement(N, Point, V), N - 1) end, L)
+    end;
 expand_point(Point, N) when ?is_mexclude(element(N, Point)) -> expand_point(Point, N - 1);
 expand_point(Point, N) when ?is_exclude(element(N, Point)) ->
     {x, X} = element(N, Point),

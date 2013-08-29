@@ -33,12 +33,14 @@
 
 expand_test() ->
     Points = [
+        {1, [], ctx},
         {[1, 2], [3, 4], ctx},
         {{x, x}, {x, y}, ctx},
         {{x, [1, 2]}, {x, 1}, ctx},
         {{x, [a, b, c]}, {x, [d, e]}, ctx}
     ],
     ExpectedPoints = [
+        {1, undefined, ctx},
         {1, 3, ctx},
         {2, 3, ctx},
         {1, 4, ctx},
