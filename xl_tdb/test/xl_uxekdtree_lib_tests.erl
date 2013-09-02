@@ -51,6 +51,7 @@ expand_test() ->
         {{x, [1, 2]}, {x, [1]}, ctx},
         {{x, [a, b, c]}, {x, [d, e]}, ctx}
     ],
+    ?assertEquals(length(ExpectedPoints), xl_uxekdtree_lib:estimate_expansion(Points)),
     ?assertEquals(ExpectedPoints, xl_uxekdtree_lib:expand(Points)).
 
 
@@ -66,3 +67,6 @@ sorter_test() ->
     ],
     ?assertEquals(Expected, lists:sort(Sorter, Points)).
 
+
+planes_test() ->
+    ?assertEqual([1, 2], xl_uxekdtree_lib:planes([{1, 2, undefined, x}])).

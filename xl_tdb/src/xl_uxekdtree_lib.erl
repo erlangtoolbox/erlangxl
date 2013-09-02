@@ -30,10 +30,11 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([expand/1, planes/1, sorter/1, compare/2, contains/2]).
+-export([expand/1, planes/1, sorter/1, compare/2, contains/2, estimate_expansion/1]).
 
 -define(is_mexclude(X), is_tuple(X) andalso element(1, X) == x andalso is_list(element(2, X))).
 -define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
+-define(EXP_LIMIT, 10).
 
 -spec(expand([tuple()]) -> [tuple()]).
 expand(Points) -> lists:flatmap(fun(Point) -> expand_point(Point, tuple_size(Point) - 1) end, Points).
@@ -43,6 +44,7 @@ expand_point(Point, N) when is_list(element(N, Point)) ->
     L = element(N, Point),
     case L of
         [] -> expand_point(setelement(N, Point, undefined), N - 1);
+        _ when length(L) > ?EXP_LIMIT -> expand_point(setelement(N, Point, {i, L}), N - 1);
         _ -> lists:flatmap(fun(V) -> expand_point(setelement(N, Point, V), N - 1) end, L)
     end;
 expand_point(Point, N) when ?is_mexclude(element(N, Point)) ->
@@ -57,6 +59,17 @@ expand_point(Point, N) when ?is_exclude(element(N, Point)) ->
 expand_point(Point, N) -> expand_point(Point, N - 1).
 
 
+-spec(estimate_expansion([tuple()]) -> non_neg_integer()).
+estimate_expansion(Points) -> lists:foldl(fun(Point, S) -> S + estimate_expansion_point(Point, tuple_size(Point) - 1) end, 0, Points).
+
+estimate_expansion_point(_Point, 0) -> 1;
+estimate_expansion_point(Point, N) when is_list(element(N, Point)) ->
+    case length(element(N, Point)) of
+        0 -> estimate_expansion_point(Point, N - 1);
+        X when X > ?EXP_LIMIT -> estimate_expansion_point(Point, N - 1);
+        X -> X * estimate_expansion_point(Point, N - 1)
+    end;
+estimate_expansion_point(Point, N) -> estimate_expansion_point(Point, N - 1).
 
 -spec(planes([tuple()]) -> [pos_integer()]).
 planes([]) -> [];
