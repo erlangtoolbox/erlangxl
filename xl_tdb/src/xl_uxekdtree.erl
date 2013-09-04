@@ -56,7 +56,9 @@ Included :: [{xl_ebloom:ref(), tree_node()}]
 new(Points) -> new(Points, [shared]).
 
 -spec(new([point()], xl_lists:kvlist_at()) -> tree()).
-new(Points, [local]) -> {?MODULE, new_tree(xl_uxekdtree_lib:expand(Points), 1, xl_uxekdtree_lib:planes(Points))};
+new(Points, [local]) ->
+    XPoints = xl_uxekdtree_lib:expand(Points),
+    {?MODULE, new_tree(XPoints, 1, xl_uxekdtree_lib:planes(XPoints))};
 new(Points, [shared]) -> xl_ref:new(new(Points, [local])).
 
 new_tree([], _PlanePos, _Planes) -> [];
