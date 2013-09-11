@@ -30,12 +30,14 @@
 
 -compile({parse_transform, do}).
 
--export([read_file/2, read_file/1]).
+-include_lib("stdlib/include/zip.hrl").
 
--spec read_file/1 :: (file:name()) -> error_m:monad(binary()).
+-export([read_file/2, read_file/1, unpack_priv/1, unpack_priv/2]).
+
+-spec(read_file/1 :: (file:name()) -> error_m:monad(binary())).
 read_file(File) -> read_file(escript:script_name(), File).
 
--spec read_file/2 :: (file:name(), file:name()) -> error_m:monad(binary()).
+-spec(read_file/2 :: (file:name(), file:name()) -> error_m:monad(binary())).
 read_file(EscriptPath, File) ->
     do([error_m ||
         Sections <- escript:extract(EscriptPath, []),
@@ -56,3 +58,18 @@ read_file(EscriptPath, File) ->
         end
     ]).
 
+unpack_priv(Dir) -> unpack_priv(escript:script_name(), Dir).
+
+unpack_priv(EscriptPath, Dir) ->
+    do([error_m ||
+        Sections <- escript:extract(EscriptPath, []),
+        xl_lists:eforeach(fun
+            ({archive, Zip}) ->
+                xl_file:mkdirs(Dir),
+                zip:extract(Zip, [
+                    {cwd, Dir},
+                    {file_filter, fun(#zip_file{name = Name}) -> lists:prefix("priv", Name) end}
+                ]);
+            (_) -> ok
+        end, Sections)
+    ]).

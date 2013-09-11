@@ -42,3 +42,17 @@ read_file_test() ->
     File = "/tmp/test/testescript",
     ok = xl_file:write_file(File, EScript),
     ?assertEqual({ok, <<"xxx">>}, xl_escript:read_file(File, "x.txt")).
+
+unpack_priv_test() ->
+    ok = xl_file:delete("/tmp/test"),
+    {ok, {_, Zip}} = zip:create("mem", [{"priv/x.txt", <<"xxx">>}, {"a/b/c.txt", <<"cccc">>}], [memory]),
+    {ok, EScript} = escript:create(binary, [
+        {shebang, default},
+        {comment, default},
+        {emu_args, undefined},
+        {archive, Zip}
+    ]),
+    File = "/tmp/test/testescript",
+    ok = xl_file:write_file(File, EScript),
+    ?assertEqual(ok, xl_escript:unpack_priv(File, "/tmp/test/xx/testescript")),
+    ?assertEqual({ok, true}, xl_file:exists("/tmp/test/xx/testescript/priv/x.txt")).
