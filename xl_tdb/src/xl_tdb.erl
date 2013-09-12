@@ -63,7 +63,7 @@ start_link(Name, Location, Identify, Options) ->
         xl_state:set(Name, updater_pid, Pid),
         xl_state:set(Name, options, Options),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
-        xl_state:set(Name, last_rsync, xl_calendar:now_micros()),
+        xl_state:set(Name, last_rsync, 0),
         FSyncTimer <- timer:apply_interval(xl_lists:kvfind(fsync, Options, 5000), ?MODULE, fsync, [Name]),
         xl_state:set(Name, fsync_timer, FSyncTimer),
         RSyncTimer <- timer:apply_interval(xl_lists:kvfind(rsync, Options, 5000), ?MODULE, rsync, [Name]),
