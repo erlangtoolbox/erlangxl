@@ -38,19 +38,21 @@ find_test() ->
 
 emap_test() ->
     L1 = [{ok, 1}, {ok, 2}, {ok, 3}],
-    ?assertEqual({ok, [1, 2, 3]},
-        xl_lists:emap(fun(X) -> X end, L1)),
+    ?assertEqual({ok, [1, 2, 3]}, xl_lists:emap(fun(X) -> X end, L1)),
     L2 = [{ok, 1}, {error, nope}, {ok, 3}],
-    ?assertEqual({error, nope},
-        xl_lists:emap(fun(X) -> X end, L2)).
+    ?assertEqual({error, nope}, xl_lists:emap(fun(X) -> X end, L2)).
+
+eflatmap_test() ->
+    L1 = [{ok, [1]}, {ok, [2]}, {ok, [3]}],
+    ?assertEqual({ok, [1, 2, 3]}, xl_lists:eflatmap(fun(X) -> X end, L1)),
+    L2 = [{ok, [1]}, {error, nope}, {ok, [3]}],
+    ?assertEqual({error, nope}, xl_lists:eflatmap(fun(X) -> X end, L2)).
 
 eforeach_test() ->
     L1 = [{ok, 1}, {ok, 2}, {ok, 3}],
-    ?assertEqual(ok,
-        xl_lists:eforeach(fun(X) -> X end, L1)),
+    ?assertEqual(ok, xl_lists:eforeach(fun(X) -> X end, L1)),
     L2 = [{ok, 1}, {error, nope}, {ok, 3}],
-    ?assertEqual({error, nope},
-        xl_lists:eforeach(fun(X) -> X end, L2)).
+    ?assertEqual({error, nope}, xl_lists:eforeach(fun(X) -> X end, L2)).
 
 mapfilter_test() ->
     L = [1, 2, 3, 4, 5],
