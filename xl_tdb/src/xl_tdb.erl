@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, fsync/1, rsync/1, updates/2]).
+-export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, fsync/1, rsync/1, updates/2, delete_all/1]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -111,6 +111,22 @@ delete(Name, Id) ->
         ])
     end).
 
+-spec(delete_all(atom()) -> error_m:monad(ok)).
+delete_all(Name) ->
+    mutate(Name, fun() ->
+        do([error_m ||
+            ETS <- xl_state:evalue(Name, ets),
+            Identify <- xl_state:evalue(Name, identify),
+            Options <- xl_state:evalue(Name, options),
+            xl_ets:foreach(fun
+                (_Key, {_Id, _O, _LastUpdate, true}) -> ok;
+                (_Key, {_Id, O, _LastUpdate, false}) ->
+                    ets:insert(ETS, wrap(O, Identify, true))
+            end, ETS),
+            xl_state:set(Name, index, index_build(Options, ETS))
+        ])
+    end).
+
 -spec(update(atom(), xl_string:iostring(), fun((term()) -> term())) -> error_m:monad(term())).
 update(Name, Id, F) ->
     mutate(Name, fun() ->
@@ -185,10 +201,9 @@ fsync(Name) ->
         ETS <- xl_state:evalue(Name, ets),
         Location <- xl_state:evalue(Name, location),
         LastFSync <- xl_state:evalue(Name, last_fsync),
-        xl_lists:eforeach(
-            fun(Wrapped = {Id, _O, _LastUpdate, _Deleted}) -> xl_tdb_storage:store(Location, Id, Wrapped) end,
-            ets_changes(ETS, LastFSync)
-        )
+        xl_lists:eforeach(fun(Wrapped = {Id, _O, _LastUpdate, _Deleted}) ->
+            xl_tdb_storage:store(Location, Id, Wrapped)
+        end, ets_changes(ETS, LastFSync))
     ]).
 
 -spec(rsync(atom()) -> error_m:monad(ok)).
