@@ -53,6 +53,9 @@ memory_options_test() ->
     ?assertEqual(undefined, xl_tdb:get(testtdbp, "1")),
     ?assertEqual({ok, T2}, xl_tdb:get(testtdbp, "2")),
 
+    ?assertOk(xl_tdb:delete_all(testtdbp)),
+    ?assertEqual([], xl_tdb:select(testtdbp)),
+
     ?assertOk(xl_tdb:close(testtdbp)).
 
 update_test() ->

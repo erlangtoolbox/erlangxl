@@ -119,8 +119,8 @@ delete_all(Name) ->
             Identify <- xl_state:evalue(Name, identify),
             Options <- xl_state:evalue(Name, options),
             xl_ets:foreach(fun
-                (_Key, {_Id, _O, _LastUpdate, true}) -> ok;
-                (_Key, {_Id, O, _LastUpdate, false}) ->
+                (_Key, [{_Id, _O, _LastUpdate, true}]) -> ok;
+                (_Key, [{_Id, O, _LastUpdate, false}]) ->
                     ets:insert(ETS, wrap(O, Identify, true))
             end, ETS),
             xl_state:set(Name, index, index_build(Options, ETS))
