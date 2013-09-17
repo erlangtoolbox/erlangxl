@@ -34,7 +34,7 @@
     count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2,
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
     compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3,
-    keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2, flatten1/1, eflatmap/2]).
+    keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2, flatten1/1, eflatmap/2, efind/2, efilter/2, esplitwith/2]).
 -export_type([kvlist/2, kvlist_at/0, mapping_predicate/2, fold_function/2, efold_function/2]).
 
 -type(kvlist(A, B) :: [{A, B}]).
@@ -50,6 +50,30 @@ find(Pred, [H | T]) ->
         true -> {ok, H};
         _ -> find(Pred, T)
     end.
+
+-spec(efind(fun((term()) -> error_m:monad(boolean())), [term()]) -> error_m:monad(option_m:monad(term()))).
+efind(_Pred, []) -> {ok, undefined};
+efind(Pred, [H | T]) ->
+    case Pred(H) of
+        {ok, true} -> {ok, {ok, H}};
+        {ok, false} -> efind(Pred, T);
+        E -> E
+    end.
+
+-spec(efilter(fun((term()) -> error_m:monad(boolean())), [term()]) -> error_m:monad([term()])).
+efilter(Pred, L) ->
+    case efilter(Pred, [], L) of
+        R when is_list(R) -> {ok, lists:reverse(R)};
+        E -> E
+    end.
+efilter(_Pred, Acc, []) -> Acc;
+efilter(Pred, Acc, [H | T]) ->
+    case Pred(H) of
+        {ok, true} -> efilter(Pred, [H | Acc], T);
+        {ok, false} -> efilter(Pred, Acc, T);
+        E -> E
+    end.
+
 
 -spec(mapfind(fun((term()) -> option_m:monad(term())), [term()]) -> option_m:monad(term())).
 mapfind(_Pred, []) -> undefined;
@@ -89,6 +113,18 @@ eforeach(F, [H | T]) ->
         {ok, _} -> eforeach(F, T);
         E -> E
     end.
+
+-spec(esplitwith(fun((term()) -> option_m:monad(term())), [term()]) -> option_m:monad({[term()], [term()]})).
+esplitwith(Pred, List) when is_function(Pred, 1) -> esplitwith(Pred, [], List).
+esplitwith(Pred, Acc, [Hd|Tail]) ->
+    case Pred(Hd) of
+        {ok, true} -> esplitwith(Pred, [Hd|Acc], Tail);
+        {ok, false} -> {ok, {lists:reverse(Acc), [Hd|Tail]}};
+        E -> E
+    end;
+esplitwith(Pred, Acc, []) when is_function(Pred, 1) -> {ok, {lists:reverse(Acc), []}}.
+
+
 
 -spec(efoldl(fun((term(), term())-> error_m:monad(term())), term(), [term()]) -> error_m:monad(term())).
 efoldl(_F, Acc, []) -> {ok, Acc};

@@ -26,8 +26,8 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(epath_tests).
--author("Volodymyr Kyrychenko <volodymyr.kyrychenko@strikead.com>").
+-module(xl_sq_tests).
+-author("volodymyr.kyrychenko@strikead.com").
 
 -include_lib("xl_stdlib/include/xl_eunit.hrl").
 
@@ -44,36 +44,35 @@
 ]}).
 
 select_test() ->
-    ?assertEquals({ok, {ok, [kernel, stdlib]}},
-        epath:select("/$3/[$1 == applications]/$2", ?APP)),
-    ?assertEquals({ok, {ok, [a]}},
-        epath:select("/$3/[$1 == ~p]/$2", ['env@1.1.1.1'], ?APP)),
-    ?assertEquals({ok, {ok, {vsn, "1"}}},
-        epath:select("/$3/[$2 == \"1\"]", ?APP)),
-    ?assertEquals({ok, {ok, description}},
-        epath:select("/$3/[$2 /= undefined]/$1", ?APP)),
+    ?assertEquals({ok, [kernel, stdlib]},
+        xl_sq:select([3, fun({applications, _}) -> true; (_) -> false end, 2], ?APP)),
+    ?assertEquals({ok, [kernel, stdlib]},
+        xl_sq:select([3, {'==', 1, applications}, 2], ?APP)),
+    ?assertEquals({ok, kernel},
+        xl_sq:select([3, {'==', 1, applications}, 2, 1], ?APP)),
+    ?assertEquals({ok, {vsn, "1"}},
+        xl_sq:select([3, {'==', 2, "1"}], ?APP)),
+    ?assertEquals({ok, description},
+        xl_sq:select([3, {'/=', 2, undefined}, 1], ?APP)),
     ?assertEquals({ok, undefined},
-        epath:select("/$3/[$2 == \"2\"]", ?APP)).
-
-eselect_test() ->
-    ?assertEquals({error, error},
-        epath:eselect("/$3/[$1 == ~p]/$2", [applic], ?APP, error)).
-
-update_list_test() ->
+        xl_sq:select([3, {'==', 2, "2"}], ?APP)),
     L = [{1, a}, {2, b}, {3, {x1, y1}}, {4, d}, {5, {x2, y2}}],
-    ?assertEquals({ok, [{1, a}, {2, b}, {3, {z, y1}}, {4, d}, {5, {z, y2}}]},
-        epath:update("/[$1 > 2]*/$2/$1", z, L)),
-    ?assertEquals({ok, [{1, a}, {2, b}, z, z, z]},
-        epath:update("/[$1 > 2]*", z, L)).
+    ?assertEquals({error, {structural_mismatch, [1], d}}, xl_sq:select([{all, {'>', 1, 2}}, 2, 1], L)),
+    L2 = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
+    ?assertEquals({ok, [x1, x2]}, xl_sq:select([{all, {'>', 1, 2}}, 2, 1], L2)).
 
-update_element_test() ->
-    L = [{1, a}, {2, b}, {3, {x1, y1}}, {4, d}, {5, {x2, y2}}],
-    ?assertEquals({ok, [{1, a}, {2, b}, {3, {z, y1}}, {4, d}, {5, {x2, y2}}]},
-        epath:update("/[$1 > 2]/$2/$1", z, L)),
-    ?assertEquals({ok, [{1, a}, {2, b}, z, {4, d}, {5, {x2, y2}}]},
-        epath:update("/[$1 > 2]", z, L)).
+update_replace_test() ->
+    L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
+    ?assertEquals({ok, [{1, a}, {2, b}, {3, {z, y1}}, {5, {z, y2}}]},
+        xl_sq:update([{all, {'>', 1, 2}}, 2, 1], {replace, z}, L)),
+    ?assertEquals({ok, [{1, a}, {2, b}, z, z]},
+        xl_sq:update([{all, {'>', 1, 2}}], {replace, z}, L)),
+    ?assertEquals({ok, [{1, a}, {2, b}, {3, {z, y1}}, {5, {x2, y2}}]},
+        xl_sq:update([{'>', 1, 2}, 2, 1], {replace, z}, L)),
+    ?assertEquals({ok, [{1, a}, {2, b}, z, {5, {x2, y2}}]},
+        xl_sq:update([{'>', 1, 2}], {replace, z}, L)).
 
-concat_test() ->
+update_append_test() ->
     ?assertEquals({ok, {application, epath, [
         {description, ""},
         {vsn, "1"},
@@ -81,8 +80,5 @@ concat_test() ->
         {applications, [epath, kernel, stdlib]},
         {env, []},
         {'env@1.1.1.1', [a]}
-    ]}}, epath:concat("/$3/[$1 == applications]/$2", [epath], ?APP)).
+    ]}}, xl_sq:update([3, {'==', 1, applications}, 2], {append, [epath]}, ?APP)).
 
-select_list_test() ->
-    L = [{1, a}, {2, b}, {3, {x1, y1}}, {4, d}, {5, {x2, y2}}],
-    ?assertEquals({ok, [x1, x2]}, epath:select("/[$1 > 2]*/$2/$1", L)).
