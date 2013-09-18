@@ -67,9 +67,9 @@ update_test() ->
     ?assertOk(xl_tdb:store(testtdbpup, [T1])),
     ?assertEqual({ok, T1}, xl_tdb:get(testtdbpup, "1")),
     ?assertEqual({ok, #testobj{id = "1", name = "updated"}},
-        xl_tdb:update(testtdbpup, "1", fun(X) -> X#testobj{name = "updated"} end)),
-    ?assertEqual({error, undefined},
-        xl_tdb:update(testtdbpup, "x", fun(X) -> X#testobj{name = "updated"} end)),
+        xl_tdb:update(testtdbpup, "1", fun(X) -> {ok, X#testobj{name = "updated"}} end)),
+    ?assertEqual({ok, undefined},
+        xl_tdb:update(testtdbpup, "x", fun(undefined) -> undefined end)),
     ?assertOk(xl_tdb:close(testtdbpup)).
 
 disk_storage_test() ->
@@ -121,7 +121,7 @@ rsync_test() ->
     ?assertOk(xl_tdb:rsync(testrsync_slave)),
     ?assertEquals([T1, T2, T3, T4], xl_tdb:select(testrsync_slave)),
     ?assertEqual({ok, TU = #testobj{id = "1", name = "updated"}},
-        xl_tdb:update(testrsync_master, "1", fun(X) -> X#testobj{name = "updated"} end)),
+        xl_tdb:update(testrsync_master, "1", fun(X) -> {ok, X#testobj{name = "updated"}} end)),
     ?assertOk(xl_tdb:rsync(testrsync_slave)),
     ?assertEquals([TU, T2, T3, T4], xl_tdb:select(testrsync_slave)),
     ?assertOk(xl_tdb:close(testrsync_slave)),

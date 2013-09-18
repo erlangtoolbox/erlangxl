@@ -102,7 +102,7 @@ delete(Name, Id) ->
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
             Options <- xl_state:evalue(Name, options),
-            case ets_lookup(ETS, Id) of
+            case xl_ets:lookup_object(ETS, Id) of
                 {ok, {_Id, O, _LastUpdate, _Deleted}} ->
                     ets:insert(ETS, wrap(O, Identify, true)),
                     xl_state:set(Name, index, index_build(Options, ETS));
@@ -127,20 +127,23 @@ delete_all(Name) ->
         ])
     end).
 
--spec(update(atom(), xl_string:iostring(), fun((term()) -> term())) -> error_m:monad(term())).
+-spec(update(atom(), xl_string:iostring(), fun((term()) -> option_m:monad(term()))) -> error_m:monad(term())).
 update(Name, Id, F) ->
     mutate(Name, fun() ->
         do([option_m ||
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
             Options <- xl_state:evalue(Name, options),
-            case ets_lookup(ETS, Id) of
-                {ok, {_Id, O, _LastUpdate, _Deleted}} ->
-                    R = F(O),
+            Obj <- case xl_ets:lookup_object(ETS, Id) of
+                {ok, {_Id, O, _LastUpdate, _Deleted}} -> return(O);
+                _ -> return(undefined)
+            end,
+            case F(Obj) of
+                {ok, R} ->
                     ets:insert(ETS, wrap(R, Identify)),
                     xl_state:set(Name, index, index_build(Options, ETS)),
                     return(R);
-                _ -> {error, undefined}
+                undefined -> return(undefined)
             end
         ])
     end).
@@ -149,7 +152,7 @@ update(Name, Id, F) ->
 get(Name, Id) ->
     do([option_m ||
         ETS <- xl_state:value(Name, ets),
-        case ets_lookup(ETS, Id) of
+        case xl_ets:lookup_object(ETS, Id) of
             {ok, O} when not ?is_deleted(O) -> {ok, unwrap(O)};
             _ -> undefined
         end
@@ -185,7 +188,7 @@ cursor(Name) ->
         xl_stream:stream(ets:first(ETS), fun
             ('$end_of_table') -> empty;
             (Key) ->
-                case ets_lookup(ETS, Key) of
+                case xl_ets:lookup_object(ETS, Key) of
                     {ok, O} -> {O, ets:next(ETS, Key)};
                     _ -> empty
                 end
@@ -283,12 +286,6 @@ index_lookup(Q, Options, Tree) ->
     case xl_lists:kvfind(index_query, Options) of
         {ok, F} -> xl_uxekdtree:find(F(Q), Tree);
         undefined -> undefined
-    end.
-
-ets_lookup(ETS, Key) ->
-    case ets:lookup(ETS, Key) of
-        [O] -> {ok, O};
-        _ -> undefined
     end.
 
 ets_changes(ETS, Since) -> ets:select(ETS, [{{'$1', '$2', '$3', '$4'}, [{'=<', Since, '$3'}], ['$_']}]).
