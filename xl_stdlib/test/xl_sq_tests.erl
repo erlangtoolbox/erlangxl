@@ -72,6 +72,13 @@ update_replace_test() ->
     ?assertEquals({ok, [{1, a}, {2, b}, z, {5, {x2, y2}}]},
         xl_sq:update([{'>', 1, 2}], {replace, z}, L)).
 
+update_insert_test() ->
+    L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
+    ?assertEquals({ok, [{1, a}, {2, b}, {3, {x1, z, y1}}, {5, {x2, z, y2}}]},
+        xl_sq:update([{all, {'>', 1, 2}}, 2], {insert, 2, z}, L)),
+    ?assertEquals({ok, [{1, a}, z, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}]},
+        xl_sq:update([], {insert, 2, z}, L)).
+
 update_delete_test() ->
     L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
     ?assertEquals({ok, [{1, a}, {2, b}, {3, {y1}}, {5, {y2}}]},
