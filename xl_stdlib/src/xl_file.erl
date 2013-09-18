@@ -33,7 +33,7 @@
 -compile({parse_transform, do}).
 
 -behaviour(xl_autoresource).
--export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2]).
+-export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2, delete_filtered/2]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
     read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3,
     absolute/1]).
@@ -144,6 +144,12 @@ copy_filtered(SrcDir, Wildcards, DstDir) ->
     xl_lists:eforeach(fun(F) ->
         xl_file:copy(F, DstDir)
     end, [F || WC <- Wildcards, F <- filelib:wildcard(SrcDir ++ "/" ++ WC)]).
+
+-spec delete_filtered(file:name(), [string()]) -> error_m:monad(ok).
+delete_filtered(Dir, Wildcards) ->
+    xl_lists:eforeach(fun(F) ->
+        xl_file:delete(F)
+    end, [F || WC <- Wildcards, F <- filelib:wildcard(Dir ++ "/" ++ WC)]).
 
 -spec copy_if_exists/2 :: (file:name(), file:name()) -> error_m:monad(ok).
 copy_if_exists(Src, Dst) ->

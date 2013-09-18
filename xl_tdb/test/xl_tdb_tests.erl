@@ -149,5 +149,5 @@ migration_test() ->
     ?assertEquals([{"1", "Comment"}, {"2", "Comment"}], xl_tdb:select(tdb_migration)),
     ?assertOk(xl_tdb:close(tdb_migration)).
 
-migrate2({Id, {Id, Name}, LastModified, Deleted}) -> {Id, {Id, Name, "Comment"}, LastModified, Deleted}.
-migrate3({Id, {Id, _Name, Comment}, LastModified, Deleted}) -> {Id, {Id, Comment}, LastModified, Deleted}.
+migrate2({Id, {Id, Name}, LastModified, Deleted}) -> {ok, {Id, {Id, Name, "Comment"}, LastModified, Deleted}}.
+migrate3({Id, {Id, _Name, Comment}, LastModified, Deleted}) -> {ok, {Id, {Id, Comment}, LastModified, Deleted}}.

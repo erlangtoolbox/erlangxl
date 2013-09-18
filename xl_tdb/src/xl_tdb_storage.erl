@@ -34,22 +34,16 @@
 
 -spec(load(file:name(), pos_integer(), [{pos_integer(), fun((term()) -> term())}]) -> error_m:monad([term()])).
 load(Location, Version, Migrations) ->
-    VersionFile = filename:join(Location, ".version"),
     do([error_m ||
-        ApplicableMigrations <- prepare_migrations(VersionFile, Migrations),
         xl_file:mkdirs(Location),
+        perform_migration(Location, Version, Migrations),
         Files <- xl_file:list_dir(Location, "*.tdb"),
-        Objects <- xl_lists:emap(fun(F) ->
-            Filename = filename:join(Location, F),
-            do([error_m ||
-                Content <- xl_file:read_file(Filename),
-                Object <- return(migrate(binary_to_term(Content), ApplicableMigrations)),
-                xl_file:write_file(Filename, term_to_binary(Object)),
-                return(Object)
-            ])
-        end, lists:sort(Files)),
-        xl_file:write_term(VersionFile, {version, Version}),
-        return(Objects)
+        xl_lists:emap(fun(F) ->
+            case xl_file:read_file(filename:join(Location, F)) of
+                {ok, Content} -> {ok, binary_to_term(Content)};
+                E -> E
+            end
+        end, lists:sort(Files))
     ]).
 
 -spec(store(file:name(), xl_string:iostring(), term()) -> error_m:monad(ok)).
@@ -60,17 +54,64 @@ store(Location, Id, X) ->
 delete(Location, Id) ->
     xl_file:delete(xl_string:join([Location, "/", Id, ".tdb"])).
 
-%% @hidden
-migrate(Term, Migrations) -> lists:foldl(fun({_, M}, T) -> M(T) end, Term, Migrations).
+version(VersionFile) ->
+    case xl_file:exists(VersionFile) of
+        {ok, true} ->
+            case xl_file:read_terms(VersionFile) of
+                {ok, [{version, Version}]} -> {ok, Version};
+                E -> E
+            end;
+        {ok, false} -> {ok, 0};
+        E -> E
+    end.
 
-%% @hidden
-prepare_migrations(VersionFile, Migrations) ->
+perform_migration(Location, TargetVersion, Migrations) ->
+    VersionFile = filename:join(Location, ".version"),
+    case version(VersionFile) of
+        {ok, TargetVersion} -> ok;
+        {ok, OldVersion} ->
+            backup(Location, OldVersion),
+            ApplicableMigrations = lists:dropwhile(fun({V, _M}) -> V =< OldVersion end, Migrations),
+            try
+                do([error_m ||
+                    Files <- xl_file:list_dir(Location, "*.tdb"),
+                    xl_lists:eforeach(fun(F) ->
+                        Filename = filename:join(Location, F),
+                        do([error_m ||
+                            Content <- xl_file:read_file(Filename),
+                            Object <- xl_lists:efoldl(fun({_, M}, T) ->
+                                M(T)
+                            end, binary_to_term(Content), ApplicableMigrations),
+                            xl_file:write_file(Filename, term_to_binary(Object))
+                        ])
+                    end, Files)
+                ]) of
+                ok -> xl_file:write_term(VersionFile, {version, TargetVersion})                ;
+                E ->
+                    case restore(Location, OldVersion) of
+                        ok -> E;
+                        RE -> RE
+                    end
+            catch
+                _:E ->
+                    case restore(Location, OldVersion) of
+                        ok -> {error, E};
+                        RE -> RE
+                    end
+            end;
+        E -> E
+    end.
+
+backup(Location, Version) ->
+    BackupLocation = filename:join([Location, "backup", integer_to_list(Version)]),
     do([error_m ||
-        Exists <- xl_file:exists(VersionFile),
-        [{version, OldVersion}] <-
-            case Exists of
-                true -> xl_file:read_terms(VersionFile);
-                false -> return([{version, 0}])
-            end,
-        return(lists:dropwhile(fun({V, _M}) -> V =< OldVersion end, Migrations))
+        xl_file:mkdirs(BackupLocation),
+        xl_file:copy_filtered(Location, ["*.tdb"], BackupLocation)
+    ]).
+
+restore(Location, Version) ->
+    BackupLocation = filename:join([Location, "backup", integer_to_list(Version)]),
+    do([error_m ||
+        xl_file:delete_filtered(Location, ["*.tdb"]),
+        xl_file:copy_filtered(BackupLocation, ["*.tdb"], Location)
     ]).
