@@ -35,12 +35,8 @@
     {description, ""},
     {vsn, "1"},
     {registered, []},
-    {applications, [
-        kernel,
-        stdlib
-    ]},
-    {env, []},
-    {'env@1.1.1.1', [a]}
+    {applications, [kernel, stdlib]},
+    {env, []}
 ]}).
 
 select_test() ->
@@ -72,13 +68,31 @@ update_replace_test() ->
     ?assertEquals({ok, [{1, a}, {2, b}, z, {5, {x2, y2}}]},
         xl_sq:update([{'>', 1, 2}], {replace, z}, L)).
 
+update_delete_test() ->
+    L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
+    ?assertEquals({ok, [{1, a}, {2, b}, {3, {y1}}, {5, {y2}}]},
+        xl_sq:update([{all, {'>', 1, 2}}, 2, 1], delete, L)).
+
+update_append_tuple_test() ->
+    L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
+    ?assertEquals({ok, [{1, a}, {2, b}, {3, {x1, y1, a, b}}, {5, {x2, y2, a, b}}]},
+        xl_sq:update([{all, {'>', 1, 2}}, 2], {append, [a, b]}, L)).
+
 update_append_test() ->
     ?assertEquals({ok, {application, epath, [
         {description, ""},
         {vsn, "1"},
         {registered, []},
-        {applications, [epath, kernel, stdlib]},
-        {env, []},
-        {'env@1.1.1.1', [a]}
+        {applications, [kernel, stdlib, epath]},
+        {env, []}
     ]}}, xl_sq:update([3, {'==', 1, applications}, 2], {append, [epath]}, ?APP)).
 
+
+update_f_test() ->
+    ?assertEquals({ok, {application, epath, [
+        {description, ""},
+        {vsn, "1"},
+        {registered, []},
+        x,
+        {env, []}
+    ]}}, xl_sq:update([3, {'==', 1, applications}], fun({applications, _}) -> x end, ?APP)).

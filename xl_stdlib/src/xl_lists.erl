@@ -34,14 +34,16 @@
     count_unique/1, keyincrement/3, split_by/2, efoldl/3, substitute/2, imap/2, intersect/2,
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
     compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3,
-    keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2, flatten1/1, eflatmap/2, efind/2, efilter/2, esplitwith/2]).
--export_type([kvlist/2, kvlist_at/0, mapping_predicate/2, fold_function/2, efold_function/2]).
+    keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2, eflatmap/2, efind/2, efilter/2,
+    esplitwith/2, not_epredicate/1]).
+-export_type([kvlist/2, kvlist_at/0, mapping_predicate/2, fold_function/2, efold_function/2, epredicate/1]).
 
 -type(kvlist(A, B) :: [{A, B}]).
 -type(kvlist_at() :: kvlist(atom(), atom() | binary() | string() | integer() | float())).
 -type(mapping_predicate(A, B) :: fun((A) -> option_m:monad(B))).
 -type(fold_function(A, Acc) :: fun((A, Acc) -> Acc)).
 -type(efold_function(A, Acc) :: fun((A, Acc) -> error_m:monad(Acc))).
+-type(epredicate(A) :: fun((A) -> error_m:monad(boolean()))).
 
 -spec(find(fun((term()) -> boolean()), [term()]) -> option_m:monad(term())).
 find(_Pred, []) -> undefined;
@@ -101,7 +103,7 @@ emap(F, Acc, [H | T]) ->
 -spec(eflatmap(fun((term()) -> error_m:monad(term())), [term()]) -> error_m:monad([term()])).
 eflatmap(F, List) ->
     case emap(F, List) of
-        {ok, L} -> {ok, flatten1(L)};
+        {ok, L} -> {ok, lists:append(L)};
         E -> E
     end.
 
@@ -114,7 +116,7 @@ eforeach(F, [H | T]) ->
         E -> E
     end.
 
--spec(esplitwith(fun((term()) -> option_m:monad(term())), [term()]) -> option_m:monad({[term()], [term()]})).
+-spec(esplitwith(fun((term()) -> option_m:monad(boolean())), [term()]) -> option_m:monad({[term()], [term()]})).
 esplitwith(Pred, List) when is_function(Pred, 1) -> esplitwith(Pred, [], List).
 esplitwith(Pred, Acc, [Hd|Tail]) ->
     case Pred(Hd) of
@@ -423,7 +425,11 @@ nmapfilter(Limit, F, Acc, [H | T], R) ->
         {ok, X} -> nmapfilter(Limit, F, [X | Acc], T, R)
     end.
 
--spec(flatten1([[term()]]) -> [term()]).
-flatten1([]) -> [];
-flatten1([H | T]) -> H ++ flatten1(T).
-
+-spec(not_epredicate(epredicate(term())) -> epredicate(term())).
+not_epredicate(P) ->
+    fun(E) ->
+        case P(E) of
+            {ok, R} -> {ok, not(R)};
+            E -> E
+        end
+    end.
