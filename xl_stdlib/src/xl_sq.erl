@@ -44,7 +44,7 @@
 -define(is_correct_list(N, T), (is_list(Target) andalso N =< length(Target))).
 -define(is_comparison(Op), (Op == '==' orelse Op == '/=' orelse Op == '=>' orelse Op == '<='
     orelse Op == '=:=' orelse Op == '=:=' orelse Op == '<' orelse Op == '>')).
--define(is_match_predicate(P), ((is_tuple(P) andalso size(P) == 3 andalso ?is_comparison(element(1, P))) orelse is_function(P, 1))).
+-define(is_predicate(P), ((is_tuple(P) andalso size(P) == 3 andalso ?is_comparison(element(1, P))) orelse is_function(P, 1))).
 
 -spec(select([path()], term()) -> error_m:monad(term())).
 select([], Target) -> {ok, Target};
@@ -53,13 +53,15 @@ select([N | Path], Target) when is_integer(N) andalso ?is_correct_tuple(N, Targe
     select(Path, element(N, Target));
 select([N | Path], Target) when is_integer(N) andalso ?is_correct_list(N, Target) ->
     select(Path, lists:nth(N, Target));
-select([P | Path], Target) when is_list(Target) andalso (?is_match_predicate(P) orelse is_function(P, 1)) ->
+select([P | Path], Target) when is_list(Target) andalso ?is_predicate(P) ->
     case xl_lists:efind(predicate(P), Target) of
         {ok, undefined} -> {ok, undefined};
         {ok, {ok, V}} -> select(Path, V);
         E -> E
     end;
-select([{all, P} | Path], Target) when is_list(Target) andalso (?is_match_predicate(P) orelse is_function(P, 1)) ->
+select([all | Path], Target) when is_list(Target) ->
+    xl_lists:emap(fun(T) -> select(Path, T) end, Target);
+select([{all, P} | Path], Target) when is_list(Target) andalso ?is_predicate(P) ->
     do([error_m ||
         Targets <- xl_lists:efilter(predicate(P), Target),
         xl_lists:emap(fun(T) -> select(Path, T) end, Targets)
@@ -93,7 +95,7 @@ update([N | Path], Update, Target) when is_integer(N) andalso ?is_correct_tuple(
         {ok, X} -> {ok, setelement(N, Target, X)};
         E -> E
     end;
-update([P | Path], Update, Target) when is_list(Target) andalso ?is_match_predicate(P) ->
+update([P | Path], Update, Target) when is_list(Target) andalso ?is_predicate(P) ->
     Predicate = xl_lists:not_epredicate(predicate(P)),
     case xl_lists:esplitwith(Predicate, Target) of
         {ok, {Head, [T | Tail]}} ->
@@ -104,7 +106,9 @@ update([P | Path], Update, Target) when is_list(Target) andalso ?is_match_predic
         {ok, {Head, []}} -> {ok, Head};
         E -> E
     end;
-update([{all, P} | Path], Update, Target) when is_list(Target) andalso ?is_match_predicate(P) ->
+update([all | Path], Update, Target) when is_list(Target) ->
+    xl_lists:emap(fun(T) -> update(Path, Update, T) end, Target);
+update([{all, P} | Path], Update, Target) when is_list(Target) andalso ?is_predicate(P) ->
     Predicate = predicate(P),
     xl_lists:emap(fun(T) ->
         case Predicate(T) of

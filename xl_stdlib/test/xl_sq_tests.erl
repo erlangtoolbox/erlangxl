@@ -55,7 +55,9 @@ select_test() ->
     L = [{1, a}, {2, b}, {3, {x1, y1}}, {4, d}, {5, {x2, y2}}],
     ?assertEquals({error, {structural_mismatch, [1], d}}, xl_sq:select([{all, {'>', 1, 2}}, 2, 1], L)),
     L2 = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
-    ?assertEquals({ok, [x1, x2]}, xl_sq:select([{all, {'>', 1, 2}}, 2, 1], L2)).
+    ?assertEquals({ok, [x1, x2]}, xl_sq:select([{all, {'>', 1, 2}}, 2, 1], L2)),
+    L2 = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
+    ?assertEquals({ok, [a, b, {x1, y1}, {x2, y2}]}, xl_sq:select([all, 2], L2)).
 
 update_replace_test() ->
     L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
@@ -63,6 +65,8 @@ update_replace_test() ->
         xl_sq:update([{all, {'>', 1, 2}}, 2, 1], {replace, z}, L)),
     ?assertEquals({ok, [{1, a}, {2, b}, z, z]},
         xl_sq:update([{all, {'>', 1, 2}}], {replace, z}, L)),
+    ?assertEquals({ok, [{1, z}, {2, z}, {3, z}, {5, z}]},
+        xl_sq:update([all, 2], {replace, z}, L)),
     ?assertEquals({ok, [{1, a}, {2, b}, {3, {z, y1}}, {5, {x2, y2}}]},
         xl_sq:update([{'>', 1, 2}, 2, 1], {replace, z}, L)),
     ?assertEquals({ok, [{1, a}, {2, b}, z, {5, {x2, y2}}]},
