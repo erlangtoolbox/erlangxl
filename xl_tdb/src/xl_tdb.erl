@@ -140,7 +140,7 @@ update(Name, Id, F) ->
             end),
             case F(Obj) of
                 {ok, {context, R, Ctx}} ->
-                    ets:insert(ETS, wrap(element(1, R), Identify)),
+                    ets:insert(ETS, wrap(R, Identify)),
                     xl_state:set(Name, index, build_index(Options, ETS)),
                     return({R, Ctx});
                 {ok, R} ->
