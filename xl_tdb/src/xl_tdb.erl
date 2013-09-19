@@ -53,7 +53,7 @@ start_link(Name, Location, Identify, Options) ->
             xl_lists:kvfind(migrations, Options, [])
         ),
         lists:foreach(fun(O) -> ets:insert(ETS, O) end, Objects),
-        xl_state:set(Name, index, index_build(Options, ETS)),
+        xl_state:set(Name, index, build_index(Options, ETS)),
         xl_state:set(Name, location, Location),
         xl_state:set(Name, identify, Identify),
         Pid <- return(spawn_link(fun() ->
@@ -91,7 +91,7 @@ store(Name, Objects) ->
             Identify <- xl_state:evalue(Name, identify),
             Options <- xl_state:evalue(Name, options),
             lists:foreach(fun(O) -> ets:insert(ETS, wrap(O, Identify)) end, Objects),
-            xl_state:set(Name, index, index_build(Options, ETS))
+            xl_state:set(Name, index, build_index(Options, ETS))
         ])
     end).
 
@@ -105,7 +105,7 @@ delete(Name, Id) ->
             case xl_ets:lookup_object(ETS, Id) of
                 {ok, {_Id, O, _LastUpdate, _Deleted}} ->
                     ets:insert(ETS, wrap(O, Identify, true)),
-                    xl_state:set(Name, index, index_build(Options, ETS));
+                    xl_state:set(Name, index, build_index(Options, ETS));
                 _ -> ok
             end
         ])
@@ -123,7 +123,7 @@ delete_all(Name) ->
                 (_Key, [{_Id, O, _LastUpdate, false}]) ->
                     ets:insert(ETS, wrap(O, Identify, true))
             end, ETS),
-            xl_state:set(Name, index, index_build(Options, ETS))
+            xl_state:set(Name, index, build_index(Options, ETS))
         ])
     end).
 
@@ -134,16 +134,21 @@ update(Name, Id, F) ->
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
             Options <- xl_state:evalue(Name, options),
-            Obj <- case xl_ets:lookup_object(ETS, Id) of
-                {ok, {_Id, O, _LastUpdate, _Deleted}} -> return(O);
-                _ -> return(undefined)
-            end,
+            Obj <- return(case xl_ets:lookup_object(ETS, Id) of
+                {ok, {_Id, O, _LastUpdate, _Deleted}} -> O;
+                _ -> undefined
+            end),
             case F(Obj) of
+                {ok, {context, R, Ctx}} ->
+                    ets:insert(ETS, wrap(element(1, R), Identify)),
+                    xl_state:set(Name, index, build_index(Options, ETS)),
+                    return({R, Ctx});
                 {ok, R} ->
                     ets:insert(ETS, wrap(R, Identify)),
-                    xl_state:set(Name, index, index_build(Options, ETS)),
+                    xl_state:set(Name, index, build_index(Options, ETS)),
                     return(R);
-                undefined -> return(undefined)
+                undefined ->
+                    return(undefined)
             end
         ])
     end).
@@ -227,7 +232,7 @@ rsync(Name) ->
                         do([error_m ||
                             ETS <- xl_state:evalue(Name, ets),
                             lists:foreach(fun(O) -> ets:insert(ETS, O) end, monad:flatten(error_m, Items)),
-                            xl_state:set(Name, index, index_build(Options, ETS))
+                            xl_state:set(Name, index, build_index(Options, ETS))
                         ])
                     end);
                 false -> lists:last(Items)
@@ -272,7 +277,7 @@ wrap(Object, Id, Deleted) -> {Id(Object), Object, xl_calendar:now_micros(), Dele
 unwrap(Objects) when is_list(Objects) -> lists:map(fun(O) -> unwrap(O) end, Objects);
 unwrap({_Id, O, _LastUpdate, _Deleted}) -> O.
 
-index_build(Options, ETS) ->
+build_index(Options, ETS) ->
     case xl_lists:kvfind(index_object, Options) of
         {ok, F} -> xl_uxekdtree:new(ets:foldl(fun
             (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
