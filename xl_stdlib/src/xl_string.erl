@@ -59,6 +59,7 @@ strip_([$\n | T]) -> strip(T);
 strip_(S) -> S.
 
 -spec(stripthru(string()) -> string()).
+stripthru(S) when is_binary(S) -> list_to_binary(stripthru(binary_to_list(S)));
 stripthru(S) -> [X || X <- S, X /= $\n andalso X /= $\r andalso X /= $\t].
 
 -spec(quote(string()) -> string()).
