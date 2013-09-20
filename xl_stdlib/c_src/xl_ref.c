@@ -23,6 +23,7 @@ ERL_NIF_TERM xl_ref_new(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 
     ref_t* ref = (ref_t*)enif_alloc_resource(XL_REF_RESOURCE, sizeof(ref_t));
     ref->env = enif_alloc_env();
+    printf("ref env allocated\n");
     ref->value = enif_make_copy(ref->env, object);
     ERL_NIF_TERM ref_term = enif_make_resource(env, ref);
     enif_release_resource(ref);
@@ -39,6 +40,7 @@ ERL_NIF_TERM xl_ref_value(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 
 void xl_ref_dtor(ErlNifEnv* env, void* arg) {
     ref_t* ref = (ref_t*) arg;
+    printf("ref env released\n");
     enif_free_env(ref->env);
 }
 

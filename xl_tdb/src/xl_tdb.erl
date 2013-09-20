@@ -188,17 +188,7 @@ nmapfilter(Name, N, Q, F) ->
 -spec(cursor(atom()) -> xl_stream:stream()).
 cursor(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
-    xl_stream:mapfilter(
-        fun({_Id, O, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end,
-        xl_stream:stream(ets:first(ETS), fun
-            ('$end_of_table') -> empty;
-            (Key) ->
-                case xl_ets:lookup_object(ETS, Key) of
-                    {ok, O} -> {O, ets:next(ETS, Key)};
-                    _ -> empty
-                end
-        end)
-    ).
+    xl_stream:mapfilter(fun({_Id, O, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end, xl_ets:cursor(ETS)).
 
 -spec(index(atom()) -> option_m:monad(xl_uxekdtree:tree())).
 index(Name) -> xl_state:value(Name, index).
@@ -209,7 +199,7 @@ fsync(Name) ->
         ETS <- xl_state:evalue(Name, ets),
         Location <- xl_state:evalue(Name, location),
         LastFSync <- xl_state:evalue(Name, last_fsync),
-        xl_lists:eforeach(fun(Wrapped = {Id, _O, _LastUpdate, _Deleted}) ->
+        xl_stream:eforeach(fun(Wrapped = {Id, _O, _LastUpdate, _Deleted}) ->
             xl_tdb_storage:store(Location, Id, Wrapped)
         end, ets_changes(ETS, LastFSync))
     ]).
@@ -244,7 +234,7 @@ rsync(Name) ->
 -spec(updates(atom(), pos_integer()) -> [term()]).
 updates(Name, Since) ->
     {ok, ETS} = xl_state:evalue(Name, ets),
-    xl_stream:to_stream(ets_changes(ETS, Since)).
+    ets_changes(ETS, Since).
 
 update(Name) ->
     receive
@@ -293,4 +283,4 @@ index_lookup(Q, Options, Tree) ->
         undefined -> undefined
     end.
 
-ets_changes(ETS, Since) -> ets:select(ETS, [{{'$1', '$2', '$3', '$4'}, [{'=<', Since, '$3'}], ['$_']}]).
+ets_changes(ETS, Since) -> xl_ets:cursor(ETS, fun({_Id, _O, LastUpdate, _Deleted}) -> LastUpdate > Since end).
