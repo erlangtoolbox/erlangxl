@@ -207,34 +207,39 @@ fsync(Name) ->
 
 -spec(rsync(atom()) -> error_m:monad(ok)).
 rsync(Name) ->
-    NewLastRSync = xl_calendar:now_micros(),
-    error_logger:info_msg("~p rsync: start~n", [Name]),
-    R = do([error_m ||
+    do([error_m ||
         Options <- xl_state:evalue(Name, options),
-        LastRSync <- xl_state:evalue(Name, last_rsync),
-        MasterNode <- xl_lists:ekvfind(rsync_master_node, Options),
-        MasterDb <- xl_lists:ekvfind(rsync_master_db, Options),
-        Treshold <- return(xl_lists:kvfind(rsync_treshold, Options, 20)),
-        SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 1000000)),
-        S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync + SafeInterval]),
-        xl_stream:eforeach(fun(Items) ->
-            case lists:partition(fun(X) -> element(1, X) == ok end, Items) of
-                {Ok, []} ->
-                    error_logger:info_msg("~p rsync: ~p items read~n", [Name, length(Ok)]),
-                    mutate(Name, fun() ->
-                        do([error_m ||
-                            ETS <- xl_state:evalue(Name, ets),
-                            lists:foreach(fun({ok, O}) -> ets:insert(ETS, O) end, Ok),
-                            xl_state:set(Name, index, build_index(Options, ETS))
-                        ])
-                    end);
-                {_, [Error | _]} -> Error
-            end
-        end, xl_stream:listn(Treshold, xl_stream:to_rpc_stream(MasterNode, S))),
-        xl_state:set(Name, last_rsync, NewLastRSync)
-    ]),
-    error_logger:info_msg("~p rsync: result ~p~n", [Name, R]),
-    R.
+        case xl_lists:kvfind(rsync_master_node, Options) of
+            {ok, MasterNode} ->
+                error_logger:info_msg("~p rsync: start~n", [Name]),
+                NewLastRSync = xl_calendar:now_micros(),
+                R = do([error_m ||
+                    LastRSync <- xl_state:evalue(Name, last_rsync),
+                    MasterDb <- xl_lists:ekvfind(rsync_master_db, Options),
+                    Treshold <- return(xl_lists:kvfind(rsync_treshold, Options, 20)),
+                    SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 1000000)),
+                    S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync + SafeInterval]),
+                    xl_stream:eforeach(fun(Items) ->
+                        case lists:partition(fun(X) -> element(1, X) == ok end, Items) of
+                            {Ok, []} ->
+                                error_logger:info_msg("~p rsync: ~p items read~n", [Name, length(Ok)]),
+                                mutate(Name, fun() ->
+                                    do([error_m ||
+                                        ETS <- xl_state:evalue(Name, ets),
+                                        lists:foreach(fun({ok, O}) -> ets:insert(ETS, O) end, Ok),
+                                        xl_state:set(Name, index, build_index(Options, ETS))
+                                    ])
+                                end);
+                            {_, [Error | _]} -> Error
+                        end
+                    end, xl_stream:listn(Treshold, xl_stream:to_rpc_stream(MasterNode, S))),
+                    xl_state:set(Name, last_rsync, NewLastRSync)
+                ]),
+                error_logger:info_msg("~p rsync: result ~p~n", [Name, R]),
+                R;
+            undefined -> ok
+        end
+    ]).
 
 -spec(updates(atom(), pos_integer()) -> [term()]).
 updates(Name, Since) ->
