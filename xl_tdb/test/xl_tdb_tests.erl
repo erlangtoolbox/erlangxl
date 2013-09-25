@@ -117,7 +117,6 @@ rsync_test() ->
         {rsync_master_node, node()},
         {rsync_master_db, testrsync_master},
         {rsync_treshold, 2},
-        {rsync_safe_interval, 0},
         {rsync, 100},
         {fsync, 5000}
     ]),
