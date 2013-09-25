@@ -43,6 +43,7 @@ start(_Type, _Args) ->
         xl_uid:start(),
         xl_re:start(),
         xl_random:start(),
+        xl_scheduler:start(),
         case xl_stdlib_sup:start_link() of
             ignore -> ok;
             X -> X

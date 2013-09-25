@@ -116,13 +116,15 @@ rsync_test() ->
     xl_tdb:start_link(testrsync_slave, "/tmp/test/tdbp/slave", xl_tdb:by_index(#testobj.id), [
         {rsync_master_node, node()},
         {rsync_master_db, testrsync_master},
-        {rsync_treshold, 2}
+        {rsync_treshold, 2},
+        {rsync, 100},
+        {fsync, 5000}
     ]),
-    ?assertOk(xl_tdb:rsync(testrsync_slave)),
+    timer:sleep(500),
     ?assertEquals([T1, T2, T3, T4], xl_tdb:select(testrsync_slave)),
     ?assertEqual({ok, TU = #testobj{id = "1", name = "updated"}},
         xl_tdb:update(testrsync_master, "1", fun(X) -> {ok, X#testobj{name = "updated"}} end)),
-    ?assertOk(xl_tdb:rsync(testrsync_slave)),
+    timer:sleep(500),
     ?assertEquals([TU, T2, T3, T4], xl_tdb:select(testrsync_slave)),
     ?assertOk(xl_tdb:close(testrsync_slave)),
     ?assertOk(xl_tdb:close(testrsync_master)).

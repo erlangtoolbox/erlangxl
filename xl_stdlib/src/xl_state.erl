@@ -30,8 +30,9 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([new/1, new/2, get/2, set/3, keys/1, start_link/0, value/2, delete/1, evalue/2]).
+-export([new/1, new/2, get/2, set/3, keys/1, start_link/0, value/2, delete/1, evalue/2, increment/2, increment/3, remove/2]).
 
+%% @todo make it supervised or bind this table to the application master
 start_link() ->
     Pid = spawn_link(fun loop/0),
     register(?MODULE, Pid),
@@ -40,7 +41,7 @@ start_link() ->
 -spec(new(atom()) -> atom()).
 new(Name) -> new(Name, []).
 
--spec(new(atom(), [term()]) -> atom()).
+-spec(new(atom(), [term()]) -> error_m:monad(ok)).
 new(Name, Options) ->
     ?MODULE ! {init, Name, Options, self()},
     receive
@@ -83,10 +84,22 @@ evalue(Name, Key) -> option_m:to_error_m(value(Name, Key), {no, Key}).
 
 -spec(set(atom(), term(), term()) -> ok).
 set(Name, Key, Value) ->
-    ets:insert(Name, {Key, Value}),
+    true = ets:insert(Name, {Key, Value}),
     ok.
+
+-spec(increment(atom(), term()) -> integer()).
+increment(Name, Key) -> increment(Name, Key, 1).
+
+-spec(increment(atom(), term(), integer()) -> integer()).
+increment(Name, Key, Value) -> ets:update_counter(Name, Key, Value).
 
 -spec(delete(atom()) -> ok).
 delete(Name) ->
     catch (ets:delete(Name)),
     ok.
+
+-spec(remove(atom(), term()) -> ok).
+remove(Name, Key) ->
+    true = ets:delete(Name, Key),
+    ok.
+

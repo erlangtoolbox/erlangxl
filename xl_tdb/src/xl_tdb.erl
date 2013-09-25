@@ -64,10 +64,10 @@ start_link(Name, Location, Identify, Options) ->
         xl_state:set(Name, options, Options),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
         xl_state:set(Name, last_rsync, 0),
-        FSyncTimer <- timer:apply_interval(xl_lists:kvfind(fsync, Options, 5000), ?MODULE, fsync, [Name]),
-        xl_state:set(Name, fsync_timer, FSyncTimer),
-        RSyncTimer <- timer:apply_interval(xl_lists:kvfind(rsync, Options, 5000), ?MODULE, rsync, [Name]),
-        xl_state:set(Name, rsync_timer, RSyncTimer),
+        xl_scheduler:interval(xl_convert:make_atom([Name, fsync]),
+            xl_lists:kvfind(fsync, Options, 5000), ?MODULE, fsync, [Name]),
+        xl_scheduler:interval(xl_convert:make_atom([Name, rsync]),
+            xl_lists:kvfind(rsync, Options, 5000), ?MODULE, rsync, [Name]),
         return(Pid)
     ]).
 
@@ -195,55 +195,63 @@ index(Name) -> xl_state:value(Name, index).
 
 -spec(fsync(atom()) -> error_m:monad(ok)).
 fsync(Name) ->
+    NewLastFSync = xl_calendar:now_micros(),
     do([error_m ||
-        ETS <- xl_state:evalue(Name, ets),
         Location <- xl_state:evalue(Name, location),
         LastFSync <- xl_state:evalue(Name, last_fsync),
         xl_stream:eforeach(fun(Wrapped = {Id, _O, _LastUpdate, _Deleted}) ->
             xl_tdb_storage:store(Location, Id, Wrapped)
-        end, ets_changes(ETS, LastFSync))
+        end, updates(Name, LastFSync)),
+        xl_state:set(Name, last_fsync, NewLastFSync)
     ]).
 
 -spec(rsync(atom()) -> error_m:monad(ok)).
 rsync(Name) ->
-    NewLastRSync = xl_calendar:now_micros(),
     do([error_m ||
         Options <- xl_state:evalue(Name, options),
-        LastRSync <- xl_state:evalue(Name, last_rsync),
-        MasterNode <- xl_lists:ekvfind(rsync_master_node, Options),
-        MasterDb <- xl_lists:ekvfind(rsync_master_db, Options),
-        Treshold <- return(xl_lists:kvfind(rsync_treshold, Options, 20)),
-        SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 1000000)),
-        S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync - SafeInterval]),
-        xl_stream:eforeach(fun(Items) ->
-            case lists:all(fun(X) -> element(1, X) == ok end, Items) of
-                true ->
-                    mutate(Name, fun() ->
-                        do([error_m ||
-                            ETS <- xl_state:evalue(Name, ets),
-                            lists:foreach(fun(O) -> ets:insert(ETS, O) end, monad:flatten(error_m, Items)),
-                            xl_state:set(Name, index, build_index(Options, ETS))
-                        ])
-                    end);
-                false -> lists:last(Items)
-            end
-        end, xl_stream:listn(Treshold, xl_stream:to_rpc_stream(MasterNode, S))),
-        xl_state:set(Name, last_rsync, NewLastRSync)
+        case xl_lists:kvfind(rsync_master_node, Options) of
+            {ok, MasterNode} ->
+                error_logger:info_msg("~p rsync: start~n", [Name]),
+                NewLastRSync = xl_calendar:now_micros(),
+                R = do([error_m ||
+                    LastRSync <- xl_state:evalue(Name, last_rsync),
+                    MasterDb <- xl_lists:ekvfind(rsync_master_db, Options),
+                    Treshold <- return(xl_lists:kvfind(rsync_treshold, Options, 20)),
+                    SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 2000000)),
+                    S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync - SafeInterval]),
+                    xl_stream:eforeach(fun(Items) ->
+                        case lists:partition(fun(X) -> element(1, X) == ok end, Items) of
+                            {Ok, []} ->
+                                error_logger:info_msg("~p rsync: ~p items read~n", [Name, length(Ok)]),
+                                mutate(Name, fun() ->
+                                    do([error_m ||
+                                        ETS <- xl_state:evalue(Name, ets),
+                                        lists:foreach(fun({ok, O}) -> ets:insert(ETS, O) end, Ok),
+                                        xl_state:set(Name, index, build_index(Options, ETS))
+                                    ])
+                                end);
+                            {_, [Error | _]} -> Error
+                        end
+                    end, xl_stream:listn(Treshold, xl_stream:to_rpc_stream(MasterNode, S))),
+                    xl_state:set(Name, last_rsync, NewLastRSync)
+                ]),
+                error_logger:info_msg("~p rsync: result ~p~n", [Name, R]),
+                R;
+            undefined -> ok
+        end
     ]).
 
 -spec(updates(atom(), pos_integer()) -> [term()]).
 updates(Name, Since) ->
     {ok, ETS} = xl_state:evalue(Name, ets),
-    ets_changes(ETS, Since).
+    xl_ets:cursor(ETS, fun({_Id, _O, LastUpdate, _Deleted}) -> LastUpdate > Since end).
 
 update(Name) ->
     receive
         {'EXIT', From, _Reason} ->
             From ! do([error_m ||
-                FSyncTimer <- xl_state:evalue(Name, fsync_timer),
-                return(timer:cancel(FSyncTimer)),
-                RSyncTimer <- xl_state:evalue(Name, rsync_timer),
-                return(timer:cancel(RSyncTimer)),
+                xl_scheduler:cancel(xl_convert:make_atom([Name, rsync])),
+                xl_scheduler:cancel(xl_convert:make_atom([Name, fsync])),
                 fsync(Name),
                 xl_state:delete(Name)
             ]);
@@ -282,5 +290,3 @@ index_lookup(Q, Options, Tree) ->
         {ok, F} -> xl_uxekdtree:find(F(Q), Tree);
         undefined -> undefined
     end.
-
-ets_changes(ETS, Since) -> xl_ets:cursor(ETS, fun({_Id, _O, LastUpdate, _Deleted}) -> LastUpdate > Since end).
