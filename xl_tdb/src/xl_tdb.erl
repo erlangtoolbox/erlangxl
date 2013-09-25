@@ -217,8 +217,8 @@ rsync(Name) ->
                     LastRSync <- xl_state:evalue(Name, last_rsync),
                     MasterDb <- xl_lists:ekvfind(rsync_master_db, Options),
                     Treshold <- return(xl_lists:kvfind(rsync_treshold, Options, 20)),
-                    SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 1000000)),
-                    S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync + SafeInterval]),
+                    SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 2000000)),
+                    S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync - SafeInterval]),
                     xl_stream:eforeach(fun(Items) ->
                         case lists:partition(fun(X) -> element(1, X) == ok end, Items) of
                             {Ok, []} ->
