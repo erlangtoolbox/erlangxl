@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, fsync/1, rsync/1, updates/2, delete_all/1]).
+-export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, updates/2, delete_all/1, sync/1]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -64,10 +64,8 @@ start_link(Name, Location, Identify, Options) ->
         xl_state:set(Name, options, Options),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
         xl_state:set(Name, last_rsync, 0),
-        xl_scheduler:interval(xl_convert:make_atom([Name, fsync]),
-            xl_lists:kvfind(fsync, Options, 5000), ?MODULE, fsync, [Name]),
-        xl_scheduler:interval(xl_convert:make_atom([Name, rsync]),
-            xl_lists:kvfind(rsync, Options, 5000), ?MODULE, rsync, [Name]),
+        xl_scheduler:interval(xl_convert:make_atom([Name, sync]),
+            xl_lists:kvfind(sync, Options, 5000), ?MODULE, sync, [Name]),
         return(Pid)
     ]).
 
@@ -193,6 +191,11 @@ cursor(Name) ->
 -spec(index(atom()) -> option_m:monad(xl_uxekdtree:tree())).
 index(Name) -> xl_state:value(Name, index).
 
+-spec(sync(atom()) -> error_m:monad(ok)).
+sync(Name) ->
+    rsync(Name),
+    fsync(Name).
+
 -spec(fsync(atom()) -> error_m:monad(ok)).
 fsync(Name) ->
     NewLastFSync = xl_calendar:now_micros(),
@@ -218,6 +221,7 @@ rsync(Name) ->
                     MasterDb <- xl_lists:ekvfind(rsync_master_db, Options),
                     Treshold <- return(xl_lists:kvfind(rsync_treshold, Options, 20)),
                     SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 2000000)),
+                    Identify <- xl_state:evalue(Name, identify),
                     S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync - SafeInterval]),
                     xl_stream:eforeach(fun(Items) ->
                         case lists:partition(fun(X) -> element(1, X) == ok end, Items) of
@@ -226,7 +230,9 @@ rsync(Name) ->
                                 mutate(Name, fun() ->
                                     do([error_m ||
                                         ETS <- xl_state:evalue(Name, ets),
-                                        lists:foreach(fun({ok, O}) -> ets:insert(ETS, O) end, Ok),
+                                        lists:foreach(fun({ok, {_Id, O, _LastMidified, Deleted}}) ->
+                                            ets:insert(ETS, wrap(O, Identify, Deleted))
+                                        end, Ok),
                                         xl_state:set(Name, index, build_index(Options, ETS))
                                     ])
                                 end);
@@ -250,8 +256,7 @@ update(Name) ->
     receive
         {'EXIT', From, _Reason} ->
             From ! do([error_m ||
-                xl_scheduler:cancel(xl_convert:make_atom([Name, rsync])),
-                xl_scheduler:cancel(xl_convert:make_atom([Name, fsync])),
+                xl_scheduler:cancel(xl_convert:make_atom([Name, sync])),
                 fsync(Name),
                 xl_state:delete(Name)
             ]);

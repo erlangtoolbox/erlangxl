@@ -117,8 +117,7 @@ rsync_test() ->
         {rsync_master_node, node()},
         {rsync_master_db, testrsync_master},
         {rsync_treshold, 2},
-        {rsync, 100},
-        {fsync, 5000}
+        {sync, 100}
     ]),
     timer:sleep(500),
     ?assertEquals([T1, T2, T3, T4], xl_tdb:select(testrsync_slave)),
