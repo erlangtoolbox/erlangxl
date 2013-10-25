@@ -28,15 +28,22 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_calendar).
 
+
 -export([format/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
     day_of_week/1, datetime_to_ms/1, weekdays/0, weekdays_order/0, adjust/4, whole_day/0, diff_hours/4,
-    daynum_of_week/1, diff_days/3, daynum/1, dayname/1, weekdays_member/2, weekdays_mask/1]).
+    daynum_of_week/1, diff_days/3, daynum/1, dayname/1, weekdays_member/2, weekdays_mask/1, number_of_days/3,
+    diff_periods/5]).
+
 
 -export_type([weekday/0, hour_of_day/0]).
 
 -type(weekday() :: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun').
 -type(hour_of_day() :: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23).
 
+-define(ONE_WEEK, 604800000). % 7 * 24 * 60 * 60
+-define(MS_IN_HOUR, 60*60*1000).
+-define(MS_IN_DAY, 24*60*60*1000).
+-define(MS_IN_WEEK, 7*24*60*60*1000).
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
 %
@@ -203,20 +210,8 @@ adjust(Date, Limit, Weekdays, Hours, Shift) ->
 %% example: accepted values for Tue with 10min resolution is lists:seq(24*6, 24*6*2)
 diff_hours(Start, Finish, Weekdays, Hours) when is_integer(Start), is_integer(Finish) ->
     diff_hours(ms_to_datetime(Start), ms_to_datetime(Finish), Weekdays, Hours);
-diff_hours(Start = {_, {SH, _, _}}, Finish = {_, {FH, _, _}}, Weekdays, Hours) ->
-    case diff_days(Start, Finish, Weekdays) of
-        1 -> xl_lists:count(fun(H) -> lists:member(H, Hours) end, lists:seq(SH, FH));
-        Days ->
-            FirstDayHoursMinus = case lists:member(day_of_week(Start), Weekdays) of
-                true -> length(Hours) - xl_lists:count(fun(H) -> lists:member(H, Hours) end, lists:seq(SH, 23));
-                _ -> 0
-            end,
-            LastDayHoursMinus = case lists:member(day_of_week(Finish), Weekdays) of
-                true -> length(Hours) - xl_lists:count(fun(H) -> lists:member(H, Hours) end, lists:seq(0, FH));
-                _ -> 0
-            end,
-            Days * length(Hours) - FirstDayHoursMinus - LastDayHoursMinus
-    end.
+diff_hours(Start, Finish, Weekdays, Hours) ->
+    diff_periods(Start, Finish, Weekdays, Hours, ?MS_IN_HOUR).
 
 diff_days(Start, Finish, Weekdays) when is_integer(Start), is_integer(Finish) ->
     diff_days(ms_to_datetime(Start), ms_to_datetime(Finish), Weekdays);
@@ -233,8 +228,94 @@ diff_days(Start = {StartDate, _}, Finish = {FinishDate, _}, Weekdays) ->
                 + xl_lists:count(fun(D) -> lists:member(dayname(D), Weekdays) end, lists:seq(1, LastDay))
     end.
 
-weekdays_mask(D) when is_atom(D) -> 1 bsl (daynum(D) - 1);
-weekdays_mask(Days) when is_list(Days) -> lists:foldl(fun(D, Bits) -> weekdays_mask(D) bor Bits end, 0, Days).
+%%  -spec(diff_periods(
+        %%  calendar:datetime(), 
+        %%  calendar:datetime(), 
+        %%  list(weekday()), 
+        %%  list(integer()), 
+        %%  PeriodLenInMiliseconds :: integer()) ->
+            %%  CountOfPeriods :: integer()).
 
-weekdays_member(D, Days) when is_list(Days) -> weekdays_member(D, weekdays_mask(Days));
-weekdays_member(D, Mask) when is_integer(Mask) -> DMask = weekdays_mask(D), DMask band Mask == DMask.
+diff_periods(Start = {StartDate, _}, Finish = {FinishDate, _}, Weekdays, Hours, PeriodLen) -> 
+    Center = diff_periods_(Start, Finish, Weekdays, Hours, PeriodLen),
+    Minus = case (datetime_to_ms(Finish) - datetime_to_ms(Start)) > ?MS_IN_DAY of
+        true -> 
+            diff_periods_({StartDate, {0,0,0}}, Start, Weekdays, Hours, PeriodLen) +
+            diff_periods_(Finish, {FinishDate, {23,59,59}}, Weekdays, Hours, PeriodLen);
+        false ->
+            0
+    end,
+    Center - (Minus).
+
+
+diff_periods_(StartDatetime, FinishDatetime, Weekdays, Hours, PeriodLen) ->
+    DaysNumber = number_of_days(
+        Weekdays, datetime_to_ms(StartDatetime), 
+        datetime_to_ms(FinishDatetime)),
+    HoursCount = hours_count(StartDatetime, FinishDatetime, Hours, PeriodLen),
+    IntervalMilis = DaysNumber * HoursCount  * ?MS_IN_HOUR,
+    Res = (IntervalMilis) / PeriodLen,
+
+    round(Res).
+
+hours_count(StartDatetime, FinishDatetime, Hours, PeriodLen) ->
+    StartMs = datetime_to_ms(StartDatetime),
+    FinishMs = datetime_to_ms(FinishDatetime),
+    IntervalMs = (FinishMs - StartMs),
+    Reducer = round(PeriodLen/4),
+    case  IntervalMs > ?MS_IN_DAY of
+        true -> length(Hours);
+        false ->   
+            Seq = lists:seq(round(StartMs/Reducer), round(FinishMs/Reducer)),
+            xl_lists:count(fun(Per) -> {_, {H, _, _}} = ms_to_datetime(Per*Reducer), lists:member(H, Hours) end,
+                Seq)/(?MS_IN_HOUR/Reducer)
+
+    end.
+
+%% @doc retrun cound of specific week days in period
+%% between Start and Finish.
+-spec(number_of_days(
+        list(weekday()), SMilisec :: integer(), FMilisec :: integer()) ->
+        CountOfDays :: integer()).
+
+
+number_of_days(Weekdays, Start, Finish) ->
+    StartDate = ms_to_datetime(Start),
+    FinishDate = ms_to_datetime(Finish),
+    StartDN = daynum_of_week(StartDate) - 1,
+    FinishDN = daynum_of_week(FinishDate) - 1,
+    WeeksCount = trunc((Finish - Start)/?ONE_WEEK),
+    lists:foldl(
+        fun (Day, Acc) ->
+                %% TODO: try to implement it in a bit more erlangish style
+                case weekdays_mask(Weekdays) band (1 bsl Day) of
+                    0 -> Acc;
+                    _Result ->
+                        Acc + WeeksCount +
+                        case StartDN > FinishDN of
+                            true -> 
+                                case (StartDN =< Day) or (Day =< FinishDN) of
+                                    true -> 1;
+                                    false -> 0
+                                end;
+                            false -> 
+                                case (StartDN =< Day) and (Day =< FinishDN) of
+                                    true -> 1;
+                                    false -> 0
+                                end
+                        end
+                end
+        end , 0, lists:seq(0,6)).
+
+
+
+
+
+weekdays_mask(D) when is_atom(D) -> 1 bsl (daynum(D) - 1);
+weekdays_mask(Days) when is_list(Days) -> lists:foldl(fun(D, Bits) -> 
+                weekdays_mask(D) bor Bits end, 0, Days).
+
+weekdays_member(D, Days) when is_list(Days) -> 
+    weekdays_member(D, weekdays_mask(Days));
+weekdays_member(D, Mask) when is_integer(Mask) ->
+    DMask = weekdays_mask(D), DMask band Mask == DMask.

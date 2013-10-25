@@ -76,13 +76,24 @@ diff_hours_test() ->
     ?assertEqual(3 * 2, xl_calendar:diff_hours({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 28}, {8, 0, 0}}, ['Mon', 'Wed'], [4, 7, 9])),
     ?assertEqual(3 + 2 + 2, xl_calendar:diff_hours({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 27}, {8, 0, 0}}, ['Sat', 'Mon', 'Wed'], [4, 7, 9])),
     ?assertEqual(1, xl_calendar:diff_hours({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 23}, {8, 0, 0}}, ['Sat', 'Mon', 'Wed'], [4, 7, 9])),
-    ?assertEqual(1, xl_calendar:diff_hours({{2013, 2, 23}, {7, 0, 0}}, {{2013, 2, 23}, {7, 0, 0}}, ['Sat', 'Mon', 'Wed'], [4, 7, 9])).
+    ?assertEqual(0, xl_calendar:diff_hours({{2013, 2, 23}, {7, 0, 0}}, {{2013, 2, 23}, {7, 0, 0}}, ['Sat', 'Mon', 'Wed'], [4, 7, 9])).
+
+diff_periods_test() ->
+    ?assertEqual(31, xl_calendar:diff_periods({{2013, 10, 1},{1,45,0}},{{2013, 10, 1},{17, 00,0}},['Mon', 'Tue', 'Wed',
+                'Thu', 'Fri', 'Sat', 'Sun'], xl_calendar:whole_day(), 30*60*1000)),
+    ?assertEqual(31, xl_calendar:diff_periods({{2013, 10, 1},{1,50,0}},{{2013, 10, 1},{17, 00,0}},['Mon', 'Tue', 'Wed',
+                'Thu', 'Fri', 'Sat', 'Sun'], xl_calendar:whole_day(), 30*60*1000)),
+    ?assertEqual(3, xl_calendar:diff_periods({{2013, 10, 1},{0,0,0}},{{2013, 10, 1},{0, 30,0}},['Mon', 'Tue', 'Wed',
+                'Thu', 'Fri', 'Sat', 'Sun'], xl_calendar:whole_day(), 10*60*1000)),
+    ?assertEqual(3, xl_calendar:diff_periods({{2013, 10, 1},{0,0,0}},{{2013, 10, 1},{1, 30,0}},['Mon', 'Tue', 'Wed',
+                'Thu', 'Fri', 'Sat', 'Sun'], xl_calendar:whole_day(), 30*60*1000)).
 
 diff_days_test() ->
     ?assertEqual(6, xl_calendar:diff_days({{2013, 2, 1}, {0, 0, 0}}, {{2013, 2, 20}, {0, 0, 0}}, ['Mon', 'Wed'])),
     ?assertEqual(1, xl_calendar:diff_days({{2013, 2, 12}, {0, 0, 0}}, {{2013, 2, 15}, {0, 0, 0}}, ['Mon', 'Wed'])),
     ?assertEqual(2, xl_calendar:diff_days({{2013, 2, 12}, {0, 0, 0}}, {{2013, 2, 18}, {0, 0, 0}}, ['Mon', 'Wed'])),
     ?assertEqual(1, xl_calendar:diff_days({{2013, 2, 23}, {6, 0, 0}}, {{2013, 2, 23}, {8, 0, 0}}, ['Sat', 'Mon', 'Wed'])).
+
 
 
 weekdays_member_test() ->
@@ -96,3 +107,11 @@ weekdays_member_test() ->
     xl_eunit:performance(lists_member, fun() ->
         lists:member('Thu', Week)
     end, 10000).
+
+number_of_days_test() ->
+    ?assertEqual(11, xl_calendar:number_of_days(
+            ['Mon', 'Tue', 'Wed'],
+            xl_calendar:datetime_to_ms({{2013, 10, 1}, {0,0,0}}),
+            xl_calendar:datetime_to_ms({{2013, 10, 23}, {0,0,0}})
+        )).
+
