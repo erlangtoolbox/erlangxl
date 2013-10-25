@@ -234,3 +234,5 @@ nshufflemapfilter_random_test() ->
     end, lists:seq(1, 10))),
     ?assert(length(Unique) > 5).
 
+delete_all_test() ->
+    ?assertEqual([1, 2, 3, 4], xl_lists:delete_all(x, [1, x, 2, x, x, 3, 4])).

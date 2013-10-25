@@ -35,7 +35,7 @@
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
     compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3,
     keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2, eflatmap/2, efind/2, efilter/2,
-    esplitwith/2, not_epredicate/1]).
+    esplitwith/2, not_epredicate/1, delete_all/2]).
 -export_type([kvlist/2, kvlist_at/0, mapping_predicate/2, fold_function/2, efold_function/2, epredicate/1]).
 
 -type(kvlist(A, B) :: [{A, B}]).
@@ -433,3 +433,7 @@ not_epredicate(P) ->
             E -> E
         end
     end.
+
+-spec(delete_all(term(), [term()]) -> [term()]).
+delete_all(Value, List) ->
+    lists:filter(fun(E) -> E /= Value end, List).
