@@ -30,10 +30,10 @@
 
 -compile({parse_transform, do}).
 
--export([compile/2, cast/3, check_required/1]).
+-export([compile/2]).
 
 %runtime
--export([cast/4]).
+-export([cast/4, cast/3, check_required/1]).
 
 -define(JSON_API, xl_json_jiffy).
 
@@ -206,11 +206,16 @@ generate_to_json(Records, Out) ->
     do([error_m ||
         Functions <- xl_lists:emap(fun({RecordName, Fields}) ->
             do([error_m ||
-                Generated <- xl_lists:emap(fun(Field) -> generate_to_json_field(RecordName, Field) end, serializable_fields(Fields)),
+                Generated <- xl_lists:emap(fun(Field) ->
+                    generate_to_json_field(RecordName, Field) end, serializable_fields(Fields)),
                 return(
                     xl_string:format(
-                        "to_json(R=#~p{}) ->\n\txl_string:join([\"{\",\n~s\n\t\"}\"])", [RecordName,
-                            xl_string:join([xl_string:format("\t\t~s,", [F]) || F <- Generated], " \",\",\n")
+                        "to_json(R=#~p{}) ->\n\txl_string:join([\"{\",\n\txl_string:join(xl_lists:mapfilter(fun({false, undefined, _}) -> undefined;({_, _, X}) -> {ok, X} end, [\n~s\n\t]), \",\"),\n\t\"}\"])", [
+                            RecordName,
+                            xl_string:join([
+                                xl_string:format("\t\t{~p, R#~p.~p, xl_string:format(\"\\\"~p\\\":~~s\", [~s])}", [Required, RecordName, Name, Name, V])
+                                || {Required, Name, V} <- Generated
+                            ], ",\n")
                         ]
                     )
                 )
@@ -219,52 +224,54 @@ generate_to_json(Records, Out) ->
         file:write(Out, xl_string:join(Functions, ";\n") ++ ".\n\n")
     ]).
 
-generate_to_json_field(RecordName, {Name, {enum, Type, _Enumeration}}) -> generate_to_json_field(RecordName, {Name, Type});
+generate_to_json_field(RecordName, {Name, {enum, Type, _Enumeration}}) ->
+    generate_to_json_field(RecordName, {Name, Type});
 generate_to_json_field(RecordName, {Name, {either, _Types}}) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, Type}) when ?is_primitive_type(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", xl_json:to_json(R#~p.~p)", [Name, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {Type, _Default}}) when ?is_primitive_type(Type) ->
-    generate_to_json_field(RecordName, {Name, Type});
+    {ok, {false, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, Type}}) when ?is_primitive_type(Type) ->
-    generate_to_json_field(RecordName, {Name, Type});
+    {ok, {true, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, Type, _Default}}) when ?is_primitive_type(Type) ->
-    generate_to_json_field(RecordName, {Name, Type});
+    {ok, {false, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {option, Type}}) when ?is_primitive_type(Type) ->
-    generate_to_json_field(RecordName, {Name, Type});
+    {ok, {true, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {option, Type, _Default}}) when ?is_primitive_type(Type) ->
-    generate_to_json_field(RecordName, {Name, Type});
+    {ok, {false, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {option, Type}}) when is_atom(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", to_json(R#~p.~p)", [Name, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", ~p:to_json(R#~p.~p)", [Name, Module, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("~p:to_json(R#~p.~p)", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, Type}}) when is_atom(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Name, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("\"[\" ++ string:join([to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, Type, _Default}}) when is_atom(Type) ->
-    generate_to_json_field(RecordName, {Name, {list, Type}});
+    {ok, {false, Name, xl_string:format("\"[\" ++ string:join([to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([~p:to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Name, Module, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("\"[\" ++ string:join([~p:to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, {Module, Type}, _Default}}) when is_atom(Module), is_atom(Type) ->
-    generate_to_json_field(RecordName, {Name, {list, {Module, Type}}});
+    {ok, {false, Name, xl_string:format("\"[\" ++ string:join([~p:to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {dict, Type, _Opts}}) when is_atom(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([to_json(X)||X <- gb_trees:values(R#~p.~p)], \",\") ++ \"]\"", [Name, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("\"[\" ++ string:join([to_json(X)||X <- gb_trees:values(R#~p.~p)], \",\") ++ \"]\"", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {dict, {Module, Type}, _Opts}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", \"[\" ++ string:join([~p:to_json(X)||X <- gb_trees:values(R#~p.~p)], \",\") ++ \"]\"", [Name, Module, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("\"[\" ++ string:join([~p:to_json(X)||X <- gb_trees:values(R#~p.~p)], \",\") ++ \"]\"", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, Type}) when is_atom(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", to_json(R#~p.~p)", [Name, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {Type, undefined}}) when is_atom(Type) ->
-    generate_to_json_field(RecordName, {Name, Type});
+    {ok, {false, Name, xl_string:format("to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {Module, Type}}) when is_atom(Module), is_atom(Type) ->
-    {ok, xl_string:format("\"\\\"~p\\\":\", ~p:to_json(R#~p.~p)", [Name, Module, RecordName, Name])};
+    {ok, {true, Name, xl_string:format("~p:to_json(R#~p.~p)", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {{Module, Type}, undefined}}) when is_atom(Module), is_atom(Type) ->
-    generate_to_json_field(RecordName, {Name, {Module, Type}});
+    {ok, {false, Name, xl_string:format("~p:to_json(R#~p.~p)", [Module, RecordName, Name])}};
 generate_to_json_field(_RecordName, Field) -> {error, {gen_to_json, dont_understand, Field}}.
 
 generate_from_json(Records, Out) ->
     do([error_m ||
         Functions <- xl_lists:emap(fun({RecordName, Fields}) ->
             do([error_m ||
-                Generated <- xl_lists:emap(fun(Field) -> generate_from_json_field(RecordName, Field) end, serializable_fields(Fields)),
+                Generated <- xl_lists:emap(fun(Field) ->
+                    generate_from_json_field(RecordName, Field) end, serializable_fields(Fields)),
                 return(
                     xl_string:format("from_json_(J, ~p) ->\n\tR = ?JSON_API:bind(fun\n\t\t~s\n\t;(_, _, T)-> T end, ~p, J),\n\txl_json_bindc:check_required(R),\n\tR", [
                         RecordName,
@@ -294,7 +301,8 @@ default_or_required({_Name, {list, {Module, Type}, Default}}) when is_atom(Modul
 default_or_required({_Name, {list, Type, Default}}) when is_atom(Type) -> Default;
 default_or_required({Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) -> {required, Name};
 default_or_required({Name, {list, Type}}) when is_atom(Type) -> {required, Name};
-default_or_required({_Name, {dict, {Module, Type}, {_Key, []}}}) when is_atom(Module), is_atom(Type) -> gb_trees:empty();
+default_or_required({_Name, {dict, {Module, Type}, {_Key, []}}}) when is_atom(Module), is_atom(Type) ->
+    gb_trees:empty();
 default_or_required({_Name, {dict, Type, {_Key, []}}}) when is_atom(Type) -> gb_trees:empty();
 default_or_required({Name, {dict, {Module, Type}, _Opts}}) when is_atom(Module), is_atom(Type) -> {required, Name};
 default_or_required({Name, {dict, Type}, _Opts}) when is_atom(Type) -> {required, Name};
@@ -532,7 +540,8 @@ generate_from_proplist(Records, Out) ->
     do([error_m ||
         Functions <- xl_lists:emap(fun({RecordName, Fields}) ->
             do([error_m ||
-                Generated <- xl_lists:emap(fun(Field) -> generate_from_proplist_field(Field) end, serializable_fields(Fields)),
+                Generated <- xl_lists:emap(fun(Field) ->
+                    generate_from_proplist_field(Field) end, serializable_fields(Fields)),
                 return(
                     xl_string:format(
                         "from_proplist_(J, ~p) ->\n\t#~p{\n~s\n\t}",
