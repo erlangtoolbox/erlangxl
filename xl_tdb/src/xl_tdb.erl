@@ -230,10 +230,13 @@ rsync(Name) ->
                                 mutate(Name, fun() ->
                                     do([error_m ||
                                         ETS <- xl_state:evalue(Name, ets),
+                                        error_logger:info_msg("~p rsync: adding to ets~n", [Name]),
                                         lists:foreach(fun({ok, {_Id, O, _LastMidified, Deleted}}) ->
                                             ets:insert(ETS, wrap(O, Identify, Deleted))
                                         end, Ok),
-                                        xl_state:set(Name, index, build_index(Options, ETS))
+                                        error_logger:info_msg("~p rsync: building index~n", [Name]),
+                                        xl_state:set(Name, index, build_index(Options, ETS)),
+                                        error_logger:info_msg("~p rsync: index built~n", [Name])
                                     ])
                                 end);
                             {_, [Error | _]} -> Error

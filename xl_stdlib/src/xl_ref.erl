@@ -29,7 +29,7 @@
 -module(xl_ref).
 -author("volodymyr.kyrychenko@strikead.com").
 
--on_load(init / 0).
+-on_load(init/0).
 
 %% API
 -export([new/1, value/1]).
@@ -40,7 +40,7 @@
 init() -> erlang:load_nif(xl_lang:find_nif(xl_stdlib, ?MODULE), 0).
 
 -spec(new(term()) -> ref()).
-new(_X) -> error(nif_not_loaded).
+new(_X) -> erlang:nif_error(nif_not_loaded).
 
 -spec(value(ref()) -> term()).
-value(_R) -> error(nif_not_loaded).
+value(_R) -> erlang:nif_error(nif_not_loaded).

@@ -26,26 +26,38 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_ebloom_tests).
+-module(xl_bloom).
 -author("volodymyr.kyrychenko@strikead.com").
 
--include_lib("xl_stdlib/include/xl_eunit.hrl").
 
-ebloom_test() ->
-    {ok, [{values, BinValues}]} = xl_json:to_abstract(xl_json:parse_file(xl_eunit:resource(?MODULE, "4.json"))),
-    Values = [{xxx, binary_to_atom(V, utf8)} || V <- BinValues],
-    {ok, F} = xl_ebloom:new(length(Values)),
-    lists:foreach(fun(X) -> xl_ebloom:insert(X, F) end, Values),
-    xl_lists:times(fun() ->
-        Value = lists:nth(random:uniform(length(Values)), Values),
-        xl_eunit:performance(ebloom, fun() ->
-            true = xl_ebloom:contains(Value, F)
-        end, 10000)
-    end, 10),
-    xl_lists:times(fun() ->
-        Value = lists:nth(random:uniform(length(Values)), Values),
-        xl_eunit:performance(list, fun() ->
-            true = lists:member(Value, Values)
-        end, 10000)
-    end, 10).
+%% API
+-export([new/1, insert/2, contains/2]).
+-export_type([ref/0]).
 
+-opaque(ref() :: term()).
+
+-spec(new(pos_integer() | [term()]) -> {ok, ref()}).
+new(Size) when is_integer(Size) ->
+    {ok, bloom:bloom(max(Size, 4000))};
+%%     ebloom:new(Size, 0.01, element(3, now()));
+new(List) ->
+    case new(length(List)) of
+        {ok, Ref} ->
+            {ok, lists:foldl(fun(X, Bloom) ->
+                insert(X, Bloom)
+            end, Ref, List)};
+        E -> E
+    end.
+
+-spec(insert(term(), ref()) -> ref()).
+insert(X, Bloom) when is_binary(X) ->
+    bloom:add_element(X, Bloom);
+%%     ebloom:insert(Bloom, X),
+%%     Bloom;
+insert(X, Bloom) -> insert(term_to_binary(X), Bloom).
+
+-spec(contains(term(), ref()) -> boolean()).
+contains(X, Bloom) when is_binary(X) ->
+    bloom:is_element(X, Bloom);
+%%     ebloom:contains(Bloom, X);
+contains(X, Bloom) -> contains(term_to_binary(X), Bloom).

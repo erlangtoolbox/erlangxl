@@ -44,8 +44,8 @@
 Less :: tree_node(),
 Equal :: tree_node(),
 Greater :: tree_node(),
-Excluded :: [{xl_ebloom:ref(), tree_node()}],
-Included :: [{xl_ebloom:ref(), tree_node()}]
+Excluded :: [{xl_bloom:ref(), tree_node()}],
+Included :: [{xl_bloom:ref(), tree_node()}]
 } | leaf()).
 -type(tree() :: {?MODULE, tree_node()} | xl_ref:ref()).
 
@@ -95,10 +95,10 @@ new_list_tree(Points, Plane, PlanePos, Planes, KeepValues) ->
     Dict = xl_lists:transform(dict, fun(Point) -> {element(2, element(Plane, Point)), Point} end, Points),
     case KeepValues of
         true ->
-            [{element(2, xl_ebloom:new(Values)), Values, new_tree(Pts, PlanePos, Planes)}
+            [{element(2, xl_bloom:new(Values)), Values, new_tree(Pts, PlanePos, Planes)}
                 || {Values, Pts} <- dict:to_list(Dict)];
         false ->
-            [{element(2, xl_ebloom:new(Values)), new_tree(Pts, PlanePos, Planes)}
+            [{element(2, xl_bloom:new(Values)), new_tree(Pts, PlanePos, Planes)}
                 || {Values, Pts} <- dict:to_list(Dict)]
     end.
 
@@ -174,7 +174,7 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane,
     end,
     XAcc = lists:foldl(fun({Bloom, T}, FoldAcc) ->
         case lists:all(fun(QValue) ->
-            not xl_ebloom:contains(QValue, Bloom)
+            not xl_bloom:contains(QValue, Bloom)
         end, QL) of
             true -> find(Query, T, FoldAcc);
             false -> FoldAcc
@@ -182,7 +182,7 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane,
     end, EAcc, XL),
     IAcc = lists:foldl(fun({Bloom, Values, T}, FoldAcc) ->
         case lists:any(fun(QValue) ->
-            xl_ebloom:contains(QValue, Bloom) andalso lists:member(QValue, Values)
+            xl_bloom:contains(QValue, Bloom) andalso lists:member(QValue, Values)
         end, QL) of
             true -> find(Query, T, FoldAcc);
             false -> FoldAcc
@@ -202,13 +202,13 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) ->
     UAcc = find(Query, U, Acc),
     QValue = element(Plane, Query),
     XAcc = lists:foldl(fun({Bloom, T}, FoldAcc) ->
-        case xl_ebloom:contains(QValue, Bloom) of
+        case xl_bloom:contains(QValue, Bloom) of
             false -> find(Query, T, FoldAcc);
             true -> FoldAcc
         end
     end, UAcc, XL),
     IAcc = lists:foldl(fun({Bloom, Values, T}, FoldAcc) ->
-        case xl_ebloom:contains(QValue, Bloom) andalso lists:member(QValue, Values) of
+        case xl_bloom:contains(QValue, Bloom) andalso lists:member(QValue, Values) of
             true -> find(Query, T, FoldAcc);
             false -> FoldAcc
         end

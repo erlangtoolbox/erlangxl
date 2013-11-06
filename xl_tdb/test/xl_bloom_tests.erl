@@ -26,33 +26,27 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_ebloom).
+-module(xl_bloom_tests).
 -author("volodymyr.kyrychenko@strikead.com").
 
-%% API
--export([new/1, insert/2, contains/2]).
--export_type([ref/0]).
+-include_lib("xl_stdlib/include/xl_eunit.hrl").
 
--opaque(ref() :: reference()).
-
--spec(new(pos_integer() | [term()]) -> {ok, ref()}).
-new(Size) when is_integer(Size) -> ebloom:new(Size, 0.01, element(3, now()));
-new(List) ->
-    case new(length(List)) of
-        {ok, Ref} ->
-            lists:foreach(fun(X) ->
-                ok = insert(X, Ref)
-            end, List),
-            {ok, Ref};
-        E -> E
-    end.
-
--spec(insert(term(), ref()) -> ok).
-insert(X, Bloom) when is_binary(X) -> ebloom:insert(Bloom, X);
-insert(X, Bloom) -> insert(term_to_binary(X), Bloom).
-
--spec(contains(term(), ref()) -> boolean()).
-contains(X, Bloom) when is_binary(X) -> ebloom:contains(Bloom, X);
-contains(X, Bloom) -> contains(term_to_binary(X), Bloom).
-
+ebloom_test() ->
+    {ok, [{values, BinValues}]} = xl_json:to_abstract(xl_json:parse_file(xl_eunit:resource(?MODULE, "4.json"))),
+    Values = [{xxx, binary_to_atom(V, utf8)} || V <- BinValues],
+    {ok, F} = xl_bloom:new(Values),
+    xl_lists:times(fun() ->
+        Value = lists:nth(random:uniform(length(Values)), Values),
+        xl_eunit:performance(ebloom, fun() ->
+            true = xl_bloom:contains(Value, F),
+            false = xl_bloom:contains({wtf, Value}, F)
+        end, 10000)
+    end, 10),
+    xl_lists:times(fun() ->
+        Value = lists:nth(random:uniform(length(Values)), Values),
+        xl_eunit:performance(list, fun() ->
+            true = lists:member(Value, Values),
+            false = lists:member({wtf, Value}, Values)
+        end, 10000)
+    end, 10).
 
