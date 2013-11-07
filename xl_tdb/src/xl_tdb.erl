@@ -292,7 +292,7 @@ build_index(Options, ETS) ->
         {ok, F} -> xl_uxekdtree:new(ets:foldl(fun
             (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
             (_O, Points) -> Points
-        end, [], ETS), [xl_lists:kvfind(index_memory_type, Options, shared)]);
+        end, [], ETS), [shared]);
         undefined -> undefined
     end.
 
