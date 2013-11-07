@@ -40,12 +40,14 @@
 -type(point() :: tuple()).
 -type(query_point() :: tuple()).
 -type(leaf() :: option_m:monad([point()])).
--type(tree_node() :: {term(), pos_integer(), Undefined :: tree_node(),
-Less :: tree_node(),
-Equal :: tree_node(),
-Greater :: tree_node(),
-Excluded :: [{xl_bloom:ref(), tree_node()}],
-Included :: [{xl_bloom:ref(), tree_node()}]
+-type(tree_node() :: {
+    term(), pos_integer(),
+    Undefined :: tree_node(),
+    Less :: tree_node(),
+    Equal :: tree_node(),
+    Greater :: tree_node(),
+    Excluded :: [{xl_bloom:ref(), tree_node()}],
+    Included :: [{xl_bloom:ref(), tree_node()}]
 } | leaf()).
 -type(tree() :: {?MODULE, tree_node()} | xl_ref:ref()).
 
@@ -75,8 +77,10 @@ new_tree(Points, PlanePos, Planes) ->
             Sorted = lists:sort(xl_uxekdtree_lib:sorter(Plane), Normal),
             Median = lists:nth(round(length(Sorted) / 2), Sorted),
             MV = element(Plane, Median),
-            {L, Rest} = xl_lists:fastsplitwith(fun(XE) -> xl_uxekdtree_lib:compare(element(Plane, XE), MV) == lt end, Sorted),
-            {E, G} = xl_lists:fastsplitwith(fun(XE) -> xl_uxekdtree_lib:compare(element(Plane, XE), MV) == eq end, Rest),
+            {L, Rest} = xl_lists:fastsplitwith(fun(XE) ->
+                xl_uxekdtree_lib:compare(element(Plane, XE), MV) == lt end, Sorted),
+            {E, G} = xl_lists:fastsplitwith(fun(XE) ->
+                xl_uxekdtree_lib:compare(element(Plane, XE), MV) == eq end, Rest),
             {MV, L, E, G}
     end,
     PlanesWOOne = lists:delete(Plane, Planes),
@@ -122,7 +126,7 @@ list_size(L, Nodes) ->
         ({_, _, T}, S) -> size(T, S)
     end, Nodes, L).
 
-- spec(depth(tree()) -> non_neg_integer()).
+-spec(depth(tree()) -> non_neg_integer()).
 depth({?MODULE, Node}) -> depth(Node, 0);
 depth(Ref) -> depth(xl_ref:value(Ref)).
 
