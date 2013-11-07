@@ -264,7 +264,11 @@ update(Name) ->
                 xl_state:delete(Name)
             ]);
         {mutate, From, Fun} ->
-            From ! Fun(),
+            From ! try
+                Fun()
+            catch
+                _ : E -> {error, E}
+            end,
             update(Name)
     end.
 
