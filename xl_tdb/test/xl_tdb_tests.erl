@@ -66,10 +66,19 @@ update_test() ->
 
     ?assertOk(xl_tdb:store(testtdbpup, [T1])),
     ?assertEqual({ok, T1}, xl_tdb:get(testtdbpup, "1")),
-    ?assertEqual({ok, #testobj{id = "1", name = "updated"}},
-        xl_tdb:update(testtdbpup, "1", fun(X) -> {ok, X#testobj{name = "updated"}} end)),
-    ?assertEqual({ok, undefined},
-        xl_tdb:update(testtdbpup, "x", fun(undefined) -> undefined end)),
+
+    ?assertEqual({error, problem}, xl_tdb:update(testtdbpup, "1", fun(_X) ->
+        error(problem)
+    end)),
+
+    ?assertEqual({ok, #testobj{id = "1", name = "updated"}}, xl_tdb:update(testtdbpup, "1", fun(X) ->
+        {ok, X#testobj{name = "updated"}}
+    end)),
+
+    ?assertEqual({ok, undefined}, xl_tdb:update(testtdbpup, "x", fun(undefined) ->
+        undefined
+    end)),
+
     ?assertOk(xl_tdb:close(testtdbpup)).
 
 disk_storage_test() ->
