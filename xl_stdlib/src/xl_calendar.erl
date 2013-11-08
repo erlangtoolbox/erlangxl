@@ -27,19 +27,24 @@
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_calendar).
+
 -include("xl_calendar.hrl").
 
-
--export([format/3, format/2, now_millis/0, now_micros/0, add/3, ms_to_datetime/1,
-    day_of_week/1, datetime_to_ms/1, weekdays/0, weekdays_order/0, adjust/4, whole_day/0, diff_hours/4,
-    daynum_of_week/1, diff_days/3, daynum/1, dayname/1, weekdays_member/2, weekdays_mask/1, number_of_days/3,
-    diff_periods/5]).
-
+-export([format/3, format/2, now_millis/0, now_micros/0, add/3,
+         ms_to_datetime/1, day_of_week/1, datetime_to_ms/1, weekdays/0,
+         weekdays_order/0, adjust/4, whole_day/0, diff_hours/4,
+         daynum_of_week/1, diff_days/3, daynum/1, dayname/1,
+         weekdays_member/2, weekdays_mask/1, number_of_days/3,
+         diff_periods/5]).
 
 -export_type([weekday/0, hour_of_day/0]).
 
 -type(weekday() :: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun').
--type(hour_of_day() :: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23).
+-type(hour_of_day() :: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+                       13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23).
+-type(month() :: 'Jan' | 'Feb' | 'Mar' | 'Apr' | 'May' | 'Jun' |
+                 'Jul' | 'Aug' | 'Sep' | 'Oct' | 'Nov' | 'Dec').
+-type(units() :: seconds | minutes | hours | days | weeks | months | years).
 
 % add code is borrowed from http://code.google.com/p/dateutils
 % Copyright (c) 2009 Jonas Enlund
@@ -62,39 +67,41 @@
 % OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 % THE SOFTWARE.
 
--spec(add(calendar:datetime(), integer(), seconds | minutes | hours | days | weeks | months | years) -> calendar:datetime()).
+-spec(add(calendar:datetime(), integer(), units()) -> calendar:datetime()).
 add(DateTime, N, seconds) ->
     T1 = calendar:datetime_to_gregorian_seconds(DateTime),
     T2 = T1 + N,
     calendar:gregorian_seconds_to_datetime(T2);
-
 add(DateTime, N, minutes) -> add(DateTime, 60 * N, seconds);
 add(DateTime, N, hours) -> add(DateTime, 60 * N, minutes);
-
 add(DateTime, N, days) -> add(DateTime, 24 * N, hours);
-
 add(DateTime, N, weeks) -> add(DateTime, 7 * N, days);
-
 add({{YYYY, MM, DD} = Date, Time}, 0, months) ->
     case calendar:valid_date(Date) of
         true -> {Date, Time};
-        false -> add({{YYYY, MM, DD - 1}, Time}, 0, months) % Rolling back illegal 31,29
+        % Rolling back illegal 31,29
+        false -> add({{YYYY, MM, DD - 1}, Time}, 0, months)
     end;
-
-add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM < 12 -> add({{YYYY, MM + 1, DD}, Time}, N - 1, months);
-add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM =:= 12 -> add({{YYYY + 1, 1, DD}, Time}, N - 1, months);
-add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM > 1 -> add({{YYYY, MM - 1, DD}, Time}, N + 1, months);
-add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM =:= 1 -> add({{YYYY - 1, 12, DD}, Time}, N + 1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM < 12 ->
+    add({{YYYY, MM + 1, DD}, Time}, N - 1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM =:= 12 ->
+    add({{YYYY + 1, 1, DD}, Time}, N - 1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM > 1 ->
+    add({{YYYY, MM - 1, DD}, Time}, N + 1, months);
+add({{YYYY, MM, DD}, Time}, N, months) when N < 0 andalso MM =:= 1 ->
+    add({{YYYY - 1, 12, DD}, Time}, N + 1, months);
 add(Date, N, years) -> add(Date, 12 * N, months).
 
 % end of Jonas Enlund
 
-day_of_week(Date) when is_integer(Date) -> day_of_week(ms_to_datetime(Date));
-day_of_week({Date, _}) -> dayname(calendar:day_of_the_week(Date)).
-
+-spec(daynum_of_week(pos_integer() | calendar:datetime()) -> calendar:daynum()).
 daynum_of_week(Date) when is_integer(Date) -> daynum_of_week(ms_to_datetime(Date));
 daynum_of_week({Date, _}) -> calendar:day_of_the_week(Date).
 
+-spec(day_of_week(calendar:datetime()) -> weekday()).
+day_of_week(Date) -> dayname(daynum_of_week(Date)).
+
+-spec(daynum(weekday()) -> pos_integer()).
 daynum(Day) ->
     case Day of
         'Mon' -> 1;
@@ -106,6 +113,7 @@ daynum(Day) ->
         'Sun' -> 7
     end.
 
+-spec(dayname(pos_integer()) -> weekday()).
 dayname(Day) ->
     case Day of
         1 -> 'Mon';
@@ -117,9 +125,8 @@ dayname(Day) ->
         7 -> 'Sun'
     end.
 
-
-
-month_name({{_, Mon, _}, _}) ->
+-spec(month_name(pos_integer()) -> month()).
+month_name(Mon) ->
     case Mon of
         1 -> 'Jan';
         2 -> 'Feb';
@@ -135,23 +142,32 @@ month_name({{_, Mon, _}, _}) ->
         12 -> 'Dec'
     end.
 
-
 -spec(format(string(), calendar:datetime()) -> string()).
 format(Pattern, Datetime = {{_, _, _}, {_, _, _}}) -> format(Pattern, Datetime, "");
 format(_Pattern, undefined) -> undefined.
 
 format(_Pattern, undefined, binary) -> undefined;
-format(Pattern, Datetime, binary) -> xl_convert:to(binary, format(Pattern, Datetime));
+format(Pattern, Datetime, binary) ->
+    xl_convert:to(binary, format(Pattern, Datetime));
 format([], _, Acc) -> Acc;
-format([$E, $E, $E | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(day_of_week(Dt)));
-format([$d, $d | Pattern], Dt = {{_, _, Date}, _}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Date));
-format([$M, $M, $M | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ atom_to_list(month_name(Dt)));
-format([$M, $M | Pattern], Dt = {{_, Mon, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Mon));
-format([$y, $y, $y, $y | Pattern], Dt = {{Year, _, _}, _}, Acc) -> format(Pattern, Dt, Acc ++ integer_to_list(Year));
-format([$H, $H | Pattern], Dt = {_, {Hour, _, _}}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Hour));
-format([$m, $m | Pattern], Dt = {_, {_, Min, _}}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Min));
-format([$s, $s | Pattern], Dt = {_, {_, _, Sec}}, Acc) -> format(Pattern, Dt, Acc ++ xl_string:format_number(2, Sec));
-format([H | Pattern], Dt, Acc) -> format(Pattern, Dt, Acc ++ [H]).
+format([$E, $E, $E | Pattern], Dt, Acc) ->
+    format(Pattern, Dt, Acc ++ atom_to_list(day_of_week(Dt)));
+format([$d, $d | Pattern], Dt = {{_, _, Day}, _}, Acc) ->
+    format(Pattern, Dt, Acc ++ xl_string:format_number(2, Day));
+format([$M, $M, $M | Pattern], Dt = {{_, Mon, _}, _}, Acc) ->
+    format(Pattern, Dt, Acc ++ atom_to_list(month_name(Mon)));
+format([$M, $M | Pattern], Dt = {{_, Mon, _}, _}, Acc) ->
+    format(Pattern, Dt, Acc ++ xl_string:format_number(2, Mon));
+format([$y, $y, $y, $y | Pattern], Dt = {{Year, _, _}, _}, Acc) ->
+    format(Pattern, Dt, Acc ++ integer_to_list(Year));
+format([$H, $H | Pattern], Dt = {_, {Hour, _, _}}, Acc) ->
+    format(Pattern, Dt, Acc ++ xl_string:format_number(2, Hour));
+format([$m, $m | Pattern], Dt = {_, {_, Min, _}}, Acc) ->
+    format(Pattern, Dt, Acc ++ xl_string:format_number(2, Min));
+format([$s, $s | Pattern], Dt = {_, {_, _, Sec}}, Acc) ->
+    format(Pattern, Dt, Acc ++ xl_string:format_number(2, Sec));
+format([H | Pattern], Dt, Acc) ->
+    format(Pattern, Dt, Acc ++ [H]).
 
 -spec(now_millis() -> pos_integer()).
 now_millis() -> now_micros() div 1000.
@@ -164,10 +180,12 @@ now_micros() ->
 -define(BASE_DATE, 62167219200).
 
 -spec(ms_to_datetime(integer()) -> calendar:datetime()).
-ms_to_datetime(Milliseconds) -> calendar:gregorian_seconds_to_datetime(?BASE_DATE + (Milliseconds div 1000)).
+ms_to_datetime(Milliseconds) ->
+    calendar:gregorian_seconds_to_datetime(?BASE_DATE + (Milliseconds div 1000)).
 
 -spec(datetime_to_ms(calendar:datetime()) -> integer()).
-datetime_to_ms(DateTime) -> (calendar:datetime_to_gregorian_seconds(DateTime) - ?BASE_DATE) * 1000.
+datetime_to_ms(DateTime) ->
+    (calendar:datetime_to_gregorian_seconds(DateTime) - ?BASE_DATE) * 1000.
 
 -spec(weekdays() -> [weekday()]).
 weekdays() -> ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].
@@ -183,6 +201,10 @@ weekdays_order() ->
             {{ok, X}, {ok, Y}} -> X =< Y
         end
     end.
+
+%%
+%% Danger Zone
+%%
 
 adjust(_Start, Finish, [], _Hours) -> {Finish, Finish};
 adjust(_Start, Finish, _Weekdays, []) -> {Finish, Finish};

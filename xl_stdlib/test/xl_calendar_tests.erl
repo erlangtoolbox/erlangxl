@@ -31,9 +31,13 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("xl_calendar.hrl").
 
-
 add_test() ->
-    ?assertEqual({{2013, 2, 28}, {0, 0, 0}}, xl_calendar:add({{2012, 2, 29}, {0, 0, 0}}, 1, years)).
+    ?assertEqual({{2013, 2, 28}, {0, 0, 0}},
+                 xl_calendar:add({{2012, 2, 29}, {0, 0, 0}}, 1, years)).
+
+day_of_week_test() ->
+    ?assertEqual(xl_calendar:day_of_week(1383912159000), 'Fri'),
+    ?assertEqual(xl_calendar:day_of_week({{2013, 11, 8}, {0, 0, 0}}), 'Fri').
 
 format_test() ->
     ?assertEqual("Sun, 01-Feb-1970 00:00:01 GMT", xl_calendar:format("EEE, dd-MMM-yyyy HH:mm:ss GMT", {{1970, 2, 1}, {0, 0, 1}})),
