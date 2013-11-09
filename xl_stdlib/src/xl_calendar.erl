@@ -35,7 +35,8 @@
          weekdays_order/0, adjust/4, whole_day/0, diff_hours/4,
          daynum_of_week/1, diff_days/3, daynum/1, dayname/1,
          weekdays_member/2, weekdays_mask/1, number_of_days/3,
-         diff_periods/5]).
+         hourly/2, filter_weekdays/2, filter_hours/2,
+         seconds_hourly/1, diff_periods/5]).
 
 -export_type([weekday/0, hour_of_day/0]).
 
@@ -201,6 +202,43 @@ weekdays_order() ->
             {{ok, X}, {ok, Y}} -> X =< Y
         end
     end.
+
+-spec(hourly(calendar:datetime(), calendar:datetime()) -> [calendar:datetime()]).
+hourly(Start = {_, {_, 0, 0}}, Finish) ->
+    hourly(datetime_to_ms(Start), datetime_to_ms(Finish), []);
+hourly(Start = {D, {H, _, _}}, Finish) ->
+    Next = add({D, {H, 0, 0}}, 1, hours),
+    hourly(datetime_to_ms(Next), datetime_to_ms(Finish), [{Start, Next}]).
+
+hourly(StartMs, FinishMs, Acc) ->
+    case FinishMs - StartMs of
+        Diff when Diff > ?MS_IN_HOUR ->
+            NextMs = StartMs + ?MS_IN_HOUR,
+            New = {ms_to_datetime(StartMs), ms_to_datetime(NextMs)},
+            hourly(NextMs, FinishMs, [New | Acc]);
+        0 ->
+            lists:reverse(Acc);
+        _ ->
+            New = {ms_to_datetime(StartMs), ms_to_datetime(FinishMs)},
+            hourly(FinishMs, FinishMs, [New | Acc])
+    end.
+
+-spec(filter_weekdays([{calendar:datetime(), calendar:datetime()}],
+                      [weekday()]) -> [[calendar:datetime()]]).
+filter_weekdays(Hourly, Weekdays) ->
+    Pred = fun({Start, _}) -> not lists:member(day_of_week(Start), Weekdays) end,
+    lists:filter(Pred, Hourly).
+
+-spec(filter_hours([{calendar:datetime(), calendar:datetime()}],
+                   [hour_of_day()]) ->[[calendar:datetime()]]).
+filter_hours(Hourly, Hours) ->
+    Pred = fun({{_, {H, _, _}}, _}) -> not lists:member(H, Hours) end,
+    lists:filter(Pred, Hourly).
+
+-spec(seconds_hourly([{calendar:datetime(), calendar:datetime()}]) -> pos_integer()).
+seconds_hourly(Hourly) ->
+    Millis = [datetime_to_ms(D2) - datetime_to_ms(D1) || {D1, D2} <- Hourly],
+    trunc(lists:sum(Millis) / 1000).
 
 %%
 %% Danger Zone
