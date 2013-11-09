@@ -31,9 +31,13 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("xl_calendar.hrl").
 
-
 add_test() ->
-    ?assertEqual({{2013, 2, 28}, {0, 0, 0}}, xl_calendar:add({{2012, 2, 29}, {0, 0, 0}}, 1, years)).
+    ?assertEqual({{2013, 2, 28}, {0, 0, 0}},
+                 xl_calendar:add({{2012, 2, 29}, {0, 0, 0}}, 1, years)).
+
+day_of_week_test() ->
+    ?assertEqual(xl_calendar:day_of_week(1383912159000), 'Fri'),
+    ?assertEqual(xl_calendar:day_of_week({{2013, 11, 8}, {0, 0, 0}}), 'Fri').
 
 format_test() ->
     ?assertEqual("Sun, 01-Feb-1970 00:00:01 GMT", xl_calendar:format("EEE, dd-MMM-yyyy HH:mm:ss GMT", {{1970, 2, 1}, {0, 0, 1}})),
@@ -55,6 +59,33 @@ datetime_to_ms_test() ->
 
 weekdays_order_test() ->
     ?assertEqual(['Mon', 'Wed', 'Sun'], lists:sort(xl_calendar:weekdays_order(), ['Wed', 'Sun', 'Mon'])).
+
+hourly_test() ->
+    Raw =
+        [{{{2013,2,23},{20,2,3}}, {{2013,2,23},{21,0,0}}},
+         {{{2013,2,23},{21,0,0}}, {{2013,2,23},{22,0,0}}},
+         {{{2013,2,23},{22,0,0}}, {{2013,2,23},{23,0,0}}},
+         {{{2013,2,23},{23,0,0}}, {{2013,2,24},{0,0,0}}},
+         {{{2013,2,24},{0,0,0}}, {{2013,2,24},{1,0,0}}},
+         {{{2013,2,24},{1,0,0}}, {{2013,2,24},{2,0,0}}},
+         {{{2013,2,24},{2,0,0}}, {{2013,2,24},{2,3,4}}}],
+    RawSeconds = (3600 - (2*60 + 3)) + 5*3600 + (3*60 + 4),
+    FilterDays =
+        [{{{2013,2,24},{0,0,0}}, {{2013,2,24},{1,0,0}}},
+         {{{2013,2,24},{1,0,0}}, {{2013,2,24},{2,0,0}}},
+         {{{2013,2,24},{2,0,0}}, {{2013,2,24},{2,3,4}}}],
+    FilterHours =
+        [{{{2013,2,23},{20,2,3}}, {{2013,2,23},{21,0,0}}},
+         {{{2013,2,23},{21,0,0}}, {{2013,2,23},{22,0,0}}},
+         {{{2013,2,23},{23,0,0}}, {{2013,2,24},{0,0,0}}},
+         {{{2013,2,24},{0,0,0}}, {{2013,2,24},{1,0,0}}},
+         {{{2013,2,24},{1,0,0}}, {{2013,2,24},{2,0,0}}}],
+    Schedule = xl_calendar:hourly({{2013, 2, 23}, {20, 2, 3}},
+                                  {{2013, 2, 24}, {2, 3, 4}}),
+    ?assertEqual(Raw, Schedule),
+    ?assertEqual(FilterDays, xl_calendar:filter_weekdays(Schedule, ['Sat'])),
+    ?assertEqual(FilterHours, xl_calendar:filter_hours(Schedule, [2, 22])),
+    ?assertEqual(RawSeconds, xl_calendar:seconds_hourly(Schedule)).
 
 adjust_test() ->
     {S1, F1} = xl_calendar:adjust({{2013, 2, 23}, {0, 0, 0}}, {{2013, 2, 28}, {0, 0, 0}}, ['Mon', 'Wed'], xl_calendar:whole_day()),
