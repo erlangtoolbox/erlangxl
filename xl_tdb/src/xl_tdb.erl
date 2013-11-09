@@ -53,7 +53,7 @@ start_link(Name, Location, Identify, Options) ->
             xl_lists:kvfind(migrations, Options, [])
         ),
         lists:foreach(fun(O) -> ets:insert(ETS, O) end, Objects),
-        xl_state:set(Name, index, build_index(Options, ETS)),
+        xl_state:set(Name, options, Options),
         xl_state:set(Name, location, Location),
         xl_state:set(Name, identify, Identify),
         Pid <- return(spawn_link(fun() ->
@@ -61,7 +61,11 @@ start_link(Name, Location, Identify, Options) ->
             update(Name)
         end)),
         xl_state:set(Name, updater_pid, Pid),
-        xl_state:set(Name, options, Options),
+        xl_state:set(Name, index_pid, spawn_link(fun() ->
+            process_flag(trap_exit, true),
+            index_read(Name, undefined)
+        end)),
+        build_index(Name),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
         xl_state:set(Name, last_rsync, 0),
         xl_scheduler:interval(xl_convert:make_atom([Name, sync]),
@@ -87,9 +91,8 @@ store(Name, Objects) ->
         do([error_m ||
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
-            Options <- xl_state:evalue(Name, options),
             lists:foreach(fun(O) -> ets:insert(ETS, wrap(O, Identify)) end, Objects),
-            xl_state:set(Name, index, build_index(Options, ETS))
+            build_index(Name)
         ])
     end).
 
@@ -99,11 +102,10 @@ delete(Name, Id) ->
         do([error_m ||
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
-            Options <- xl_state:evalue(Name, options),
             case xl_ets:lookup_object(ETS, Id) of
                 {ok, {_Id, O, _LastUpdate, _Deleted}} ->
                     ets:insert(ETS, wrap(O, Identify, true)),
-                    xl_state:set(Name, index, build_index(Options, ETS));
+                    build_index(Name);
                 _ -> ok
             end
         ])
@@ -115,13 +117,12 @@ delete_all(Name) ->
         do([error_m ||
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
-            Options <- xl_state:evalue(Name, options),
             xl_ets:foreach(fun
                 (_Key, [{_Id, _O, _LastUpdate, true}]) -> ok;
                 (_Key, [{_Id, O, _LastUpdate, false}]) ->
                     ets:insert(ETS, wrap(O, Identify, true))
             end, ETS),
-            xl_state:set(Name, index, build_index(Options, ETS))
+            build_index(Name)
         ])
     end).
 
@@ -131,7 +132,6 @@ update(Name, Id, F) ->
         do([option_m ||
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
-            Options <- xl_state:evalue(Name, options),
             Obj <- return(case xl_ets:lookup_object(ETS, Id) of
                 {ok, {_Id, O, _LastUpdate, _Deleted}} -> O;
                 _ -> undefined
@@ -139,11 +139,11 @@ update(Name, Id, F) ->
             case F(Obj) of
                 {ok, {context, R, Ctx}} ->
                     ets:insert(ETS, wrap(R, Identify)),
-                    xl_state:set(Name, index, build_index(Options, ETS)),
+                    build_index(Name),
                     return({R, Ctx});
                 {ok, R} ->
                     ets:insert(ETS, wrap(R, Identify)),
-                    xl_state:set(Name, index, build_index(Options, ETS)),
+                    build_index(Name),
                     return(R);
                 undefined ->
                     return(undefined)
@@ -174,12 +174,20 @@ by_index(N) -> fun(X) -> element(N, X) end.
 
 -spec(nmapfilter(atom(), non_neg_integer(), xl_lists:kvlist_at(), xl_lists:mapping_predicate(term(), term())) -> [term()]).
 nmapfilter(Name, N, Q, F) ->
-    {ok, Index} = xl_state:value(Name, index),
-    {ok, Options} = xl_state:value(Name, options),
-    Random = xl_lists:kvfind(random, Options, false),
-    case index_lookup(Q, Options, Index) of
-        {ok, Values} when Random -> xl_lists:nshufflemapfilter(N, F, Values);
-        {ok, Values} -> xl_lists:nmapfilter(N, F, Values);
+    Result = do([option_m ||
+        Options <- xl_state:value(Name, options),
+        IndexPid <- xl_state:value(Name, index_pid),
+        begin
+            IndexPid ! {read_index, self(), Q},
+            receive
+                {ok, Values} -> {ok, Values, xl_lists:kvfind(random, Options, false)};
+                undefined -> undefined
+            end
+        end
+    ]),
+    case Result of
+        {ok, Values, true} -> xl_lists:nshufflemapfilter(N, F, Values);
+        {ok, Values, false} -> xl_lists:nmapfilter(N, F, Values);
         undefined -> []
     end.
 
@@ -235,7 +243,7 @@ rsync(Name) ->
                                             ets:insert(ETS, wrap(O, Identify, Deleted))
                                         end, Ok),
                                         error_logger:info_msg("~p rsync: building index~n", [Name]),
-                                        xl_state:set(Name, index, build_index(Options, ETS)),
+                                        build_index(Name),
                                         error_logger:info_msg("~p rsync: index built~n", [Name])
                                     ])
                                 end);
@@ -272,6 +280,23 @@ update(Name) ->
             update(Name)
     end.
 
+index_read(Name, Index) ->
+    receive
+        {'EXIT', _From, _Reason} -> ok;
+        {update_index, From, NewIndex} ->
+            From ! ok,
+            index_read(Name, NewIndex);
+        {read_index, From, _Query} when Index == undefined ->
+            From ! undefined;
+        {read_index, From, Query} ->
+            From ! do([option_m ||
+                Options <- xl_state:value(Name, options),
+                QueryF <- xl_lists:kvfind(index_query, Options),
+                xl_uxekdtree:find(QueryF(Query), Index)
+            ]),
+            index_read(Name, Index)
+    end.
+
 mutate(Name, Fun) ->
     {ok, Pid} = xl_state:value(Name, updater_pid),
     Pid ! {mutate, self(), Fun},
@@ -287,18 +312,20 @@ wrap(Object, Id, Deleted) -> {Id(Object), Object, xl_calendar:now_micros(), Dele
 unwrap(Objects) when is_list(Objects) -> lists:map(fun(O) -> unwrap(O) end, Objects);
 unwrap({_Id, O, _LastUpdate, _Deleted}) -> O.
 
-build_index(Options, ETS) ->
-    case xl_lists:kvfind(index_object, Options) of
-        {ok, F} -> xl_uxekdtree:new(ets:foldl(fun
-            (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
-            (_O, Points) -> Points
-        end, [], ETS), [shared]);
-        undefined -> undefined
-    end.
-
-index_lookup(_Q, _Options, undefined) -> undefined;
-index_lookup(Q, Options, Tree) ->
-    case xl_lists:kvfind(index_query, Options) of
-        {ok, F} -> xl_uxekdtree:find(F(Q), Tree);
-        undefined -> undefined
-    end.
+build_index(Name) ->
+    do([error_m ||
+        Options <- xl_state:evalue(Name, options),
+        IndexPid <- xl_state:evalue(Name, index_pid),
+        ETS <- xl_state:evalue(Name, ets),
+        case xl_lists:kvfind(index_object, Options) of
+            {ok, F} ->
+                IndexPid ! {update_index, self(), xl_uxekdtree:new(ets:foldl(fun
+                    (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
+                    (_O, Points) -> Points
+                end, [], ETS), [local])},
+                receive
+                    Result -> Result
+                end;
+            undefined -> ok
+        end
+    ]).

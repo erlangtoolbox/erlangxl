@@ -40,7 +40,7 @@
 memory_options_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:start_link(testtdbp, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    ?assertOk(xl_tdb:start_link(testtdbp, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [])),
     T1 = #testobj{id = "1", name = "n1"},
     T2 = #testobj{id = "2", name = "n2"},
 
@@ -61,7 +61,7 @@ memory_options_test() ->
 update_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:start_link(testtdbpup, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    ?assertOk(xl_tdb:start_link(testtdbpup, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [])),
     T1 = #testobj{id = "1", name = "n1"},
 
     ?assertOk(xl_tdb:store(testtdbpup, [T1])),
@@ -84,7 +84,7 @@ update_test() ->
 disk_storage_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:start_link(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    ?assertOk(xl_tdb:start_link(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [])),
     T1 = #testobj{id = "1", name = "n1"},
     T2 = #testobj{id = "2", name = "n2"},
     xl_eunit:performance(tdb_store, fun() ->
@@ -92,7 +92,7 @@ disk_storage_test() ->
     end, 100000),
     timer:sleep(500),
     ?assertEqual(ok, xl_tdb:close(testtdbpds)),
-    xl_tdb:start_link(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), []),
+    ?assertOk(xl_tdb:start_link(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [])),
     ?assertEqual([T1, T2], xl_tdb:select(testtdbpds)),
     ?assertEqual([T1, T2], xl_stream:to_list(xl_tdb:cursor(testtdbpds))),
     ?assertEqual(ok, xl_tdb:close(testtdbpds)).
@@ -100,10 +100,10 @@ disk_storage_test() ->
 mapfilter_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:start_link(testtdbpmf, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [
+    ?assertOk(xl_tdb:start_link(testtdbpmf, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [
         {index_object, fun index_object/1},
         {index_query, fun index_query/1}
-    ]),
+    ])),
     T1 = #testobj{id = "1", name = <<"n1">>},
     T2 = #testobj{id = "2", name = <<"n2">>},
     T3 = #testobj{id = "3", name = <<"n1">>},
@@ -116,18 +116,18 @@ mapfilter_test() ->
 rsync_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),
-    xl_tdb:start_link(testrsync_master, "/tmp/test/tdbp/master", xl_tdb:by_index(#testobj.id), []),
+    ?assertOk(xl_tdb:start_link(testrsync_master, "/tmp/test/tdbp/master", xl_tdb:by_index(#testobj.id), [])),
     T1 = #testobj{id = "1", name = <<"n1">>},
     T2 = #testobj{id = "2", name = <<"n2">>},
     T3 = #testobj{id = "3", name = <<"n1">>},
     T4 = #testobj{id = "4", name = <<"n3">>},
     ?assertOk(xl_tdb:store(testrsync_master, [T1, T2, T3, T4])),
-    xl_tdb:start_link(testrsync_slave, "/tmp/test/tdbp/slave", xl_tdb:by_index(#testobj.id), [
+    ?assertOk(xl_tdb:start_link(testrsync_slave, "/tmp/test/tdbp/slave", xl_tdb:by_index(#testobj.id), [
         {rsync_master_node, node()},
         {rsync_master_db, testrsync_master},
         {rsync_treshold, 2},
         {sync, 100}
-    ]),
+    ])),
     timer:sleep(500),
     ?assertEquals([T1, T2, T3, T4], xl_tdb:select(testrsync_slave)),
     ?assertEqual({ok, TU = #testobj{id = "1", name = "updated"}},
@@ -144,7 +144,7 @@ index_query([{name, Name}]) -> {Name}.
 migration_test() ->
     xl_file:delete("/tmp/test/tdb"),
     xl_application:start(xl_stdlib),
-    xl_tdb:start_link(tdb_migration, "/tmp/test/tdb", xl_tdb:by_index(1), [{version, 1}]),
+    ?assertOk(xl_tdb:start_link(tdb_migration, "/tmp/test/tdb", xl_tdb:by_index(1), [{version, 1}])),
     T1 = {"1", <<"n1">>},
     T2 = {"2", <<"n2">>},
     ?assertOk(xl_tdb:store(tdb_migration, [T1, T2])),

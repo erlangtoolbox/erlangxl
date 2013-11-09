@@ -1,4 +1,5 @@
 #include <erl_nif.h>
+#include <stdio.h>
 
 
 ERL_NIF_TERM xl_ref_new(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
@@ -20,6 +21,7 @@ static ErlNifResourceType* XL_REF_RESOURCE;
 
 ERL_NIF_TERM xl_ref_new(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     ERL_NIF_TERM object = argv[0];
+//    printf("build babilon...\n");
 
     ref_t* ref = (ref_t*)enif_alloc_resource(XL_REF_RESOURCE, sizeof(ref_t));
     ref->env = enif_alloc_env();
@@ -39,6 +41,7 @@ ERL_NIF_TERM xl_ref_value(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
 
 void xl_ref_dtor(ErlNifEnv* env, void* arg) {
     ref_t* ref = (ref_t*) arg;
+//    printf("babilon should be destroyed, but...\n");
     enif_free_env(ref->env);
 }
 
