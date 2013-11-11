@@ -76,9 +76,14 @@ start_link(Name, Location, Identify, Options) ->
 
 -spec(close(atom()) -> error_m:monad(ok)).
 close(Name) ->
+    case xl_state:value(Name, index_pid) of
+        {ok, IndexPid} -> exit(IndexPid, normal);
+        undefined -> undefined
+
+    end,
     case xl_state:evalue(Name, updater_pid) of
-        {ok, Pid} ->
-            exit(Pid, normal),
+        {ok, UpdaterPid} ->
+            exit(UpdaterPid, normal),
             receive
                 X -> X
             end;
@@ -269,6 +274,10 @@ update(Name) ->
             From ! do([error_m ||
                 xl_scheduler:cancel(xl_convert:make_atom([Name, sync])),
                 fsync(Name),
+                case xl_state:value(Name, ets) of
+                    {ok, ETS} -> ets:delete(ETS), ok;
+                    undefined -> ok
+                end,
                 xl_state:delete(Name)
             ]);
         {mutate, From, Fun} ->
