@@ -153,14 +153,14 @@ zip_with_index_test() ->
     ?assertEqual([{a, 1}, {b, 2}, {c, 3}], xl_lists:zip_with_index([a, b, c])).
 
 intersect_test() ->
-    ?assertEqual([a, b], xl_lists:intersect([a, b, c], [a, b, d])),
-    ?assertEqual([a, b], xl_lists:intersect([a, b, b, c], [a, b, d, d])),
-    ?assertEqual([a, b], xl_lists:intersect([a, b, d, d], [a, b, b, c])).
+    ?assertEqual([b, a], xl_lists:intersect([a, b, c], [a, b, d])),
+    ?assertEqual([b, a], xl_lists:intersect([a, b, b, c], [a, b, d, d])),
+    ?assertEqual([b, a], xl_lists:intersect([a, b, d, d], [a, b, b, c])).
 
 union_test() ->
-    ?assertEqual([a, b, c, d], xl_lists:union([a, b, c], [a, b, d])),
-    ?assertEqual([a, b, c, d], xl_lists:union([a, b, b, c], [a, b, d, d])),
-    ?assertEqual([a, b, c, d], xl_lists:union([a, b, d, d], [a, b, b, c])).
+    ?assertEqual([d, c, b, a], xl_lists:union([a, b, c], [a, b, d])),
+    ?assertEqual([d, c, b, a], xl_lists:union([a, b, b, c], [a, b, d, d])),
+    ?assertEqual([d, c, b, a], xl_lists:union([a, b, d, d], [a, b, b, c])).
 
 transform_gb_tree_test() ->
     Expected = gb_trees:insert(3, c, gb_trees:insert(2, b, gb_trees:insert(1, a, gb_trees:empty()))),

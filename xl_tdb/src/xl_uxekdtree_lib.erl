@@ -34,7 +34,7 @@
 
 -define(is_mexclude(X), is_tuple(X) andalso element(1, X) == x andalso is_list(element(2, X))).
 -define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
--define(EXP_LIMIT, 10).
+-define(EXP_LIMIT, 100).
 
 -spec(expand([tuple()]) -> [tuple()]).
 expand(Points) -> lists:flatmap(fun(Point) -> expand_point(Point, tuple_size(Point) - 1) end, Points).

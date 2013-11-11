@@ -115,32 +115,22 @@ diff_periods_at_the_intersection_of_two_days_test() ->
             {FinishDate, DayFinishTime}, xl_calendar:weekdays(), 
             xl_calendar:whole_day(), 30*?MS_IN_MIN)),
 
-    xl_eunit:format("~n first test is passed ~n~n", []),
-
     ?assertEqual(48, xl_calendar:diff_periods({StartDate, DayFinishTime}, 
             {FinishDate, DayFinishTime}, xl_calendar:weekdays(), 
             xl_calendar:whole_day(), 30*?MS_IN_MIN)),
-    
-    xl_eunit:format("~n second test is passed ~n~n", []),
 
     ?assertEqual(48, xl_calendar:diff_periods({StartDate, DayStartTime}, 
             {FinishDate, DayStartTime}, xl_calendar:weekdays(), 
             xl_calendar:whole_day(), 30*?MS_IN_MIN)),
 
-    xl_eunit:format("~n third test is passed ~n~n", []),
-
     ?assertEqual(1, xl_calendar:diff_periods({StartDate, DayFinishTime}, 
             {FinishDate, DayStartTime}, xl_calendar:weekdays(), 
             xl_calendar:whole_day(), 30*?MS_IN_MIN)),
 
-    xl_eunit:format("~n fourth test is passed ~n~n", []),
-    
     ?assertEqual(18 * 4, xl_calendar:diff_periods({StartDate, {6, 0, 0}},
             {FinishDate, {18, 0, 0}}, xl_calendar:weekdays(),
             xl_calendar:whole_day(), 30*?MS_IN_MIN)),
 
-    xl_eunit:format("~n fifth test is passed ~n~n", []),
-    
     %%  TODO: fix that + 1
     ?assertEqual(12 * 4 + 1, xl_calendar:diff_periods({StartDate, {18, 0, 0}},
             {FinishDate, {6, 0, 0}}, xl_calendar:weekdays(),

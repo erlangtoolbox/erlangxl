@@ -30,10 +30,9 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 -compile({no_auto_import, [size/1]}).
-%% -on_load(init/0).
 
 %% API
--export([size/1, depth/1, new/1, find/2, dump/1, new/2]).
+-export([size/1, depth/1, new/1, find/2]).
 
 -export_type([tree/0, tree_node/0, leaf/0, point/0, query_point/0]).
 
@@ -49,22 +48,18 @@
     Excluded :: [{xl_bloom:ref(), tree_node()}],
     Included :: [{xl_bloom:ref(), tree_node()}]
 } | leaf()).
--type(tree() :: {?MODULE, tree_node()} | xl_ref:ref()).
+-type(tree() :: {?MODULE, tree_node()}).
 
 -define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
 -define(is_include(X), is_tuple(X) andalso element(1, X) == i).
 
 -spec(new([point()]) -> tree()).
-new(Points) -> new(Points, [shared]).
-
--spec(new([point()], xl_lists:kvlist_at()) -> tree()).
-new(Points, [local]) ->
+new(Points) ->
     XPoints = xl_uxekdtree_lib:expand(Points),
-    {?MODULE, new_tree(XPoints, 1, xl_uxekdtree_lib:planes(XPoints))};
-new(Points, [shared]) -> xl_ref:new(new(Points, [local])).
+    {?MODULE, new_tree(XPoints, 1, xl_uxekdtree_lib:planes(XPoints))}.
 
 new_tree([], _PlanePos, _Planes) -> [];
-new_tree(Points, _PlanePos, []) -> lists:map(fun(P) -> element(tuple_size(P), P) end, Points);
+new_tree(Points, _PlanePos, []) -> xl_lists:set(lists:map(fun(P) -> element(tuple_size(P), P) end, Points));
 new_tree(Points, PlanePos, Planes) when PlanePos > length(Planes) -> new_tree(Points, 1, Planes);
 new_tree(Points, PlanePos, Planes) ->
     Plane = lists:nth(PlanePos, Planes),
@@ -107,8 +102,7 @@ new_list_tree(Points, Plane, PlanePos, Planes, KeepValues) ->
     end.
 
 -spec(size(tree()) -> pos_integer()).
-size({?MODULE, Node}) -> size(Node, 0);
-size(Ref) -> size(xl_ref:value(Ref)).
+size({?MODULE, Node}) -> size(Node, 0).
 
 -spec(size(tree_node(), non_neg_integer()) -> non_neg_integer()).
 size(L, Count) when is_list(L) -> Count;
@@ -127,8 +121,7 @@ list_size(L, Nodes) ->
     end, Nodes, L).
 
 -spec(depth(tree()) -> non_neg_integer()).
-depth({?MODULE, Node}) -> depth(Node, 0);
-depth(Ref) -> depth(xl_ref:value(Ref)).
+depth({?MODULE, Node}) -> depth(Node, 0).
 
 -spec(depth(tree_node(), non_neg_integer()) -> non_neg_integer()).
 depth(L, Depth) when is_list(L) -> Depth;
@@ -152,14 +145,14 @@ list_depth(L, Depth) ->
     end.
 
 %% todo presort lists in query and replace partition with efficient split
--spec(find(query_point(), xl_ref:ref()) -> option_m:monad([term()])).
+-spec(find(query_point(), tree()) -> option_m:monad([term()])).
 find(Query, {?MODULE, Node}) ->
-    case find(Query, Node, []) of
-        [] -> undefined;
-        R -> {ok, R}
-    end;
-find(Query, Ref) -> find(Query, xl_ref:value(Ref)).
-find(_Query, L, Acc) when is_list(L) -> L ++ Acc;
+    Result = find(Query, Node, sets:new()),
+    case sets:size(Result) of
+        0 -> undefined;
+        _ -> {ok, sets:to_list(Result)}
+    end.
+find(_Query, L, Acc) when is_list(L) -> lists:foldl(fun(X, S) -> sets:add_element(X, S) end, Acc, L);
 find(Query, {_Value, Plane, U, L, E, R, XL, IL}, Acc) when element(Plane, Query) == undefined ->
     UAcc = find(Query, U, Acc),
     LAcc = find(Query, L, UAcc),
@@ -222,8 +215,3 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) ->
         lt -> find(Query, L, IAcc);
         gt -> find(Query, R, IAcc)
     end.
-
--spec(dump(tree()) -> tree_node()).
-dump(T = {?MODULE, _}) -> T;
-dump(Ref) -> dump(xl_ref:value(Ref)).
-

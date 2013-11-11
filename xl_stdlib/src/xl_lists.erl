@@ -302,7 +302,7 @@ intersect(List1, List2) ->
 
 union(List1, List2) -> set(List1 ++ List2).
 
-set(List) -> lists:reverse(set(lists:sort(List), [])).
+set(List) -> set(lists:sort(List), []).
 
 set([], Acc) -> Acc;
 set([H], Acc) -> [H | Acc];

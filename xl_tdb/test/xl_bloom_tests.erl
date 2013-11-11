@@ -31,13 +31,13 @@
 
 -include_lib("xl_stdlib/include/xl_eunit.hrl").
 
-ebloom_test() ->
+bloom_test() ->
     {ok, [{values, BinValues}]} = xl_json:to_abstract(xl_json:parse_file(xl_eunit:resource(?MODULE, "4.json"))),
     Values = [{xxx, binary_to_atom(V, utf8)} || V <- BinValues],
     {ok, F} = xl_bloom:new(Values),
     xl_lists:times(fun() ->
         Value = lists:nth(random:uniform(length(Values)), Values),
-        xl_eunit:performance(ebloom, fun() ->
+        xl_eunit:performance(bloom, fun() ->
             true = xl_bloom:contains(Value, F),
             false = xl_bloom:contains({wtf, Value}, F)
         end, 10000)

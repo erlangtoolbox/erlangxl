@@ -59,7 +59,7 @@ new_test() ->
             {b, 2,
                 [],
                 [],
-                {1, 1, [], [], [b, b, b], [], [], []},
+                {1, 1, [], [], [b], [], [], []},
                 {1, 1,
                     [],
                     [],
@@ -68,14 +68,14 @@ new_test() ->
                     [],
                     []
                 },
-                []                ,
+                [],
                 []
             },
-            {c, 2, [], [], [c, c, c], [], [], []},
+            {c, 2, [], [], [c], [], [], []},
             {a, 2,
                 [],
                 [],
-                {3, 1, [], [], [a, a, a], [], [], []},
+                {3, 1, [], [], [a], [], [], []},
                 [],
                 [],
                 []
@@ -83,7 +83,7 @@ new_test() ->
             [],
             []
         }},
-    ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE))).
+    ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE)).
 
 %% new_with_excludes_test() ->
 %%     xl_application:start(xl_stdlib),
@@ -259,11 +259,11 @@ new_with_undefs_test() ->
                 [],
                 []
             },
-            {c, 2, [uc], [], [c, c], [], [], []},
+            {c, 2, [uc], [], [c], [], [], []},
             {a, 2,
                 [],
                 [],
-                {3, 1, [], [], [a, a, a], [], [], []},
+                {3, 1, [], [], [a], [], [], []},
                 [],
                 [],
                 []
@@ -271,20 +271,20 @@ new_with_undefs_test() ->
             [],
             []
         }},
-    ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS))).
+    ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
 
 find_all_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE),
     Q = {undefined, undefined},
-    Expected = lists:sort(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE)),
+    Expected = lists:sort(xl_lists:set(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE))),
     ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
 
 find_all_with_undefs_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
     Q = {undefined, undefined},
-    Expected = lists:sort(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)),
+    Expected = lists:sort(xl_lists:set(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE_WITH_UNDEFS))),
     ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
 
 find_with_any_test() ->
@@ -455,7 +455,7 @@ undefine(Tuple, Count, Length) ->
 %% PERFORMANCE xl_uxekdtree_real_space_find: 45126.4 op/s, time: 22.16 ms
 
 real_space_test_() ->
-    {timeout, 200, fun() ->
+    {timeout, 2000, fun() ->
         {ok, Data} = xl_file:read_file(xl_eunit:resource(?MODULE, "space")),
         Points = binary_to_term(Data),
         xl_eunit:format("points: ~p, expansion: ~p, planes:~p~n", [
@@ -471,26 +471,20 @@ real_space_test_() ->
             Time
         ]),
         Qs = [
-            {2, {false, undefined, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
-                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>,
-                undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined}},
-            {63, {false, undefined, <<"US">>, <<"IAB-19">>, undefined, 1, undefined, site, nexage,
-                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>,
-                undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined}},
-            {63, {false, undefined, <<"US">>, [<<"IAB-19">>, <<"IAB-20">>], undefined, 1, undefined, site, nexage,
-                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>,
-                undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined}},
-            {40, {false, undefined, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
-                'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>,
-                undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined}},
-            {93, {false, undefined, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
-                'Mon', 1, ['300x250', '320x50'], <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>,
-                undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined}}
+            {9, {false, <<"CC">>, undefined, 1, undefined,
+                site, mediba, 'Mon', 1, '320x50',
+                <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined}},
+            {296, {false, <<"US">>, undefined, 1, undefined,
+                site, nexage, 'Mon', 1, '320x50',
+                <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined}}
         ],
         lists:foreach(fun({R, Q}) ->
             ?assertEquals(R, length(element(2, xl_uxekdtree:find(Q, Tree)))),

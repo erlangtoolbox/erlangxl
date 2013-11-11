@@ -331,7 +331,7 @@ build_index(Name) ->
                 IndexPid ! {update_index, self(), xl_uxekdtree:new(ets:foldl(fun
                     (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
                     (_O, Points) -> Points
-                end, [], ETS), [local])},
+                end, [], ETS))},
                 receive
                     Result -> Result
                 end;
