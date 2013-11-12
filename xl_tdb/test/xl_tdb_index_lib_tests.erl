@@ -26,7 +26,7 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_uxekdtree_lib_tests).
+-module(xl_tdb_index_lib_tests).
 -author("volodymyr.kyrychenko@strikead.com").
 
 -include_lib("xl_stdlib/include/xl_eunit.hrl").
@@ -51,12 +51,12 @@ expand_test() ->
         {{x, [1, 2]}, {x, [1]}, ctx},
         {{x, [a, b, c]}, {x, [d, e]}, ctx}
     ],
-    ?assertEquals(length(ExpectedPoints), xl_uxekdtree_lib:estimate_expansion(Points)),
-    ?assertEquals(ExpectedPoints, xl_uxekdtree_lib:expand(Points)).
+    ?assertEquals(length(ExpectedPoints), xl_tdb_index_lib:estimate_expansion(Points, 10)),
+    ?assertEquals(ExpectedPoints, xl_tdb_index_lib:expand(Points, 10)).
 
 
 sorter_test() ->
-    Sorter = xl_uxekdtree_lib:sorter(1),
+    Sorter = xl_tdb_index_lib:sorter(1),
     Points = [
         {1, c, c}, {undefined, b, ub1}, {3, a, a}, {2, undefined, uc}, {undefined, b, ub2},
         {3, a, a}, {2, c, c}, {1, b, b}, {3, a, a}, {2, c, c}
@@ -69,4 +69,4 @@ sorter_test() ->
 
 
 planes_test() ->
-    ?assertEqual([1, 2], xl_uxekdtree_lib:planes([{1, 2, undefined, x}])).
+    ?assertEqual([1, 2], xl_tdb_index_lib:planes([{1, 2, undefined, x}])).

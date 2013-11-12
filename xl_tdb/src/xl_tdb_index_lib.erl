@@ -26,50 +26,55 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_uxekdtree_lib).
+-module(xl_tdb_index_lib).
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([expand/1, planes/1, sorter/1, compare/2, contains/2, estimate_expansion/1]).
+-export([expand/2, planes/1, sorter/1, compare/2, contains/2, estimate_expansion/2]).
 
 -define(is_mexclude(X), is_tuple(X) andalso element(1, X) == x andalso is_list(element(2, X))).
 -define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
--define(EXP_LIMIT, 100).
 
--spec(expand([tuple()]) -> [tuple()]).
-expand(Points) -> lists:flatmap(fun(Point) -> expand_point(Point, tuple_size(Point) - 1) end, Points).
+-spec(expand([tuple()], pos_integer()) -> [tuple()]).
+expand(Points, ExpansionLimit) ->
+    lists:flatmap(fun(Point) ->
+        expand_point(Point, tuple_size(Point) - 1, ExpansionLimit)
+    end, Points).
 
-expand_point(Point, 0) -> [Point];
-expand_point(Point, N) when is_list(element(N, Point)) ->
+expand_point(Point, 0, _ExpansionLimit) -> [Point];
+expand_point(Point, N, ExpansionLimit) when is_list(element(N, Point)) ->
     L = element(N, Point),
     case L of
-        [] -> expand_point(setelement(N, Point, undefined), N - 1);
-        _ when length(L) > ?EXP_LIMIT -> expand_point(setelement(N, Point, {i, L}), N - 1);
-        _ -> lists:flatmap(fun(V) -> expand_point(setelement(N, Point, V), N - 1) end, L)
+        [] -> expand_point(setelement(N, Point, undefined), N - 1, ExpansionLimit);
+        _ when length(L) > ExpansionLimit -> expand_point(setelement(N, Point, {i, L}), N - 1, ExpansionLimit);
+        _ -> lists:flatmap(fun(V) -> expand_point(setelement(N, Point, V), N - 1, ExpansionLimit) end, L)
     end;
-expand_point(Point, N) when ?is_mexclude(element(N, Point)) ->
+expand_point(Point, N, ExpansionLimit) when ?is_mexclude(element(N, Point)) ->
     L = element(N, Point),
     case L of
-        {x, []} -> expand_point(setelement(N, Point, undefined), N - 1);
-        _ -> expand_point(Point, N - 1)
+        {x, []} -> expand_point(setelement(N, Point, undefined), N - 1, ExpansionLimit);
+        _ -> expand_point(Point, N - 1, ExpansionLimit)
     end;
-expand_point(Point, N) when ?is_exclude(element(N, Point)) ->
+expand_point(Point, N, ExpansionLimit) when ?is_exclude(element(N, Point)) ->
     {x, X} = element(N, Point),
-    expand_point(setelement(N, Point, {x, [X]}), N - 1);
-expand_point(Point, N) -> expand_point(Point, N - 1).
+    expand_point(setelement(N, Point, {x, [X]}), N - 1, ExpansionLimit);
+expand_point(Point, N, ExpansionLimit) -> expand_point(Point, N - 1, ExpansionLimit).
 
 
--spec(estimate_expansion([tuple()]) -> non_neg_integer()).
-estimate_expansion(Points) -> lists:foldl(fun(Point, S) -> S + estimate_expansion_point(Point, tuple_size(Point) - 1) end, 0, Points).
+-spec(estimate_expansion([tuple()], pos_integer()) -> non_neg_integer()).
+estimate_expansion(Points, ExpansionLimit) ->
+    lists:foldl(fun(Point, S) ->
+        S + estimate_expansion_point(Point, tuple_size(Point) - 1, ExpansionLimit)
+    end, 0, Points).
 
-estimate_expansion_point(_Point, 0) -> 1;
-estimate_expansion_point(Point, N) when is_list(element(N, Point)) ->
+estimate_expansion_point(_Point, 0, _ExpansionLimit) -> 1;
+estimate_expansion_point(Point, N, ExpansionLimit) when is_list(element(N, Point)) ->
     case length(element(N, Point)) of
-        0 -> estimate_expansion_point(Point, N - 1);
-        X when X > ?EXP_LIMIT -> estimate_expansion_point(Point, N - 1);
-        X -> X * estimate_expansion_point(Point, N - 1)
+        0 -> estimate_expansion_point(Point, N - 1, ExpansionLimit);
+        X when X > ExpansionLimit -> estimate_expansion_point(Point, N - 1, ExpansionLimit);
+        X -> X * estimate_expansion_point(Point, N - 1, ExpansionLimit)
     end;
-estimate_expansion_point(Point, N) -> estimate_expansion_point(Point, N - 1).
+estimate_expansion_point(Point, N, ExpansionLimit) -> estimate_expansion_point(Point, N - 1, ExpansionLimit).
 
 -spec(planes([tuple()]) -> [pos_integer()]).
 planes([]) -> [];

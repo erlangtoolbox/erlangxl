@@ -26,7 +26,7 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_uxekdtree_tests).
+-module(xl_tdb_index_tests).
 -author("volodymyr.kyrychenko@strikead.com").
 
 -include_lib("eunit/include/eunit.hrl").
@@ -53,37 +53,36 @@
 
 new_test() ->
     xl_application:start(xl_stdlib),
-    ExpectedTree = {xl_uxekdtree,
-        {2, 1,
+    ExpectedTree = {2, 1,
+        [],
+        {b, 2,
             [],
-            {b, 2,
+            [],
+            {1, 1, [], [], [b], [], [], []},
+            {1, 1,
                 [],
                 [],
-                {1, 1, [], [], [b], [], [], []},
-                {1, 1,
-                    [],
-                    [],
-                    {c, 2, [], [], [c], [], [], []},
-                    [],
-                    [],
-                    []
-                },
-                [],
-                []
-            },
-            {c, 2, [], [], [c], [], [], []},
-            {a, 2,
-                [],
-                [],
-                {3, 1, [], [], [a], [], [], []},
+                {c, 2, [], [], [c], [], [], []},
                 [],
                 [],
                 []
             },
             [],
             []
-        }},
-    ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE)).
+        },
+        {c, 2, [], [], [c], [], [], []},
+        {a, 2,
+            [],
+            [],
+            {3, 1, [], [], [a], [], [], []},
+            [],
+            [],
+            []
+        },
+        [],
+        []
+    },
+    ?assertEquals(ExpectedTree, xl_tdb_index:new(?POINTS_FOR_SMALL_TREE)).
 
 %% new_with_excludes_test() ->
 %%     xl_application:start(xl_stdlib),
@@ -241,87 +240,86 @@ new_test() ->
 
 new_with_undefs_test() ->
     xl_application:start(xl_stdlib),
-    ExpectedTree = {xl_uxekdtree,
-        {2, 1,
-            {b, 2, [], [], [ub2, ub1], [], [], []},
-            {b, 2,
+    ExpectedTree = {2, 1,
+        {b, 2, [], [], [ub2, ub1], [], [], []},
+        {b, 2,
+            [],
+            [],
+            {1, 1, [], [], [b], [], [], []},
+            {1, 1,
                 [],
                 [],
-                {1, 1, [], [], [b], [], [], []},
-                {1, 1,
-                    [],
-                    [],
-                    {c, 2, [], [], [c], [], [], []},
-                    [],
-                    [],
-                    []
-                },
-                [],
-                []
-            },
-            {c, 2, [uc], [], [c], [], [], []},
-            {a, 2,
-                [],
-                [],
-                {3, 1, [], [], [a], [], [], []},
+                {c, 2, [], [], [c], [], [], []},
                 [],
                 [],
                 []
             },
             [],
             []
-        }},
-    ?assertEquals(ExpectedTree, xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
+        },
+        {c, 2, [uc], [], [c], [], [], []},
+        {a, 2,
+            [],
+            [],
+            {3, 1, [], [], [a], [], [], []},
+            [],
+            [],
+            []
+        },
+        [],
+        []
+    },
+    ?assertEquals(ExpectedTree, xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
 
 find_all_test() ->
     xl_application:start(xl_stdlib),
-    Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE),
+    Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE),
     Q = {undefined, undefined},
     Expected = lists:sort(xl_lists:set(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE))),
-    ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
+    ?assertEquals(Expected, lists:sort(element(2, xl_tdb_index:find(Q, Tree)))).
 
 find_all_with_undefs_test() ->
     xl_application:start(xl_stdlib),
-    Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
+    Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
     Q = {undefined, undefined},
     Expected = lists:sort(xl_lists:set(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE_WITH_UNDEFS))),
-    ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
+    ?assertEquals(Expected, lists:sort(element(2, xl_tdb_index:find(Q, Tree)))).
 
 find_with_any_test() ->
     xl_application:start(xl_stdlib),
-    Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
-    ?assertEquals([b, ub1, ub2], lists:sort(element(2, xl_uxekdtree:find({1, b}, Tree)))).
+    Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
+    ?assertEquals([b, ub1, ub2], lists:sort(element(2, xl_tdb_index:find({1, b}, Tree)))).
 
 find_with_x_test() ->
     xl_application:start(xl_stdlib),
-    Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
+    Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
     Q = {1, b},
-    ?assertEquals([b, xb2], lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
+    ?assertEquals([b, xb2], lists:sort(element(2, xl_tdb_index:find(Q, Tree)))).
 
 find_with_mx_test() ->
     xl_application:start(xl_stdlib),
-    SimpleTree = xl_uxekdtree:new([
+    SimpleTree = xl_tdb_index:new([
         {{x, 1}, xb1},
         {2, b2},
         {3, b3}
     ]),
-    ?assertEquals({ok, [xb1]}, xl_uxekdtree:find({4}, SimpleTree)),
-    ?assertEquals(undefined, xl_uxekdtree:find({[1, 4]}, SimpleTree)),
-    Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_MULTI_EXCLUDES),
-    ?assertEquals([b, xb2], lists:sort(element(2, xl_uxekdtree:find({1, b}, Tree)))),
-    ?assertEquals([xc], lists:sort(element(2, xl_uxekdtree:find({2, b}, Tree)))),
-    ?assertEquals([xb1, xb2], lists:sort(element(2, xl_uxekdtree:find({4, b}, Tree)))).
+    ?assertEquals({ok, [xb1]}, xl_tdb_index:find({4}, SimpleTree)),
+    ?assertEquals(undefined, xl_tdb_index:find({[1, 4]}, SimpleTree)),
+    Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_MULTI_EXCLUDES),
+    ?assertEquals([b, xb2], lists:sort(element(2, xl_tdb_index:find({1, b}, Tree)))),
+    ?assertEquals([xc], lists:sort(element(2, xl_tdb_index:find({2, b}, Tree)))),
+    ?assertEquals([xb1, xb2], lists:sort(element(2, xl_tdb_index:find({4, b}, Tree)))).
 
 find_with_variance_test() ->
     xl_application:start(xl_stdlib),
-    Tree = xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
+    Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
     Q = {1, [b, c]},
-    ?assertEquals([b, c, xb2], lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))).
+    ?assertEquals([b, c, xb2], lists:sort(element(2, xl_tdb_index:find(Q, Tree)))).
 
 new_performance_test_() ->
     xl_application:start(xl_stdlib),
     {timeout, 2000, fun() ->
-        xl_eunit:performance(uxekdtree, fun() ->
+        xl_eunit:performance(xl_tdb_index, fun() ->
             prepare_space(10, 1000)
         end, 5)
     end}.
@@ -336,9 +334,9 @@ find_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             Expected = xl_lists:kvfind(Q, ExpectedResuts),
-            ?assertEquals(Expected, xl_uxekdtree:find(Q, Tree)),
-            xl_eunit:performance(uxekdtree_find, fun() ->
-                xl_uxekdtree:find(Q, Tree)
+            ?assertEquals(Expected, xl_tdb_index:find(Q, Tree)),
+            xl_eunit:performance(xl_tdb_index_find, fun() ->
+                xl_tdb_index:find(Q, Tree)
             end, 1000)
         end, 10)
     end}.
@@ -355,9 +353,9 @@ find_undefined_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-            ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))),
-            xl_eunit:performance(xl_uxekdtree_find_undef_q, fun() ->
-                xl_uxekdtree:find(Q, Tree)
+            ?assertEquals(Expected, lists:sort(element(2, xl_tdb_index:find(Q, Tree)))),
+            xl_eunit:performance(xl_tdb_index_find_undef_q, fun() ->
+                xl_tdb_index:find(Q, Tree)
             end, 1000)
         end, 10)
     end}.
@@ -374,9 +372,9 @@ find_with_any_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-            ?assertEquals(Expected, lists:sort(element(2, xl_uxekdtree:find(Q, Tree)))),
-            xl_eunit:performance(xl_uxekdtree_find_w_any, fun() ->
-                xl_uxekdtree:find(Q, Tree)
+            ?assertEquals(Expected, lists:sort(element(2, xl_tdb_index:find(Q, Tree)))),
+            xl_eunit:performance(xl_tdb_index_find_w_any, fun() ->
+                xl_tdb_index:find(Q, Tree)
             end, 1000)
         end, 10)
     end}.
@@ -399,14 +397,14 @@ prepare_space(Dimensions, TotalPoints) -> prepare_space(Dimensions, TotalPoints,
 prepare_space(Dimensions, TotalPoints, Undefined) ->
     Planes = generate_planes([100, 50, 10], Dimensions),
     Points = generate_points(Planes, TotalPoints, Undefined),
-    {Time, Tree} = timer:tc(xl_uxekdtree, new, [Points]),
+    {Time, Tree} = timer:tc(xl_tdb_index, new, [Points]),
     xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\t'any' positions: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
         length(Planes),
         list_to_tuple(Planes),
         TotalPoints,
         Undefined,
-        xl_uxekdtree:size(Tree),
-        xl_uxekdtree:depth(Tree),
+        xl_tdb_index:size(Tree),
+        xl_tdb_index:depth(Tree),
         Time
     ]),
     {Tree, Points}.
@@ -456,18 +454,19 @@ undefine(Tuple, Count, Length) ->
 
 real_space_test_() ->
     {timeout, 2000, fun() ->
+        ExpLimit = 10,
         {ok, Data} = xl_file:read_file(xl_eunit:resource(?MODULE, "space")),
         Points = binary_to_term(Data),
         xl_eunit:format("points: ~p, expansion: ~p, planes:~p~n", [
             length(Points),
-            xl_uxekdtree_lib:estimate_expansion(Points),
-            xl_uxekdtree_lib:planes(Points)
+            xl_tdb_index_lib:estimate_expansion(Points, ExpLimit),
+            xl_tdb_index_lib:planes(Points)
         ]),
-        {Time, Tree} = timer:tc(xl_uxekdtree, new, [Points]),
+        {Time, Tree} = timer:tc(xl_tdb_index, new, [Points, [{expansion_limit, ExpLimit}]]),
         xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
             length(Points),
-            xl_uxekdtree:size(Tree),
-            xl_uxekdtree:depth(Tree),
+            xl_tdb_index:size(Tree),
+            xl_tdb_index:depth(Tree),
             Time
         ]),
         Qs = [
@@ -487,9 +486,9 @@ real_space_test_() ->
                 undefined, undefined, undefined, undefined, undefined}}
         ],
         lists:foreach(fun({R, Q}) ->
-            ?assertEquals(R, length(element(2, xl_uxekdtree:find(Q, Tree)))),
-            xl_eunit:performance(xl_uxekdtree_real_space_find, fun() ->
-                xl_uxekdtree:find(Q, Tree)
+            ?assertEquals(R, length(element(2, xl_tdb_index:find(Q, Tree)))),
+            xl_eunit:performance(xl_tdb_index_real_space_find, fun() ->
+                xl_tdb_index:find(Q, Tree)
             end, 1000)
         end, Qs)
     end}.

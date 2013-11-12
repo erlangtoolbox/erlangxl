@@ -26,13 +26,13 @@
 %%  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 %%  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--module(xl_uxekdtree).
+-module(xl_tdb_index).
 -author("volodymyr.kyrychenko@strikead.com").
 
 -compile({no_auto_import, [size/1]}).
 
 %% API
--export([size/1, depth/1, new/1, find/2]).
+-export([size/1, depth/1, new/1, find/2, new/2]).
 
 -export_type([tree/0, tree_node/0, leaf/0, point/0, query_point/0]).
 
@@ -48,15 +48,18 @@
     Excluded :: [{xl_bloom:ref(), tree_node()}],
     Included :: [{xl_bloom:ref(), tree_node()}]
 } | leaf()).
--type(tree() :: {?MODULE, tree_node()}).
+-type(tree() :: tree_node()).
 
 -define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
 -define(is_include(X), is_tuple(X) andalso element(1, X) == i).
 
 -spec(new([point()]) -> tree()).
-new(Points) ->
-    XPoints = xl_uxekdtree_lib:expand(Points),
-    {?MODULE, new_tree(XPoints, 1, xl_uxekdtree_lib:planes(XPoints))}.
+new(Points) -> new(Points, [{expansion_limit, 10}]).
+
+-spec(new([point()], [{expansion_limit, pos_integer()}]) -> tree()).
+new(Points, [{expansion_limit, Limit}]) ->
+    XPoints = xl_tdb_index_lib:expand(Points, Limit),
+    new_tree(XPoints, 1, xl_tdb_index_lib:planes(XPoints)).
 
 new_tree([], _PlanePos, _Planes) -> [];
 new_tree(Points, _PlanePos, []) -> xl_lists:set(lists:map(fun(P) -> element(tuple_size(P), P) end, Points));
@@ -69,13 +72,13 @@ new_tree(Points, PlanePos, Planes) ->
     {MedianValue, Less, Equal, Greater} = case Normal of
         [] -> {undefined, [], [], []};
         _ ->
-            Sorted = lists:sort(xl_uxekdtree_lib:sorter(Plane), Normal),
+            Sorted = lists:sort(xl_tdb_index_lib:sorter(Plane), Normal),
             Median = lists:nth(round(length(Sorted) / 2), Sorted),
             MV = element(Plane, Median),
             {L, Rest} = xl_lists:fastsplitwith(fun(XE) ->
-                xl_uxekdtree_lib:compare(element(Plane, XE), MV) == lt end, Sorted),
+                xl_tdb_index_lib:compare(element(Plane, XE), MV) == lt end, Sorted),
             {E, G} = xl_lists:fastsplitwith(fun(XE) ->
-                xl_uxekdtree_lib:compare(element(Plane, XE), MV) == eq end, Rest),
+                xl_tdb_index_lib:compare(element(Plane, XE), MV) == eq end, Rest),
             {MV, L, E, G}
     end,
     PlanesWOOne = lists:delete(Plane, Planes),
@@ -102,7 +105,7 @@ new_list_tree(Points, Plane, PlanePos, Planes, KeepValues) ->
     end.
 
 -spec(size(tree()) -> pos_integer()).
-size({?MODULE, Node}) -> size(Node, 0).
+size(Node) -> size(Node, 0).
 
 -spec(size(tree_node(), non_neg_integer()) -> non_neg_integer()).
 size(L, Count) when is_list(L) -> Count;
@@ -121,7 +124,7 @@ list_size(L, Nodes) ->
     end, Nodes, L).
 
 -spec(depth(tree()) -> non_neg_integer()).
-depth({?MODULE, Node}) -> depth(Node, 0).
+depth(Node) -> depth(Node, 0).
 
 -spec(depth(tree_node(), non_neg_integer()) -> non_neg_integer()).
 depth(L, Depth) when is_list(L) -> Depth;
@@ -146,7 +149,7 @@ list_depth(L, Depth) ->
 
 %% todo presort lists in query and replace partition with efficient split
 -spec(find(query_point(), tree()) -> option_m:monad([term()])).
-find(Query, {?MODULE, Node}) ->
+find(Query, Node) ->
     Result = find(Query, Node, sets:new()),
     case sets:size(Result) of
         0 -> undefined;
@@ -163,8 +166,8 @@ find(Query, {_Value, Plane, U, L, E, R, XL, IL}, Acc) when element(Plane, Query)
 find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane, Query)) ->
     UAcc = find(Query, U, Acc),
     QL = element(Plane, Query),
-    {QLess, QRest} = lists:partition(fun(QV) -> xl_uxekdtree_lib:compare(QV, Value) == lt end, QL),
-    {QEq, QGreater} = lists:partition(fun(QV) -> xl_uxekdtree_lib:compare(QV, Value) == eq end, QRest),
+    {QLess, QRest} = lists:partition(fun(QV) -> xl_tdb_index_lib:compare(QV, Value) == lt end, QL),
+    {QEq, QGreater} = lists:partition(fun(QV) -> xl_tdb_index_lib:compare(QV, Value) == eq end, QRest),
     EAcc = case QEq of
         [_ | _] -> find(Query, E, UAcc);
         _ -> UAcc
@@ -210,7 +213,7 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) ->
             false -> FoldAcc
         end
     end, XAcc, IL),
-    case xl_uxekdtree_lib:compare(QValue, Value) of
+    case xl_tdb_index_lib:compare(QValue, Value) of
         eq -> find(Query, E, IAcc);
         lt -> find(Query, L, IAcc);
         gt -> find(Query, R, IAcc)

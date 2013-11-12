@@ -201,7 +201,7 @@ cursor(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
     xl_stream:mapfilter(fun({_Id, O, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end, xl_ets:cursor(ETS)).
 
--spec(index(atom()) -> option_m:monad(xl_uxekdtree:tree())).
+-spec(index(atom()) -> option_m:monad(xl_tdb_index:tree())).
 index(Name) -> xl_state:value(Name, index).
 
 -spec(sync(atom()) -> error_m:monad(ok)).
@@ -236,25 +236,27 @@ rsync(Name) ->
                     SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 2000000)),
                     Identify <- xl_state:evalue(Name, identify),
                     S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync - SafeInterval]),
-                    xl_stream:eforeach(fun(Items) ->
+                    ETS <- xl_state:evalue(Name, ets),
+                    Updated <- xl_stream:efoldl(fun(Items, Count) ->
                         case lists:partition(fun(X) -> element(1, X) == ok end, Items) of
                             {Ok, []} ->
                                 error_logger:info_msg("~p rsync: ~p items read~n", [Name, length(Ok)]),
                                 mutate(Name, fun() ->
-                                    do([error_m ||
-                                        ETS <- xl_state:evalue(Name, ets),
-                                        error_logger:info_msg("~p rsync: adding to ets~n", [Name]),
-                                        lists:foreach(fun({ok, {_Id, O, _LastMidified, Deleted}}) ->
-                                            ets:insert(ETS, wrap(O, Identify, Deleted))
-                                        end, Ok),
-                                        error_logger:info_msg("~p rsync: building index~n", [Name]),
-                                        build_index(Name),
-                                        error_logger:info_msg("~p rsync: index built~n", [Name])
-                                    ])
-                                end);
+                                    error_logger:info_msg("~p rsync: adding to ets~n", [Name]),
+                                    lists:foreach(fun({ok, {_Id, O, _LastMidified, Deleted}}) ->
+                                        ets:insert(ETS, wrap(O, Identify, Deleted))
+                                    end, Ok)
+                                end),
+                                {ok, Count + length(Items)};
                             {_, [Error | _]} -> Error
                         end
-                    end, xl_stream:listn(Treshold, xl_stream:to_rpc_stream(MasterNode, S))),
+                    end, 0, xl_stream:listn(Treshold, xl_stream:to_rpc_stream(MasterNode, S))),
+                    case Updated of
+                        0 -> ok;
+                        _ ->
+                            error_logger:info_msg("~p rsync: building index~n", [Name]),
+                            build_index(Name)
+                    end,
                     xl_state:set(Name, last_rsync, NewLastRSync)
                 ]),
                 error_logger:info_msg("~p rsync: result ~p~n", [Name, R]),
@@ -301,7 +303,7 @@ index_read(Name, Index) ->
             From ! do([option_m ||
                 Options <- xl_state:value(Name, options),
                 QueryF <- xl_lists:kvfind(index_query, Options),
-                xl_uxekdtree:find(QueryF(Query), Index)
+                xl_tdb_index:find(QueryF(Query), Index)
             ]),
             index_read(Name, Index)
     end.
@@ -328,10 +330,10 @@ build_index(Name) ->
         ETS <- xl_state:evalue(Name, ets),
         case xl_lists:kvfind(index_object, Options) of
             {ok, F} ->
-                IndexPid ! {update_index, self(), xl_uxekdtree:new(ets:foldl(fun
+                IndexPid ! {update_index, self(), xl_tdb_index:new(ets:foldl(fun
                     (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
                     (_O, Points) -> Points
-                end, [], ETS))},
+                end, [], ETS), [{expansion_limit, xl_lists:kvfind(index_expansion_limit, Options, 10)}])},
                 receive
                     Result -> Result
                 end;
