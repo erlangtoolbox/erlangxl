@@ -66,20 +66,14 @@ new_tree(Points, _PlanePos, []) -> xl_lists:set(lists:map(fun(P) -> element(tupl
 new_tree(Points, PlanePos, Planes) when PlanePos > length(Planes) -> new_tree(Points, 1, Planes);
 new_tree(Points, PlanePos, Planes) ->
     Plane = lists:nth(PlanePos, Planes),
-    {Undefs, Defs} = xl_lists:keypartition(Plane, undefined, Points),
-    {Excluded, Other} = lists:partition(fun(XE) -> ?is_exclude(element(Plane, XE)) end, Defs),
-    {Included, Normal} = lists:partition(fun(XE) -> ?is_include(element(Plane, XE)) end, Other),
+    {Undefs, Excluded, Included, Normal} = xl_tdb_index_lib:ueipartition(Plane, Points),
     {MedianValue, Less, Equal, Greater} = case Normal of
         [] -> {undefined, [], [], []};
         _ ->
             Sorted = lists:sort(xl_tdb_index_lib:sorter(Plane), Normal),
             Median = lists:nth(round(length(Sorted) / 2), Sorted),
             MV = element(Plane, Median),
-            {L, Rest} = xl_lists:fastsplitwith(fun(XE) ->
-                xl_tdb_index_lib:compare(element(Plane, XE), MV) == lt end, Sorted),
-            {E, G} = xl_lists:fastsplitwith(fun(XE) ->
-                xl_tdb_index_lib:compare(element(Plane, XE), MV) == eq end, Rest),
-            {MV, L, E, G}
+            xl_tdb_index_lib:splitwith(Plane, MV, Sorted)
     end,
     PlanesWOOne = lists:delete(Plane, Planes),
     {
@@ -165,8 +159,8 @@ find(Query, {_Value, Plane, U, L, E, R, XL, IL}, Acc) when element(Plane, Query)
 find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane, Query)) ->
     UAcc = find(Query, U, Acc),
     QL = element(Plane, Query),
-    {QLess, QRest} = lists:partition(fun(QV) -> xl_tdb_index_lib:compare(QV, Value) == lt end, QL),
-    {QEq, QGreater} = lists:partition(fun(QV) -> xl_tdb_index_lib:compare(QV, Value) == eq end, QRest),
+    {QLess, QRest} = xl_lists:fastpartition(fun(QV) -> xl_tdb_index_lib:compare(QV, Value) == lt end, QL),
+    {QEq, QGreater} = xl_lists:fastpartition(fun(QV) -> xl_tdb_index_lib:compare(QV, Value) == eq end, QRest),
     EAcc = case QEq of
         [_ | _] -> find(Query, E, UAcc);
         _ -> UAcc

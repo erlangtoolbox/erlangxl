@@ -179,43 +179,32 @@ by_index(N) -> fun(X) -> element(N, X) end.
 
 -spec(nmapfilter(atom(), non_neg_integer(), xl_lists:kvlist_at(), xl_lists:mapping_predicate(term(), term())) -> [term()]).
 nmapfilter(Name, N, Q, F) ->
-    do([option_m ||
+    option_m:get(do([option_m ||
         Options <- xl_state:value(Name, options),
         IndexPid <- xl_state:value(Name, index_pid),
-        begin
-            Random = xl_lists:kvfind(random, Options, false),
-            IndexPid ! {read_index, self(), Q, fun
-                (undefined) -> [];
-                ({ok, Values}) ->
-                    case Random of
-                        true -> xl_lists:nshufflemapfilter(N, F, Values);
-                        false -> xl_lists:nmapfilter(N, F, Values)
-                    end
-            end},
-            receive
-                Result -> Result
-            end
+        Random <- return(xl_lists:kvfind(random, Options, false)),
+        case xl_lists:kvfind(index_local_execution, Options, false) of
+            true ->
+                IndexPid ! {read_index, self(), Q},
+                receive
+                    {ok, Values} -> {ok, process_values(N, F, Values, Random)};
+                    undefined -> {ok, []}
+                end;
+            false ->
+                IndexPid ! {read_index, self(), Q, fun
+                    (undefined) -> [];
+                    ({ok, Values}) -> process_values(N, F, Values, Random)
+                end},
+                receive
+                    Result -> {ok, Result}
+                end
         end
-    ]).
+    ]), []).
 
-%% nmapfilter(Name, N, Q, F) ->
-%%     Result = do([option_m ||
-%%         Options <- xl_state:value(Name, options),
-%%         IndexPid <- xl_state:value(Name, index_pid),
-%%         begin
-%%             IndexPid ! {read_index, self(), Q},
-%%             receive
-%%                 {ok, Values} -> {ok, Values, xl_lists:kvfind(random, Options, false)};
-%%                 undefined -> undefined
-%%             end
-%%         end
-%%     ]),
-%%     case Result of
-%%         {ok, Values, true} -> xl_lists:nshufflemapfilter(N, F, Values);
-%%         {ok, Values, false} -> xl_lists:nmapfilter(N, F, Values);
-%%         undefined -> []
-%%     end.
-%%
+process_values(N, F, Values, true) -> xl_lists:nshufflemapfilter(N, F, Values);
+process_values(N, F, Values, false) -> xl_lists:nmapfilter(N, F, Values).
+
+
 -spec(cursor(atom()) -> xl_stream:stream()).
 cursor(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
@@ -357,12 +346,13 @@ build_index(Name) ->
         Options <- xl_state:evalue(Name, options),
         IndexPid <- xl_state:evalue(Name, index_pid),
         ETS <- xl_state:evalue(Name, ets),
+        ExpansionLimit <- return(xl_lists:kvfind(index_expansion_limit, Options, 10)),
         case xl_lists:kvfind(index_object, Options) of
             {ok, F} ->
                 IndexPid ! {update_index, self(), xl_tdb_index:new(ets:foldl(fun
                     (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
                     (_O, Points) -> Points
-                end, [], ETS), [{expansion_limit, xl_lists:kvfind(index_expansion_limit, Options, 10)}])},
+                end, [], ETS), [{expansion_limit, ExpansionLimit}])},
                 receive
                     Result -> Result
                 end;

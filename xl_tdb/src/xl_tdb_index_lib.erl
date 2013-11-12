@@ -30,10 +30,11 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([expand/2, planes/1, sorter/1, compare/2, contains/2, estimate_expansion/2]).
+-export([expand/2, planes/1, sorter/1, compare/2, contains/2, estimate_expansion/2, ueipartition/2, splitwith/3]).
 
 -define(is_mexclude(X), is_tuple(X) andalso element(1, X) == x andalso is_list(element(2, X))).
 -define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
+-define(is_include(X), is_tuple(X) andalso element(1, X) == i).
 
 -spec(expand([tuple()], pos_integer()) -> [tuple()]).
 expand(Points, ExpansionLimit) ->
@@ -119,3 +120,24 @@ compare(_, _) -> lt.
 
 -spec(contains(term(), [term()]) -> boolean()).
 contains(K, L) when is_list(L) -> lists:member(K, L).
+
+ueipartition(Plane, Points) -> ueipartition(Plane, Points, [], [], [], []).
+
+ueipartition(_Plane, [], UAcc, XAcc, IAcc, NAcc) -> {UAcc, XAcc, IAcc, NAcc};
+ueipartition(Plane, [H | T], UAcc, XAcc, IAcc, NAcc) when element(Plane, H) == undefined ->
+    ueipartition(Plane, T, [H | UAcc], XAcc, IAcc, NAcc);
+ueipartition(Plane, [H | T], UAcc, XAcc, IAcc, NAcc) when ?is_exclude(element(Plane, H)) ->
+    ueipartition(Plane, T, UAcc, [H | XAcc], IAcc, NAcc);
+ueipartition(Plane, [H | T], UAcc, XAcc, IAcc, NAcc) when ?is_include(element(Plane, H)) ->
+    ueipartition(Plane, T, UAcc, XAcc, [H | IAcc], NAcc);
+ueipartition(Plane, [H | T], UAcc, XAcc, IAcc, NAcc) ->
+    ueipartition(Plane, T, UAcc, XAcc, IAcc, [H | NAcc]).
+
+splitwith(Plane, Value, Points) -> splitwith(Plane, Value, Points, [], [], []).
+splitwith(_Plane, Value, [], LAcc, EAcc, GAcc) -> {Value, LAcc, EAcc, GAcc};
+splitwith(Plane, Value, [H | T], LAcc, EAcc, GAcc) ->
+    case compare(element(Plane, H), Value) of
+        lt -> splitwith(Plane, Value, T, [H | LAcc], EAcc, GAcc);
+        eq -> splitwith(Plane, Value, T, LAcc, [H | EAcc], GAcc);
+        gt -> splitwith(Plane, Value, T, LAcc, EAcc, [H | GAcc])
+    end.
