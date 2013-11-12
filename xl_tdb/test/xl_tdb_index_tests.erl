@@ -469,6 +469,42 @@ real_space_test_() ->
             xl_tdb_index:depth(Tree),
             Time
         ]),
+        Qs = [{6, {false, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
+            'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {263, {false, <<"US">>, <<"IAB-19">>, undefined, 1, undefined, site, nexage,
+                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {263, {false, <<"US">>, [<<"IAB-19">>, <<"IAB-20">>], undefined, 1, undefined, site, nexage,
+                'Mon', 1, '320x50', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {111, {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
+                'Mon', 1, '300x250', <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}},
+            {381, {false, <<"GB">>, <<"IAB-19">>, undefined, 1, undefined, site, adiquity,
+                'Mon', 1, ['300x250', '320x50'], <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>}}
+        ],
+        lists:foreach(fun({R, Q}) ->
+            ?assertEquals(R, length(element(2, xl_tdb_index:find(Q, Tree)))),
+            xl_eunit:performance(xl_tdb_index_real_space_find, fun() ->
+                xl_tdb_index:find(Q, Tree)
+            end, 10000)
+        end, Qs)
+    end}.
+
+real_space_x_test_() ->
+    {timeout, 2000, fun() ->
+        ExpLimit = 10,
+        {ok, Data} = xl_file:read_file(xl_eunit:resource(?MODULE, "space.x")),
+        Points = binary_to_term(Data),
+        xl_eunit:format("points: ~p, expansion: ~p, planes:~p~n", [
+            length(Points),
+            xl_tdb_index_lib:estimate_expansion(Points, ExpLimit),
+            xl_tdb_index_lib:planes(Points)
+        ]),
+        {Time, Tree} = timer:tc(xl_tdb_index, new, [Points, [{expansion_limit, ExpLimit}]]),
+        xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+            length(Points),
+            xl_tdb_index:size(Tree),
+            xl_tdb_index:depth(Tree),
+            Time
+        ]),
         Qs = [
             {9, {false, <<"CC">>, undefined, 1, undefined,
                 site, mediba, 'Mon', 1, '320x50',
