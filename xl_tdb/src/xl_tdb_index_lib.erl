@@ -86,16 +86,19 @@ planes(Points = [H | _]) ->
     end, lists:seq(1, tuple_size(H) - 1)),
     Planes.
 
-%% todo refactor using early exit if all planes are present
-stat(Points, Size) ->
-    lists:foldl(fun(P, Mask) ->
-        lists:foldl(fun(Index, IMask) ->
-            case element(Index, P) of
-                undefined -> IMask;
-                _ -> IMask bor (1 bsl (Index - 1))
-            end
-        end, Mask, lists:seq(1, Size))
-    end, 0, Points).
+stat(Points, Size) -> stat(Points, Size, 0).
+stat([], _Size, Mask) -> Mask;
+stat([H | T], Size, Mask) ->
+    M = lists:foldl(fun(Index, IMask) ->
+        case element(Index, H) of
+            undefined -> IMask;
+            _ -> IMask bor (1 bsl (Index - 1))
+        end
+    end, Mask, lists:seq(1, Size)),
+    case trunc(math:pow(2, Size)) - 1 of
+        M -> M;
+        _ -> stat(T, Size, M)
+    end.
 
 
 %% prebuild sorters
