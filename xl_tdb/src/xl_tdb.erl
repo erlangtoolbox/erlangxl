@@ -179,23 +179,43 @@ by_index(N) -> fun(X) -> element(N, X) end.
 
 -spec(nmapfilter(atom(), non_neg_integer(), xl_lists:kvlist_at(), xl_lists:mapping_predicate(term(), term())) -> [term()]).
 nmapfilter(Name, N, Q, F) ->
-    Result = do([option_m ||
+    do([option_m ||
         Options <- xl_state:value(Name, options),
         IndexPid <- xl_state:value(Name, index_pid),
         begin
-            IndexPid ! {read_index, self(), Q},
+            Random = xl_lists:kvfind(random, Options, false),
+            IndexPid ! {read_index, self(), Q, fun
+                (undefined) -> [];
+                ({ok, Values}) ->
+                    case Random of
+                        true -> xl_lists:nshufflemapfilter(N, F, Values);
+                        false -> xl_lists:nmapfilter(N, F, Values)
+                    end
+            end},
             receive
-                {ok, Values} -> {ok, Values, xl_lists:kvfind(random, Options, false)};
-                undefined -> undefined
+                Result -> Result
             end
         end
-    ]),
-    case Result of
-        {ok, Values, true} -> xl_lists:nshufflemapfilter(N, F, Values);
-        {ok, Values, false} -> xl_lists:nmapfilter(N, F, Values);
-        undefined -> []
-    end.
+    ]).
 
+%% nmapfilter(Name, N, Q, F) ->
+%%     Result = do([option_m ||
+%%         Options <- xl_state:value(Name, options),
+%%         IndexPid <- xl_state:value(Name, index_pid),
+%%         begin
+%%             IndexPid ! {read_index, self(), Q},
+%%             receive
+%%                 {ok, Values} -> {ok, Values, xl_lists:kvfind(random, Options, false)};
+%%                 undefined -> undefined
+%%             end
+%%         end
+%%     ]),
+%%     case Result of
+%%         {ok, Values, true} -> xl_lists:nshufflemapfilter(N, F, Values);
+%%         {ok, Values, false} -> xl_lists:nmapfilter(N, F, Values);
+%%         undefined -> []
+%%     end.
+%%
 -spec(cursor(atom()) -> xl_stream:stream()).
 cursor(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
@@ -299,11 +319,20 @@ index_read(Name, Index) ->
             index_read(Name, NewIndex);
         {read_index, From, _Query} when Index == undefined ->
             From ! undefined;
+        {read_index, From, _Query, _F} when Index == undefined ->
+            From ! undefined;
         {read_index, From, Query} ->
             From ! do([option_m ||
                 Options <- xl_state:value(Name, options),
                 QueryF <- xl_lists:kvfind(index_query, Options),
                 xl_tdb_index:find(QueryF(Query), Index)
+            ]),
+            index_read(Name, Index);
+        {read_index, From, Query, F} ->
+            From ! do([option_m ||
+                Options <- xl_state:value(Name, options),
+                QueryF <- xl_lists:kvfind(index_query, Options),
+                F(xl_tdb_index:find(QueryF(Query), Index))
             ]),
             index_read(Name, Index)
     end.
