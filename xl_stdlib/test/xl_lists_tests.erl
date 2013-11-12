@@ -236,3 +236,17 @@ nshufflemapfilter_random_test() ->
 
 delete_all_test() ->
     ?assertEqual([1, 2, 3, 4], xl_lists:delete_all(x, [1, x, 2, x, x, 3, 4])).
+
+set_test() ->
+    L = [random:uniform(1000) || _ <- lists:seq(1, 1000)],
+    ?assertEquals(length(xl_lists:set(L)), length(sets:to_list(sets:from_list(L)))),
+    xl_lists:times(fun() ->
+        xl_eunit:performance(xl_lists_set, fun() ->
+            xl_lists:set(L)
+        end, 100)
+    end, 5),
+    xl_lists:times(fun() ->
+        xl_eunit:performance(sets_from_list, fun() ->
+            sets:to_list(sets:from_list(L))
+        end, 100)
+    end, 5).

@@ -160,7 +160,6 @@ find(Query, {_Value, Plane, U, L, E, R, XL, IL}, Acc) when element(Plane, Query)
     LAcc = find(Query, L, UAcc),
     EAcc = find(Query, E, LAcc),
     RAcc = find(Query, R, EAcc),
-%%      RAcc;
     XAcc = lists:foldl(fun({_, T}, A) -> find(Query, T, A) end, RAcc, XL),
     lists:foldl(fun({_, _, T}, A) -> find(Query, T, A) end, XAcc, IL);
 find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane, Query)) ->
@@ -188,7 +187,6 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane,
             false -> FoldAcc
         end
     end, XAcc, IL),
-%%     IAcc = EAcc,
     LAcc = case QLess of
         [] -> IAcc;
         [LV] -> find(setelement(Plane, Query, LV), L, IAcc);
@@ -214,7 +212,6 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) ->
             false -> FoldAcc
         end
     end, XAcc, IL),
-%%     IAcc = UAcc,
     case xl_tdb_index_lib:compare(QValue, Value) of
         eq -> find(Query, E, IAcc);
         lt -> find(Query, L, IAcc);
