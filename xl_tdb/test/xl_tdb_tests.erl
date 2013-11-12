@@ -109,8 +109,8 @@ mapfilter_test() ->
     T3 = #testobj{id = "3", name = <<"n1">>},
     T4 = #testobj{id = "4", name = <<"n3">>},
     ?assertOk(xl_tdb:store(testtdbpmf, [T1, T2, T3, T4])),
-    ?assertEquals([T3, T1], xl_tdb:nmapfilter(testtdbpmf, 2, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
-    ?assertEquals([T1], xl_tdb:nmapfilter(testtdbpmf, 1, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
+    ?assertEquals([T1, T3], xl_tdb:nmapfilter(testtdbpmf, 2, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
+    ?assertEquals([T3], xl_tdb:nmapfilter(testtdbpmf, 1, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
     ?assertOk(xl_tdb:close(testtdbpmf)).
 
 rsync_test() ->

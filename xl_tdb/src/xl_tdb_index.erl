@@ -150,17 +150,17 @@ list_depth(L, Depth) ->
 %% todo presort lists in query and replace partition with efficient split
 -spec(find(query_point(), tree()) -> option_m:monad([term()])).
 find(Query, Node) ->
-    Result = find(Query, Node, sets:new()),
-    case sets:size(Result) of
-        0 -> undefined;
-        _ -> {ok, sets:to_list(Result)}
+    case find(Query, Node, []) of
+        [] -> undefined;
+        R -> {ok, R}
     end.
-find(_Query, L, Acc) when is_list(L) -> lists:foldl(fun(X, S) -> sets:add_element(X, S) end, Acc, L);
+find(_Query, L, Acc) when is_list(L) -> L ++ Acc;
 find(Query, {_Value, Plane, U, L, E, R, XL, IL}, Acc) when element(Plane, Query) == undefined ->
     UAcc = find(Query, U, Acc),
     LAcc = find(Query, L, UAcc),
     EAcc = find(Query, E, LAcc),
     RAcc = find(Query, R, EAcc),
+%%      RAcc;
     XAcc = lists:foldl(fun({_, T}, A) -> find(Query, T, A) end, RAcc, XL),
     lists:foldl(fun({_, _, T}, A) -> find(Query, T, A) end, XAcc, IL);
 find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane, Query)) ->
@@ -188,6 +188,7 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane,
             false -> FoldAcc
         end
     end, XAcc, IL),
+%%     IAcc = EAcc,
     LAcc = case QLess of
         [] -> IAcc;
         [LV] -> find(setelement(Plane, Query, LV), L, IAcc);
@@ -213,6 +214,7 @@ find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) ->
             false -> FoldAcc
         end
     end, XAcc, IL),
+%%     IAcc = UAcc,
     case xl_tdb_index_lib:compare(QValue, Value) of
         eq -> find(Query, E, IAcc);
         lt -> find(Query, L, IAcc);
