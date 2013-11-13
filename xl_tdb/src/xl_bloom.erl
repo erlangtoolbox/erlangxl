@@ -44,9 +44,11 @@ new(List) ->
     end, new(length(List)), List).
 
 -spec(insert(term(), ref()) -> ref()).
-insert(X, Bloom) when is_binary(X) -> bloom:add(X, Bloom);
-insert(X, Bloom) -> insert(term_to_binary(X), Bloom).
+insert(X, Bloom)  -> bloom:add(X, Bloom).
+%% insert(X, Bloom) when is_binary(X) -> bloom:add(X, Bloom);
+%% insert(X, Bloom) -> insert(term_to_binary(X), Bloom).
 
 -spec(contains(term(), ref()) -> boolean()).
-contains(X, Bloom) when is_binary(X) -> bloom:member(X, Bloom);
-contains(X, Bloom) -> contains(term_to_binary(X), Bloom).
+contains(X, Bloom) -> bloom:member(X, Bloom).
+%% contains(X, Bloom) when is_binary(X) -> bloom:member(X, Bloom);
+%% contains(X, Bloom) -> contains(term_to_binary(X), Bloom).

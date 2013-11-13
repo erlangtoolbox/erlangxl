@@ -99,7 +99,7 @@ new_list_tree(Points, Plane, PlanePos, Planes, IsInclude) ->
                 false -> {list, Values, new_tree(Pts, PlanePos, Planes)}
             end || {Values, Pts} <- dict:to_list(Dict)];
         false ->
-            [case length(Values) > 100 of
+            [case length(Values) > 10 of
                 true -> {xbloom, xl_bloom:new(Values), new_tree(Pts, PlanePos, Planes)};
                 false when length(Values) == 1 -> {xitem, hd(Values), new_tree(Pts, PlanePos, Planes)};
                 false -> {xlist, Values, new_tree(Pts, PlanePos, Planes)}
