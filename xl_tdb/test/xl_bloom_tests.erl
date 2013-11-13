@@ -44,10 +44,10 @@ bloom_test() ->
             xl_eunit:performance(xl_convert:make_atom(['bloom#', Count]), fun() ->
                 true = xl_bloom:contains(Value, Bloom),
                 false = xl_bloom:contains({wtf, Value}, Bloom)
-            end, 10000),
+            end, 1000),
             xl_eunit:performance(xl_convert:make_atom(['list#', Count]), fun() ->
                 true = lists:member(Value, Actual),
                 false = lists:member({wtf, Value}, Actual)
-            end, 10000)
+            end, 1000)
         end, 10)
     end, Counts).
