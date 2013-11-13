@@ -66,7 +66,7 @@ new_tree(Points, _PlanePos, []) -> xl_lists:set(lists:map(fun(P) -> element(tupl
 new_tree(Points, PlanePos, Planes) when PlanePos > length(Planes) -> new_tree(Points, 1, Planes);
 new_tree(Points, PlanePos, Planes) ->
     Plane = lists:nth(PlanePos, Planes),
-    {Undefs, _Excluded, _Included, Normal} = xl_tdb_index_lib:ueipartition(Plane, Points),
+    {Undefs, Excluded, Included, Normal} = xl_tdb_index_lib:ueipartition(Plane, Points),
     {MedianValue, Less, Equal, Greater} = case Normal of
         [] -> {undefined, [], [], []};
         _ ->
@@ -83,30 +83,28 @@ new_tree(Points, PlanePos, Planes) ->
         new_tree(Less, PlanePos + 1, Planes),
         new_tree(Equal, PlanePos, PlanesWOOne),
         new_tree(Greater, PlanePos + 1, Planes),
-        [],
-        []
-%%         new_list_tree(Excluded, Plane, PlanePos, PlanesWOOne, false),
-%%         new_list_tree(Included, Plane, PlanePos, PlanesWOOne, true)
+        new_list_tree(Excluded, Plane, PlanePos, PlanesWOOne, false),
+        new_list_tree(Included, Plane, PlanePos, PlanesWOOne, true)
     }.
 
-%% new_list_tree(Points, Plane, PlanePos, Planes, IsInclude) ->
-%%     Dict = xl_lists:transform(dict, fun(Point) ->
-%%         {_, Values} = element(Plane, Point),
-%%         {Values, Point}
-%%     end, Points),
-%%     case IsInclude of
-%%         true ->
-%%             [case length(Values) > 100 of
-%%                 true -> {bloom, {xl_bloom:new(Values), Values}, new_tree(Pts, PlanePos, Planes)};
-%%                 false -> {list, Values, new_tree(Pts, PlanePos, Planes)}
-%%             end || {Values, Pts} <- dict:to_list(Dict)];
-%%         false ->
-%%             [case length(Values) > 100 of
-%%                 true -> {xbloom, xl_bloom:new(Values), new_tree(Pts, PlanePos, Planes)};
-%%                 false when length(Values) == 1 -> {xitem, hd(Values), new_tree(Pts, PlanePos, Planes)};
-%%                 false -> {xlist, Values, new_tree(Pts, PlanePos, Planes)}
-%%             end || {Values, Pts} <- dict:to_list(Dict)]
-%%     end.
+new_list_tree(Points, Plane, PlanePos, Planes, IsInclude) ->
+    Dict = xl_lists:transform(dict, fun(Point) ->
+        {_, Values} = element(Plane, Point),
+        {Values, Point}
+    end, Points),
+    case IsInclude of
+        true ->
+            [case length(Values) > 100 of
+                true -> {bloom, {xl_bloom:new(Values), Values}, new_tree(Pts, PlanePos, Planes)};
+                false -> {list, Values, new_tree(Pts, PlanePos, Planes)}
+            end || {Values, Pts} <- dict:to_list(Dict)];
+        false ->
+            [case length(Values) > 100 of
+                true -> {xbloom, xl_bloom:new(Values), new_tree(Pts, PlanePos, Planes)};
+                false when length(Values) == 1 -> {xitem, hd(Values), new_tree(Pts, PlanePos, Planes)};
+                false -> {xlist, Values, new_tree(Pts, PlanePos, Planes)}
+            end || {Values, Pts} <- dict:to_list(Dict)]
+    end.
 
 -spec(stats(tree()) -> xl_lists:kvlist_at()).
 stats({_Node, Stats}) -> Stats.
@@ -163,15 +161,14 @@ list_depth(L, Depth) ->
 -spec(find(query_point(), tree()) -> [term()]).
 find(Query, {Node, _Stats}) -> find(Query, Node, []).
 find(_Query, L, Acc) when is_list(L) -> L ++ Acc;
-find(Query, {_Value, Plane, U, L, E, R, _XL, _IL}, Acc) when element(Plane, Query) == undefined ->
+find(Query, {_Value, Plane, U, L, E, R, XL, IL}, Acc) when element(Plane, Query) == undefined ->
     UAcc = find(Query, U, Acc),
     LAcc = find(Query, L, UAcc),
     EAcc = find(Query, E, LAcc),
     RAcc = find(Query, R, EAcc),
-    RAcc;
-%%     XAcc = lists:foldl(fun({_, _, T}, A) -> find(Query, T, A) end, RAcc, XL),
-%%     lists:foldl(fun({_, _, T}, A) -> find(Query, T, A) end, XAcc, IL);
-find(Query, {Value, Plane, U, L, E, R, _XL, _IL}, Acc) when is_list(element(Plane, Query)) ->
+    XAcc = lists:foldl(fun({_, _, T}, A) -> find(Query, T, A) end, RAcc, XL),
+    lists:foldl(fun({_, _, T}, A) -> find(Query, T, A) end, XAcc, IL);
+find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) when is_list(element(Plane, Query)) ->
     UAcc = find(Query, U, Acc),
     QL = element(Plane, Query),
     {QLess, QRest} = xl_lists:fastpartition(fun(QV) -> xl_tdb_index_lib:compare(QV, Value) == lt end, QL),
@@ -180,19 +177,18 @@ find(Query, {Value, Plane, U, L, E, R, _XL, _IL}, Acc) when is_list(element(Plan
         [_ | _] -> find(Query, E, UAcc);
         _ -> UAcc
     end,
-%%     XAcc = lists:foldl(fun(X = {_, _, T}, FoldAcc) ->
-%%         case lists:all(fun(QValue) -> xi_match(QValue, X) end, QL) of
-%%             true -> find(Query, T, FoldAcc);
-%%             false -> FoldAcc
-%%         end
-%%     end, EAcc, XL),
-%%     IAcc = lists:foldl(fun(X = {_, _, T}, FoldAcc) ->
-%%         case lists:any(fun(QValue) -> xi_match(QValue, X) end, QL) of
-%%             true -> find(Query, T, FoldAcc);
-%%             false -> FoldAcc
-%%         end
-%%     end, XAcc, IL),
-    IAcc = EAcc,
+    XAcc = lists:foldl(fun(X = {_, _, T}, FoldAcc) ->
+        case lists:all(fun(QValue) -> xi_match(QValue, X) end, QL) of
+            true -> find(Query, T, FoldAcc);
+            false -> FoldAcc
+        end
+    end, EAcc, XL),
+    IAcc = lists:foldl(fun(X = {_, _, T}, FoldAcc) ->
+        case lists:any(fun(QValue) -> xi_match(QValue, X) end, QL) of
+            true -> find(Query, T, FoldAcc);
+            false -> FoldAcc
+        end
+    end, XAcc, IL),
     LAcc = case QLess of
         [] -> IAcc;
         [LV] -> find(setelement(Plane, Query, LV), L, IAcc);
@@ -203,33 +199,32 @@ find(Query, {Value, Plane, U, L, E, R, _XL, _IL}, Acc) when is_list(element(Plan
         [GV] -> find(setelement(Plane, Query, GV), R, LAcc);
         _ -> find(setelement(Plane, Query, QGreater), R, LAcc)
     end;
-find(Query, {Value, Plane, U, L, E, R, _XL, _IL}, Acc) ->
+find(Query, {Value, Plane, U, L, E, R, XL, IL}, Acc) ->
     UAcc = find(Query, U, Acc),
     QValue = element(Plane, Query),
-%%     XAcc = xi_find(Query, QValue, XL, UAcc),
-%%     IAcc = xi_find(Query, QValue, IL, XAcc),
-    IAcc = UAcc,
+    XAcc = xi_find(Query, QValue, XL, UAcc),
+    IAcc = xi_find(Query, QValue, IL, XAcc),
     case xl_tdb_index_lib:compare(QValue, Value) of
         eq -> find(Query, E, IAcc);
         lt -> find(Query, L, IAcc);
         gt -> find(Query, R, IAcc)
     end.
 
-%% xi_find(Query, Value, List, Acc) ->
-%%     lists:foldl(fun(X = {_, _, T}, FoldAcc) ->
-%%         case xi_match(Value, X) of
-%%             true -> find(Query, T, FoldAcc);
-%%             false -> FoldAcc
-%%         end
-%%     end, Acc, List).
-%%
-%% xi_match(Value, {bloom, {Bloom, Values}, _T}) ->
-%%     xl_bloom:contains(Value, Bloom) andalso lists:member(Value, Values);
-%% xi_match(Value, {xbloom, Bloom, _T}) ->
-%%     not xl_bloom:contains(Value, Bloom);
-%% xi_match(Value, {list, Values, _T}) ->
-%%     lists:member(Value, Values);
-%% xi_match(Value, {xlist, Values, _T}) ->
-%%     not lists:member(Value, Values);
-%% xi_match(Value, {xitem, Value, _T}) -> false;
-%% xi_match(_Value, {xitem, _, _T}) -> true.
+xi_find(Query, Value, List, Acc) ->
+    lists:foldl(fun(X = {_, _, T}, FoldAcc) ->
+        case xi_match(Value, X) of
+            true -> find(Query, T, FoldAcc);
+            false -> FoldAcc
+        end
+    end, Acc, List).
+
+xi_match(Value, {bloom, {Bloom, Values}, _T}) ->
+    xl_bloom:contains(Value, Bloom) andalso lists:member(Value, Values);
+xi_match(Value, {xbloom, Bloom, _T}) ->
+    not xl_bloom:contains(Value, Bloom);
+xi_match(Value, {list, Values, _T}) ->
+    lists:member(Value, Values);
+xi_match(Value, {xlist, Values, _T}) ->
+    not lists:member(Value, Values);
+xi_match(Value, {xitem, Value, _T}) -> false;
+xi_match(_Value, {xitem, _, _T}) -> true.

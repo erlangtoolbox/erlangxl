@@ -189,11 +189,11 @@ nmapfilter(Name, N, Q, F) ->
             true ->
                 IndexPid ! {read_index, self(), Query},
                 receive
-                    Values -> {ok, process_values(N, xl_tdb_index_lib:ixfilter(Query, F), Values, Random)}
+                    Values -> {ok, process_values(N, F , Values, Random)}
                 end;
             false ->
                 IndexPid ! {read_index, self(), Query, fun(Values) ->
-                    process_values(N, xl_tdb_index_lib:ixfilter(Query, F), Values, Random)
+                    process_values(N, F, Values, Random)
                 end},
                 receive
                     Result -> {ok, Result}
