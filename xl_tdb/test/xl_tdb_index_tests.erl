@@ -53,7 +53,7 @@
 
 new_test() ->
     xl_application:start(xl_stdlib),
-    ExpectedTree = {2, 1,
+    ExpectedTree = {{2, 1,
         [],
         {b, 2,
             [],
@@ -81,7 +81,7 @@ new_test() ->
         },
         [],
         []
-    },
+    }, [{expansion_limit, 10}]},
     ?assertEquals(ExpectedTree, xl_tdb_index:new(?POINTS_FOR_SMALL_TREE)).
 
 %% new_with_excludes_test() ->
@@ -240,7 +240,7 @@ new_test() ->
 
 new_with_undefs_test() ->
     xl_application:start(xl_stdlib),
-    ExpectedTree = {2, 1,
+    ExpectedTree = {{2, 1,
         {b, 2, [], [], [ub2, ub1], [], [], []},
         {b, 2,
             [],
@@ -268,7 +268,7 @@ new_with_undefs_test() ->
         },
         [],
         []
-    },
+    }, [{expansion_limit, 10}]},
     ?assertEquals(ExpectedTree, xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)).
 
 find_all_test() ->
