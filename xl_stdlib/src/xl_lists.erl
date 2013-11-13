@@ -409,6 +409,7 @@ fastsplitwith(Pred, [Hd | Tail], Taken) ->
 fastsplitwith(Pred, [], Taken) when is_function(Pred, 1) -> {Taken, []}.
 
 -spec(nshufflemapfilter(non_neg_integer(), mapping_predicate(term(), term()), [term()]) -> [term()]).
+nshufflemapfilter(_Limit, _F, []) -> [];
 nshufflemapfilter(Limit, F, List) ->
     N = xl_random:uniform(length(List)) - 1,
     {L, R} = lists:split(N, List),
