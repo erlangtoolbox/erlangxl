@@ -36,28 +36,17 @@
 
 -opaque(ref() :: term()).
 
--spec(new(pos_integer() | [term()]) -> {ok, ref()}).
-new(Size) when is_integer(Size) ->
-    {ok, bloom:bloom(max(Size, 4000))};
-%%     ebloom:new(Size, 0.01, element(3, now()));
+-spec(new(pos_integer() | [term()]) -> ref()).
+new(Size) when is_integer(Size) -> bloom:bloom(max(Size, 4000));
 new(List) ->
-    case new(length(List)) of
-        {ok, Ref} ->
-            {ok, lists:foldl(fun(X, Bloom) ->
-                insert(X, Bloom)
-            end, Ref, List)};
-        E -> E
-    end.
+    lists:foldl(fun(X, Bloom) ->
+        insert(X, Bloom)
+    end, new(length(List)), List).
 
 -spec(insert(term(), ref()) -> ref()).
-insert(X, Bloom) when is_binary(X) ->
-    bloom:add_element(X, Bloom);
-%%     ebloom:insert(Bloom, X),
-%%     Bloom;
+insert(X, Bloom) when is_binary(X) -> bloom:add(X, Bloom);
 insert(X, Bloom) -> insert(term_to_binary(X), Bloom).
 
 -spec(contains(term(), ref()) -> boolean()).
-contains(X, Bloom) when is_binary(X) ->
-    bloom:is_element(X, Bloom);
-%%     ebloom:contains(Bloom, X);
+contains(X, Bloom) when is_binary(X) -> bloom:member(X, Bloom);
 contains(X, Bloom) -> contains(term_to_binary(X), Bloom).

@@ -77,6 +77,7 @@ estimate_expansion_point(Point, N, ExpansionLimit) when is_list(element(N, Point
     end;
 estimate_expansion_point(Point, N, ExpansionLimit) -> estimate_expansion_point(Point, N - 1, ExpansionLimit).
 
+
 -spec(planes([tuple()]) -> [pos_integer()]).
 planes([]) -> [];
 planes(Points = [H | _]) ->

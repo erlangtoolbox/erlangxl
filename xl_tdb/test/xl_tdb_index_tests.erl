@@ -463,10 +463,11 @@ real_space_test_() ->
             xl_tdb_index_lib:planes(Points)
         ]),
         {Time, Tree} = timer:tc(xl_tdb_index, new, [Points, [{expansion_limit, ExpLimit}]]),
-        xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+        xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tvalues: ~p\tconstruction time: ~p mcs~n", [
             length(Points),
             xl_tdb_index:size(Tree),
             xl_tdb_index:depth(Tree),
+            xl_tdb_index:count(Tree),
             Time
         ]),
         Qs = [{6, {false, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
@@ -499,10 +500,11 @@ real_space_x_test_() ->
             xl_tdb_index_lib:planes(Points)
         ]),
         {Time, Tree} = timer:tc(xl_tdb_index, new, [Points, [{expansion_limit, ExpLimit}]]),
-        xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+        xl_eunit:format("points: ~p\tsize: ~p\tdepth: ~p\tvalues: ~p\tconstruction time: ~p mcs~n", [
             length(Points),
             xl_tdb_index:size(Tree),
             xl_tdb_index:depth(Tree),
+            xl_tdb_index:count(Tree),
             Time
         ]),
         Qs = [

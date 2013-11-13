@@ -34,19 +34,20 @@
 bloom_test() ->
     {ok, [{values, BinValues}]} = xl_json:to_abstract(xl_json:parse_file(xl_eunit:resource(?MODULE, "4.json"))),
     Values = [{xxx, binary_to_atom(V, utf8)} || V <- BinValues],
-    {ok, F} = xl_bloom:new(Values),
-    xl_lists:times(fun() ->
-        Value = lists:nth(random:uniform(length(Values)), Values),
-        xl_eunit:performance(bloom, fun() ->
-            true = xl_bloom:contains(Value, F),
-            false = xl_bloom:contains({wtf, Value}, F)
-        end, 10000)
-    end, 10),
-    xl_lists:times(fun() ->
-        Value = lists:nth(random:uniform(length(Values)), Values),
-        xl_eunit:performance(list, fun() ->
-            true = lists:member(Value, Values),
-            false = lists:member({wtf, Value}, Values)
-        end, 10000)
-    end, 10).
+    Counts = xl_lists:seq(1, 5, 0.2, fun(X) -> round(math:exp(X)) end),
 
+    lists:foreach(fun(Count) ->
+        {Actual, _} = xl_lists:split(Count, Values),
+        Bloom = xl_bloom:new(Actual),
+        Value = lists:nth(random:uniform(length(Actual)), Actual),
+        xl_lists:times(fun() ->
+            xl_eunit:performance(xl_convert:make_atom(['bloom#', Count]), fun() ->
+                true = xl_bloom:contains(Value, Bloom),
+                false = xl_bloom:contains({wtf, Value}, Bloom)
+            end, 10000),
+            xl_eunit:performance(xl_convert:make_atom(['list#', Count]), fun() ->
+                true = lists:member(Value, Actual),
+                false = lists:member({wtf, Value}, Actual)
+            end, 10000)
+        end, 10)
+    end, Counts).
