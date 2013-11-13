@@ -58,11 +58,11 @@ new_test() ->
         {b, 2,
             [],
             [],
-            {1, 1, [], [], [b], [], [], []},
+            {1, 1, [], [], [{[], b}], [], [], []},
             {1, 1,
                 [],
                 [],
-                {c, 2, [], [], [c], [], [], []},
+                {c, 2, [], [], [{[], c}], [], [], []},
                 [],
                 [],
                 []
@@ -70,11 +70,11 @@ new_test() ->
             [],
             []
         },
-        {c, 2, [], [], [c], [], [], []},
+        {c, 2, [], [], [{[], c}], [], [], []},
         {a, 2,
             [],
             [],
-            {3, 1, [], [], [a], [], [], []},
+            {3, 1, [], [], [{[], a}], [], [], []},
             [],
             [],
             []
@@ -84,172 +84,18 @@ new_test() ->
     }, [{expansion_limit, 10}]},
     ?assertEquals(ExpectedTree, xl_tdb_index:new(?POINTS_FOR_SMALL_TREE)).
 
-%% new_with_excludes_test() ->
-%%     xl_application:start(xl_stdlib),
-%%     ExpectedTree = {xl_uxekdtree,
-%%         {2, 1,
-%%             [],
-%%             {b, 2,
-%%                 [],
-%%                 [],
-%%                 {1, 1,
-%%                     [],
-%%                     [],
-%%                     [b],
-%%                     [],
-%%                     [{[], [xb1]}]
-%%                 },
-%%                 {1, 1,
-%%                     [],
-%%                     [],
-%%                     {c, 2,
-%%                         [],
-%%                         [],
-%%                         [c],
-%%                         [],
-%%                         []
-%%                     },
-%%                     [],
-%%                     []
-%%                 },
-%%                 []
-%%             },
-%%             {c, 2,
-%%                 [],
-%%                 [],
-%%                 [c, c],
-%%                 [],
-%%                 [{[], [xc]}]
-%%             },
-%%             {a, 2,
-%%                 [],
-%%                 [],
-%%                 {3, 1,
-%%                     [],
-%%                     [],
-%%                     [a, a, a],
-%%                     [],
-%%                     []
-%%                 },
-%%                 [],
-%%                 []
-%%             },
-%%             [
-%%                 {[],
-%%                     {b, 2,
-%%                         [],
-%%                         [],
-%%                         [xb2],
-%%                         [],
-%%                         []
-%%                     }
-%%                 }
-%%             ]
-%%         }
-%%     },
-%%     ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES))).
-%%
-%% new_with_mx_test() ->
-%%     xl_application:start(xl_stdlib),
-%%     ExpectedTree = {xl_uxekdtree,
-%%         {2, 1,
-%%             [],
-%%             {b, 2,
-%%                 [],
-%%                 [],
-%%                 {1, 1,
-%%                     [],
-%%                     [],
-%%                     [b],
-%%                     [],
-%%                     [{[2, 3], [xb1]}]
-%%                 },
-%%                 {1, 1,
-%%                     [],
-%%                     [],
-%%                     {c, 2,
-%%                         [],
-%%                         [],
-%%                         [c],
-%%                         [],
-%%                         []
-%%                     },
-%%                     [],
-%%                     []
-%%                 },
-%%                 []
-%%             },
-%%             {c, 2,
-%%                 [],
-%%                 [],
-%%                 [c, c],
-%%                 [],
-%%                 [{[], [xc]}]
-%%             },
-%%             {a, 2,
-%%                 [],
-%%                 [],
-%%                 {3, 1,
-%%                     [],
-%%                     [],
-%%                     [a, a, a],
-%%                     [],
-%%                     []
-%%                 },
-%%                 {3, 1,
-%%                     [],
-%%                     [],
-%%                     [],
-%%                     [],
-%%                     [{[1, 2],
-%%                         {b, 2,
-%%                             [],
-%%                             [],
-%%                             [xb1],
-%%                             [],
-%%                             []
-%%                         }
-%%                     }]
-%%                 },
-%%                 []
-%%             },
-%%             [
-%%                 {[],
-%%                     {b, 2,
-%%                         [],
-%%                         [],
-%%                         [xb2],
-%%                         [],
-%%                         []
-%%                     }
-%%                 },
-%%                 {[1, 3],
-%%                     {b, 2,
-%%                         [],
-%%                         [],
-%%                         [xb1],
-%%                         [],
-%%                         []
-%%                     }
-%%                 }
-%%             ]
-%%         }
-%%     },
-%%
-%%     ?assertEquals(ExpectedTree, xl_uxekdtree:dump(xl_uxekdtree:new(?POINTS_FOR_SMALL_TREE_WITH_MULTI_EXCLUDES))).
-
 new_with_undefs_test() ->
     xl_application:start(xl_stdlib),
     ExpectedTree = {{2, 1,
-        {b, 2, [], [], [ub2, ub1], [], [], []},
+        {b, 2, [], [], [{[], ub2}, {[], ub1}], [], [], []},
         {b, 2,
             [],
             [],
-            {1, 1, [], [], [b], [], [], []},
+            {1, 1, [], [], [{[], b}], [], [], []},
             {1, 1,
                 [],
                 [],
-                {c, 2, [], [], [c], [], [], []},
+                {c, 2, [], [], [{[], c}], [], [], []},
                 [],
                 [],
                 []
@@ -257,11 +103,11 @@ new_with_undefs_test() ->
             [],
             []
         },
-        {c, 2, [uc], [], [c], [], [], []},
+        {c, 2, [{[], uc}], [], [{[], c}], [], [], []},
         {a, 2,
             [],
             [],
-            {3, 1, [], [], [a], [], [], []},
+            {3, 1, [], [], [{[], a}], [], [], []},
             [],
             [],
             []
@@ -276,25 +122,25 @@ find_all_test() ->
     Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE),
     Q = {undefined, undefined},
     Expected = xl_lists:set(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE)),
-    ?assertEquals(Expected, xl_lists:set(element(2, xl_tdb_index:find(Q, Tree)))).
+    ?assertEquals(Expected, xl_lists:set(xl_tdb_index_lib:ixfilter(Q, xl_tdb_index:find(Q, Tree)))).
 
 find_all_with_undefs_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
     Q = {undefined, undefined},
     Expected = xl_lists:set(lists:map(fun({_, _, V}) -> V end, ?POINTS_FOR_SMALL_TREE_WITH_UNDEFS)),
-    ?assertEquals(Expected, xl_lists:set(element(2, xl_tdb_index:find(Q, Tree)))).
+    ?assertEquals(Expected, xl_lists:set(xl_tdb_index_lib:ixfilter(Q, xl_tdb_index:find(Q, Tree)))).
 
 find_with_any_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_UNDEFS),
-    ?assertEquals([b, ub1, ub2], lists:sort(element(2, xl_tdb_index:find({1, b}, Tree)))).
+    ?assertEquals([b, ub1, ub2], lists:sort(xl_tdb_index_lib:ixfilter({1, b}, xl_tdb_index:find({1, b}, Tree)))).
 
 find_with_x_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
     Q = {1, b},
-    ?assertEquals([b, xb2], lists:sort(element(2, xl_tdb_index:find(Q, Tree)))).
+    ?assertEquals([b, xb2], lists:sort(xl_tdb_index_lib:ixfilter(Q, xl_tdb_index:find(Q, Tree)))).
 
 find_with_mx_test() ->
     xl_application:start(xl_stdlib),
@@ -303,18 +149,18 @@ find_with_mx_test() ->
         {2, b2},
         {3, b3}
     ]),
-    ?assertEquals({ok, [xb1]}, xl_tdb_index:find({4}, SimpleTree)),
-    ?assertEquals(undefined, xl_tdb_index:find({[1, 4]}, SimpleTree)),
+    ?assertEquals([xb1], xl_tdb_index_lib:ixfilter({4}, xl_tdb_index:find({4}, SimpleTree))),
+    ?assertEquals([], xl_tdb_index_lib:ixfilter({[1, 4]}, xl_tdb_index:find({[1, 4]}, SimpleTree))),
     Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_MULTI_EXCLUDES),
-    ?assertEquals([b, xb2], lists:sort(element(2, xl_tdb_index:find({1, b}, Tree)))),
-    ?assertEquals([xc], lists:sort(element(2, xl_tdb_index:find({2, b}, Tree)))),
-    ?assertEquals([xb1, xb2], lists:sort(element(2, xl_tdb_index:find({4, b}, Tree)))).
+    ?assertEquals([b, xb2], lists:sort(xl_tdb_index_lib:ixfilter({1, b}, xl_tdb_index:find({1, b}, Tree)))),
+    ?assertEquals([xc], xl_tdb_index_lib:ixfilter({2, b}, xl_tdb_index:find({2, b}, Tree))),
+    ?assertEquals([xb1, xb2], lists:sort(xl_tdb_index_lib:ixfilter({4, b}, xl_tdb_index:find({4, b}, Tree)))).
 
 find_with_variance_test() ->
     xl_application:start(xl_stdlib),
     Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
     Q = {1, [b, c]},
-    ?assertEquals([b, c, xb2], lists:sort(element(2, xl_tdb_index:find(Q, Tree)))).
+    ?assertEquals([b, c, xb2], lists:sort(xl_tdb_index_lib:ixfilter(Q, xl_tdb_index:find(Q, Tree)))).
 
 new_performance_test_() ->
     xl_application:start(xl_stdlib),
@@ -333,8 +179,8 @@ find_test_() ->
         ExpectedResuts = extract_results(Points, Queries, fun erlang:'=='/2),
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
-            Expected = xl_lists:kvfind(Q, ExpectedResuts),
-            ?assertEquals(Expected, xl_tdb_index:find(Q, Tree)),
+            {ok, Expected} = xl_lists:kvfind(Q, ExpectedResuts),
+            ?assertEquals(Expected, xl_tdb_index_lib:ixfilter(Q, xl_tdb_index:find(Q, Tree))),
             xl_eunit:performance(xl_tdb_index_find, fun() ->
                 xl_tdb_index:find(Q, Tree)
             end, 1000)
@@ -353,7 +199,7 @@ find_undefined_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-            ?assertEquals(Expected, lists:sort(element(2, xl_tdb_index:find(Q, Tree)))),
+            ?assertEquals(Expected, lists:sort(xl_tdb_index_lib:ixfilter(Q, xl_tdb_index:find(Q, Tree)))),
             xl_eunit:performance(xl_tdb_index_find_undef_q, fun() ->
                 xl_tdb_index:find(Q, Tree)
             end, 1000)
@@ -372,7 +218,7 @@ find_with_any_test_() ->
         xl_lists:times(fun() ->
             {ok, Q} = xl_lists:random(Queries),
             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-            ?assertEquals(Expected, lists:sort(element(2, xl_tdb_index:find(Q, Tree)))),
+            ?assertEquals(Expected, lists:sort(xl_tdb_index_lib:ixfilter(Q, xl_tdb_index:find(Q, Tree)))),
             xl_eunit:performance(xl_tdb_index_find_w_any, fun() ->
                 xl_tdb_index:find(Q, Tree)
             end, 1000)

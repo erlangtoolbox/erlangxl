@@ -187,22 +187,23 @@ nmapfilter(Name, N, Q, F) ->
             true ->
                 IndexPid ! {read_index, self(), Q},
                 receive
-                    {ok, Values} -> {ok, process_values(N, F, Values, Random)};
+                    {ok, Values} -> {ok, process_values(N, xl_tdb_index_lib:ixfilter(Q, F), Values, Random)};
                     undefined -> {ok, []}
                 end;
             false ->
-                IndexPid ! {read_index, self(), Q, fun
-                    (undefined) -> [];
-                    ({ok, Values}) -> process_values(N, F, Values, Random)
+                IndexPid ! {read_index, self(), Q, fun(Values) ->
+                    process_values(N, xl_tdb_index_lib:ixfilter(Q, F), Values, Random)
                 end},
                 receive
-                    Result -> {ok, Result}
+                    Result -> Result
                 end
         end
     ]), []).
 
-process_values(N, F, Values, true) -> xl_lists:nshufflemapfilter(N, F, Values);
-process_values(N, F, Values, false) -> xl_lists:nmapfilter(N, F, Values).
+process_values(N, F, Values, true) ->
+    xl_lists:nshufflemapfilter(N, F, Values);
+process_values(N, F, Values, false) ->
+    xl_lists:nmapfilter(N, F, Values).
 
 
 -spec(cursor(atom()) -> xl_stream:stream()).
@@ -314,14 +315,14 @@ index_read(Name, Index) ->
             From ! do([option_m ||
                 Options <- xl_state:value(Name, options),
                 QueryF <- xl_lists:kvfind(index_query, Options),
-                xl_tdb_index:find(QueryF(Query), Index)
+                return(xl_tdb_index:find(QueryF(Query), Index))
             ]),
             index_read(Name, Index);
         {read_index, From, Query, F} ->
             From ! do([option_m ||
                 Options <- xl_state:value(Name, options),
                 QueryF <- xl_lists:kvfind(index_query, Options),
-                F(xl_tdb_index:find(QueryF(Query), Index))
+                return(F(xl_tdb_index:find(QueryF(Query), Index)))
             ]),
             index_read(Name, Index)
     end.
@@ -350,9 +351,9 @@ build_index(Name) ->
         case xl_lists:kvfind(index_object, Options) of
             {ok, F} ->
                 Index = xl_tdb_index:new(ets:foldl(fun
-                        (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
-                        (_O, Points) -> Points
-                    end, [], ETS), [{expansion_limit, ExpansionLimit}]),
+                    (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
+                    (_O, Points) -> Points
+                end, [], ETS), [{expansion_limit, ExpansionLimit}]),
                 [update_index(Pid, Index) || Pid <- IndexPids],
                 ok;
             undefined -> ok

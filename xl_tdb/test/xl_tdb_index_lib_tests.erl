@@ -41,16 +41,28 @@ expand_test() ->
         {{x, [a, b, c]}, {x, [d, e]}, ctx}
     ],
     ExpectedPoints = [
-        {1, undefined, ctx},
-        {2, undefined, ctx},
-        {1, 3, ctx},
-        {2, 3, ctx},
-        {1, 4, ctx},
-        {2, 4, ctx},
-        {{x, [x]}, {x, [y]}, ctx},
-        {{x, [1, 2]}, {x, [1]}, ctx},
-        {{x, [a, b, c]}, {x, [d, e]}, ctx}
+        {1, undefined, {[], ctx}},
+        {2, undefined, {[], ctx}},
+        {1, 3, {[], ctx}},
+        {2, 3, {[], ctx}},
+        {1, 4, {[], ctx}},
+        {2, 4, {[], ctx}},
+        {undefined, undefined, {[{x, 1, [x]}, {x, 2, [y]}], ctx}},
+        {undefined, undefined, {[{x, 1, [1, 2]}, {x, 2, [1]}], ctx}},
+        {undefined, undefined, {[{x, 1, [a, b, c]}, {x, 2, [d, e]}], ctx}}
     ],
+
+%%     ExpectedPoints = [
+%%         {1, undefined, ctx},
+%%         {2, undefined, ctx},
+%%         {1, 3, ctx},
+%%         {2, 3, ctx},
+%%         {1, 4, ctx},
+%%         {2, 4, ctx},
+%%         {{x, [x]}, {x, [y]}, ctx},
+%%         {{x, [1, 2]}, {x, [1]}, ctx},
+%%         {{x, [a, b, c]}, {x, [d, e]}, ctx}
+%%     ],
     ?assertEquals(length(ExpectedPoints), xl_tdb_index_lib:estimate_expansion(Points, 10)),
     ?assertEquals(ExpectedPoints, xl_tdb_index_lib:expand(Points, 10)).
 

@@ -30,36 +30,50 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([expand/2, planes/1, sorter/1, compare/2, contains/2, estimate_expansion/2, ueipartition/2, splitwith/3]).
+-export([expand/2, planes/1, sorter/1, compare/2, contains/2, estimate_expansion/2, ueipartition/2, splitwith/3, ixfilter/2]).
 
--define(is_mexclude(X), is_tuple(X) andalso element(1, X) == x andalso is_list(element(2, X))).
 -define(is_exclude(X), is_tuple(X) andalso element(1, X) == x).
+-define(is_mexclude(X), ?is_exclude(X) andalso is_list(element(2, X))).
 -define(is_include(X), is_tuple(X) andalso element(1, X) == i).
 
 -spec(expand([tuple()], pos_integer()) -> [tuple()]).
 expand(Points, ExpansionLimit) ->
     lists:flatmap(fun(Point) ->
-        expand_point(Point, tuple_size(Point) - 1, ExpansionLimit)
+        TupleSize = tuple_size(Point),
+        UpdatedPoint = setelement(TupleSize, Point, {[], element(TupleSize, Point)}),
+        expand_point(UpdatedPoint, TupleSize - 1, TupleSize, ExpansionLimit)
     end, Points).
 
-expand_point(Point, 0, _ExpansionLimit) -> [Point];
-expand_point(Point, N, ExpansionLimit) when is_list(element(N, Point)) ->
+expand_point(Point, 0, _ValuePos, _ExpansionLimit) -> [Point];
+expand_point(Point, N, ValuePos, ExpansionLimit) when is_list(element(N, Point)) ->
     L = element(N, Point),
     case L of
-        [] -> expand_point(setelement(N, Point, undefined), N - 1, ExpansionLimit);
-        _ when length(L) > ExpansionLimit -> expand_point(setelement(N, Point, {i, L}), N - 1, ExpansionLimit);
-        _ -> lists:flatmap(fun(V) -> expand_point(setelement(N, Point, V), N - 1, ExpansionLimit) end, L)
+        [] -> expand_point(setelement(N, Point, undefined), N - 1, ValuePos, ExpansionLimit);
+        _ when length(L) > ExpansionLimit ->
+            {Rules, Value} = element(ValuePos, Point),
+            NewPoint = setelement(ValuePos, Point, {[{i, N, L} | Rules], Value}),
+            expand_point(setelement(N, NewPoint, undefined), N - 1, ValuePos, ExpansionLimit);
+        _ ->
+            lists:flatmap(fun(V) ->
+                expand_point(setelement(N, Point, V), N - 1, ValuePos, ExpansionLimit)
+            end, L)
     end;
-expand_point(Point, N, ExpansionLimit) when ?is_mexclude(element(N, Point)) ->
-    L = element(N, Point),
-    case L of
-        {x, []} -> expand_point(setelement(N, Point, undefined), N - 1, ExpansionLimit);
-        _ -> expand_point(Point, N - 1, ExpansionLimit)
+expand_point(Point, N, ValuePos, ExpansionLimit) when ?is_mexclude(element(N, Point)) ->
+    case (element(N, Point)) of
+        {x, []} ->
+            expand_point(setelement(N, Point, undefined), N - 1, ValuePos, ExpansionLimit);
+        {x, L} ->
+            {Rules, Value} = element(ValuePos, Point),
+            NewPoint = setelement(ValuePos, Point, {[{x, N, L} | Rules], Value}),
+            expand_point(setelement(N, NewPoint, undefined), N - 1, ValuePos, ExpansionLimit)
     end;
-expand_point(Point, N, ExpansionLimit) when ?is_exclude(element(N, Point)) ->
+expand_point(Point, N, ValuePos, ExpansionLimit) when ?is_exclude(element(N, Point)) ->
     {x, X} = element(N, Point),
-    expand_point(setelement(N, Point, {x, [X]}), N - 1, ExpansionLimit);
-expand_point(Point, N, ExpansionLimit) -> expand_point(Point, N - 1, ExpansionLimit).
+    {Rules, Value} = element(ValuePos, Point),
+    NewPoint = setelement(ValuePos, Point, {[{x, N, [X]} | Rules], Value}),
+    expand_point(setelement(N, NewPoint, undefined), N - 1, ValuePos, ExpansionLimit);
+expand_point(Point, N, ValuePos, ExpansionLimit) ->
+    expand_point(Point, N - 1, ValuePos, ExpansionLimit).
 
 
 -spec(estimate_expansion([tuple()], pos_integer()) -> non_neg_integer()).
@@ -142,3 +156,31 @@ splitwith(Plane, Value, [H | T], LAcc, EAcc, GAcc) ->
         eq -> splitwith(Plane, Value, T, LAcc, [H | EAcc], GAcc);
         gt -> splitwith(Plane, Value, T, LAcc, EAcc, [H | GAcc])
     end.
+
+-spec(ixfilter(tuple(), xl_lists:mapping_predicate() | [{[{x|i, pos_integer(), [term()]}], term()}]) ->
+    xl_lists:mapping_predicate()).
+ixfilter(Q, F) when is_function(F, 1) ->
+    fun({Filters, Value}) ->
+        case accept(Filters, Q) of
+            true -> F(Value);
+            false -> undefined
+        end
+    end;
+ixfilter(Q, Values) when is_list(Values) ->
+    xl_lists:mapfilter(fun({Filters, Value}) ->
+        case accept(Filters, Q) of
+            true -> {ok, Value};
+            false -> undefined
+        end
+    end, Values).
+
+accept(Filters, Q) when is_list(Filters) ->
+    lists:all(fun(Filter) -> accept(Filter, Q) end, Filters);
+accept({x, Pos, Values}, Q) when is_list(element(Pos, Q)) ->
+    not lists:any(fun(E) -> lists:member(E, Values) end, element(Pos, Q));
+accept({x, Pos, Values}, Q) ->
+    not lists:member(element(Pos, Q), Values);
+accept({i, Pos, Values}, Q) when is_list(element(Pos, Q)) ->
+    lists:any(fun(E) -> lists:member(E, Values) end, element(Pos, Q));
+accept({i, Pos, Values}, Q) ->
+    lists:member(element(Pos, Q), Values).
