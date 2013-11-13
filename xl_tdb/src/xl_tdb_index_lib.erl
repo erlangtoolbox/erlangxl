@@ -51,7 +51,11 @@ expand_point(Point, N, ValuePos, ExpansionLimit) when is_list(element(N, Point))
         [] -> expand_point(setelement(N, Point, undefined), N - 1, ValuePos, ExpansionLimit);
         _ when length(L) > ExpansionLimit ->
             {Rules, Value} = element(ValuePos, Point),
-            NewPoint = setelement(ValuePos, Point, {[{i, N, L} | Rules], Value}),
+            Rule = case length(L) > 100 of
+                true -> {ibloom, N, {xl_bloom:new(L), L}};
+                false -> {i, N, L}
+            end,
+            NewPoint = setelement(ValuePos, Point, {[Rule | Rules], Value}),
             expand_point(setelement(N, NewPoint, undefined), N - 1, ValuePos, ExpansionLimit);
         _ ->
             lists:flatmap(fun(V) ->
@@ -64,13 +68,17 @@ expand_point(Point, N, ValuePos, ExpansionLimit) when ?is_mexclude(element(N, Po
             expand_point(setelement(N, Point, undefined), N - 1, ValuePos, ExpansionLimit);
         {x, L} ->
             {Rules, Value} = element(ValuePos, Point),
-            NewPoint = setelement(ValuePos, Point, {[{x, N, L} | Rules], Value}),
+            Rule = case length(L) > 100 of
+                true -> {xbloom, N, xl_bloom:new(L)};
+                false -> {x, N, L}
+            end,
+            NewPoint = setelement(ValuePos, Point, {[Rule | Rules], Value}),
             expand_point(setelement(N, NewPoint, undefined), N - 1, ValuePos, ExpansionLimit)
     end;
 expand_point(Point, N, ValuePos, ExpansionLimit) when ?is_exclude(element(N, Point)) ->
     {x, X} = element(N, Point),
     {Rules, Value} = element(ValuePos, Point),
-    NewPoint = setelement(ValuePos, Point, {[{x, N, [X]} | Rules], Value}),
+    NewPoint = setelement(ValuePos, Point, {[{xitem, N, X} | Rules], Value}),
     expand_point(setelement(N, NewPoint, undefined), N - 1, ValuePos, ExpansionLimit);
 expand_point(Point, N, ValuePos, ExpansionLimit) ->
     expand_point(Point, N - 1, ValuePos, ExpansionLimit).
@@ -176,11 +184,29 @@ ixfilter(Q, Values) when is_list(Values) ->
 
 accept(Filters, Q) when is_list(Filters) ->
     lists:all(fun(Filter) -> accept(Filter, Q) end, Filters);
+
+accept({xitem, Pos, Value}, Q) when is_list(element(Pos, Q)) ->
+    not lists:any(fun(E) -> E == Value end, element(Pos, Q));
+accept({xitem, Pos, Value}, Q) ->
+    element(Pos, Q) /= Value;
+
 accept({x, Pos, Values}, Q) when is_list(element(Pos, Q)) ->
     not lists:any(fun(E) -> lists:member(E, Values) end, element(Pos, Q));
 accept({x, Pos, Values}, Q) ->
     not lists:member(element(Pos, Q), Values);
+
+accept({xbloom, Pos, Bloom}, Q) when is_list(element(Pos, Q)) ->
+    not lists:any(fun(E) -> xl_bloom:contains(E, Bloom) end, element(Pos, Q));
+accept({xbloom, Pos, Bloom}, Q) ->
+    not xl_bloom:contains(element(Pos, Q), Bloom);
+
 accept({i, Pos, Values}, Q) when is_list(element(Pos, Q)) ->
     lists:any(fun(E) -> lists:member(E, Values) end, element(Pos, Q));
 accept({i, Pos, Values}, Q) ->
-    lists:member(element(Pos, Q), Values).
+    lists:member(element(Pos, Q), Values);
+
+accept({ibloom, Pos, {Bloom, Values}}, Q) when is_list(element(Pos, Q)) ->
+    lists:any(fun(E) -> xl_bloom:contains(E, Bloom) andalso lists:member(E, Values) end, element(Pos, Q));
+accept({ibloom, Pos, {Bloom, Values}}, Q) ->
+    Value = element(Pos, Q),
+    xl_bloom:contains(Value, Bloom) andalso lists:member(Value, Values).

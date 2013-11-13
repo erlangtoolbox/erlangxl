@@ -47,8 +47,8 @@ expand_test() ->
         {2, 3, {[], ctx}},
         {1, 4, {[], ctx}},
         {2, 4, {[], ctx}},
-        {undefined, undefined, {[{x, 1, [x]}, {x, 2, [y]}], ctx}},
-        {undefined, undefined, {[{x, 1, [1, 2]}, {x, 2, [1]}], ctx}},
+        {undefined, undefined, {[{xitem, 1, x}, {xitem, 2, y}], ctx}},
+        {undefined, undefined, {[{x, 1, [1, 2]}, {xitem, 2, 1}], ctx}},
         {undefined, undefined, {[{x, 1, [a, b, c]}, {x, 2, [d, e]}], ctx}}
     ],
 
