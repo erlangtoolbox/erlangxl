@@ -349,21 +349,19 @@ build_index(Name) ->
         ExpansionLimit <- return(xl_lists:kvfind(index_expansion_limit, Options, 10)),
         case xl_lists:kvfind(index_object, Options) of
             {ok, F} ->
-                [build_index(Pid, ETS, ExpansionLimit, F) || Pid <- IndexPids],
+                Index = xl_tdb_index:new(ets:foldl(fun
+                        (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
+                        (_O, Points) -> Points
+                    end, [], ETS), [{expansion_limit, ExpansionLimit}]),
+                [update_index(Pid, Index) || Pid <- IndexPids],
                 ok;
             undefined -> ok
         end
     ]).
 
-build_index(IndexPid, ETS, ExpansionLimit, F) ->
+update_index(IndexPid, Index) ->
     IndexPid !
-        {update_index, self(),
-         xl_tdb_index:new(
-           ets:foldl(
-             fun
-                 (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
-                 (_O, Points) -> Points
-             end, [], ETS), [{expansion_limit, ExpansionLimit}])},
+        {update_index, self(), Index},
     receive
         Result -> Result
     end.
