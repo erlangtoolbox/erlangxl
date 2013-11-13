@@ -58,12 +58,12 @@ start_link(Name, Location, Identify, Options) ->
         xl_state:set(Name, identify, Identify),
         Pid <- return(spawn_link(fun() ->
             process_flag(trap_exit, true),
-            update(Name)
+            update_loop(Name)
         end)),
         xl_state:set(Name, updater_pid, Pid),
         xl_state:set(Name, index_pid, [spawn_link(fun() ->
             process_flag(trap_exit, true),
-            index_read(Name, undefined)
+            index_read_loop(Name, undefined)
         end) || _ <- lists:seq(1, xl_lists:kvfind(index_pid_count, Options, 1))]),
         build_index(Name),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
@@ -183,19 +183,20 @@ nmapfilter(Name, N, Q, F) ->
         IndexPids <- xl_state:value(Name, index_pid),
         IndexPid <- xl_lists:random(IndexPids),
         Random <- return(xl_lists:kvfind(random, Options, false)),
+        QueryF <- xl_lists:kvfind(index_query, Options),
+        Query <- return(QueryF(Q)),
         case xl_lists:kvfind(index_local_execution, Options, false) of
             true ->
-                IndexPid ! {read_index, self(), Q},
+                IndexPid ! {read_index, self(), Query},
                 receive
-                    {ok, Values} -> {ok, process_values(N, xl_tdb_index_lib:ixfilter(Q, F), Values, Random)};
-                    undefined -> {ok, []}
+                    Values -> {ok, process_values(N, xl_tdb_index_lib:ixfilter(Query, F), Values, Random)}
                 end;
             false ->
-                IndexPid ! {read_index, self(), Q, fun(Values) ->
-                    process_values(N, xl_tdb_index_lib:ixfilter(Q, F), Values, Random)
+                IndexPid ! {read_index, self(), Query, fun(Values) ->
+                    process_values(N, xl_tdb_index_lib:ixfilter(Query, F), Values, Random)
                 end},
                 receive
-                    Result -> Result
+                    Result -> {ok, Result}
                 end
         end
     ]), []).
@@ -280,7 +281,7 @@ updates(Name, Since) ->
     {ok, ETS} = xl_state:evalue(Name, ets),
     xl_ets:cursor(ETS, fun({_Id, _O, LastUpdate, _Deleted}) -> LastUpdate > Since end).
 
-update(Name) ->
+update_loop(Name) ->
     receive
         {'EXIT', From, _Reason} ->
             From ! do([error_m ||
@@ -298,33 +299,27 @@ update(Name) ->
             catch
                 _ : E -> {error, E}
             end,
-            update(Name)
+            update_loop(Name)
     end.
 
-index_read(Name, Index) ->
+index_read_loop(Name, Index) ->
     receive
         {'EXIT', _From, _Reason} -> ok;
         {update_index, From, NewIndex} ->
             From ! ok,
-            index_read(Name, NewIndex);
+            index_read_loop(Name, NewIndex);
         {read_index, From, _Query} when Index == undefined ->
-            From ! undefined;
+            From ! [],
+            index_read_loop(Name, Index);
         {read_index, From, _Query, _F} when Index == undefined ->
-            From ! undefined;
+            From ! [],
+            index_read_loop(Name, Index);
         {read_index, From, Query} ->
-            From ! do([option_m ||
-                Options <- xl_state:value(Name, options),
-                QueryF <- xl_lists:kvfind(index_query, Options),
-                return(xl_tdb_index:find(QueryF(Query), Index))
-            ]),
-            index_read(Name, Index);
+            From ! xl_tdb_index:find(Query, Index),
+            index_read_loop(Name, Index);
         {read_index, From, Query, F} ->
-            From ! do([option_m ||
-                Options <- xl_state:value(Name, options),
-                QueryF <- xl_lists:kvfind(index_query, Options),
-                return(F(xl_tdb_index:find(QueryF(Query), Index)))
-            ]),
-            index_read(Name, Index)
+            From ! F(xl_tdb_index:find(Query, Index)),
+            index_read_loop(Name, Index)
     end.
 
 mutate(Name, Fun) ->
