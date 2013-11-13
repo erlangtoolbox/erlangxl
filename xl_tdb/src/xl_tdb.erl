@@ -61,10 +61,10 @@ start_link(Name, Location, Identify, Options) ->
             update(Name)
         end)),
         xl_state:set(Name, updater_pid, Pid),
-        xl_state:set(Name, index_pid, spawn_link(fun() ->
+        xl_state:set(Name, index_pid, [spawn_link(fun() ->
             process_flag(trap_exit, true),
             index_read(Name, undefined)
-        end)),
+        end) || _ <- lists:seq(1, xl_lists:kvfind(index_pid_count, Options, 1))]),
         build_index(Name),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
         xl_state:set(Name, last_rsync, 0),
@@ -73,11 +73,10 @@ start_link(Name, Location, Identify, Options) ->
         return(Pid)
     ]).
 
-
 -spec(close(atom()) -> error_m:monad(ok)).
 close(Name) ->
     case xl_state:value(Name, index_pid) of
-        {ok, IndexPid} -> exit(IndexPid, normal);
+        {ok, IndexPids} -> [exit(Pid, normal) || Pid <- IndexPids];
         undefined -> undefined
 
     end,
@@ -181,7 +180,8 @@ by_index(N) -> fun(X) -> element(N, X) end.
 nmapfilter(Name, N, Q, F) ->
     option_m:get(do([option_m ||
         Options <- xl_state:value(Name, options),
-        IndexPid <- xl_state:value(Name, index_pid),
+        IndexPids <- xl_state:value(Name, index_pid),
+        IndexPid <- xl_lists:random(IndexPids),
         Random <- return(xl_lists:kvfind(random, Options, false)),
         case xl_lists:kvfind(index_local_execution, Options, false) of
             true ->
@@ -344,18 +344,24 @@ unwrap({_Id, O, _LastUpdate, _Deleted}) -> O.
 build_index(Name) ->
     do([error_m ||
         Options <- xl_state:evalue(Name, options),
-        IndexPid <- xl_state:evalue(Name, index_pid),
+        IndexPids <- xl_state:evalue(Name, index_pid),
         ETS <- xl_state:evalue(Name, ets),
         ExpansionLimit <- return(xl_lists:kvfind(index_expansion_limit, Options, 10)),
         case xl_lists:kvfind(index_object, Options) of
             {ok, F} ->
-                IndexPid ! {update_index, self(), xl_tdb_index:new(ets:foldl(fun
-                    (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
-                    (_O, Points) -> Points
-                end, [], ETS), [{expansion_limit, ExpansionLimit}])},
-                receive
-                    Result -> Result
-                end;
+                Index = xl_tdb_index:new(ets:foldl(fun
+                        (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
+                        (_O, Points) -> Points
+                    end, [], ETS), [{expansion_limit, ExpansionLimit}]),
+                [update_index(Pid, Index) || Pid <- IndexPids],
+                ok;
             undefined -> ok
         end
     ]).
+
+update_index(IndexPid, Index) ->
+    IndexPid !
+        {update_index, self(), Index},
+    receive
+        Result -> Result
+    end.
