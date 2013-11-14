@@ -352,10 +352,10 @@ index_read_loop(Name, Index) ->
         {read_index, From, Query, false} ->
             From ! xl_tdb_index:find(Query, Index),
             index_read_loop(Name, Index);
-        {read_index, From, Query, F, true} ->
+        {read_index, From, Query, true, F} ->
             From ! F(xl_lists:set(xl_tdb_index:find(Query, Index))),
             index_read_loop(Name, Index);
-        {read_index, From, Query, F, false} ->
+        {read_index, From, Query, false, F} ->
             From ! F(xl_tdb_index:find(Query, Index)),
             index_read_loop(Name, Index)
     end.
