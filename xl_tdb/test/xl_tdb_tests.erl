@@ -113,6 +113,22 @@ mapfilter_test() ->
     ?assertEquals([T3], xl_tdb:nmapfilter(testtdbpmf, 1, [{name, <<"n1">>}], fun(O) -> {ok, O} end)),
     ?assertOk(xl_tdb:close(testtdbpmf)).
 
+mapfind_test() ->
+    xl_file:delete("/tmp/test/tdbp"),
+    xl_application:start(xl_stdlib),
+    ?assertOk(xl_tdb:start_link(testtdbpmf, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [
+        {index_object, fun index_object/1},
+        {index_query, fun index_query/1},
+        {index_local_execution, true}
+    ])),
+    T1 = #testobj{id = "1", name = <<"n1">>},
+    T2 = #testobj{id = "2", name = <<"n2">>},
+    T3 = #testobj{id = "3", name = <<"n1">>},
+    T4 = #testobj{id = "4", name = <<"n3">>},
+    ?assertOk(xl_tdb:store(testtdbpmf, [T1, T2, T3, T4])),
+    ?assertEquals({ok, T3}, xl_tdb:mapfindc(testtdbpmf, [{name, <<"n1">>}], fun(O, _) -> {ok, O} end, undefined)),
+    ?assertOk(xl_tdb:close(testtdbpmf)).
+
 rsync_test() ->
     xl_file:delete("/tmp/test/tdbp"),
     xl_application:start(xl_stdlib),

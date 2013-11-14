@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, updates/2, delete_all/1, sync/1]).
+-export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, updates/2, delete_all/1, sync/1, mapfindc/4]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -174,7 +174,8 @@ select(Name) ->
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
 
--spec(nmapfilter(atom(), non_neg_integer(), xl_lists:kvlist_at(), xl_lists:mapping_predicate(term(), term())) -> [term()]).
+-spec(nmapfilter(atom(), non_neg_integer(),
+        xl_lists:kvlist_at(), xl_lists:mapping_predicate(term(), term())) -> [term()]).
 nmapfilter(Name, N, Q, F) ->
     option_m:get(do([option_m ||
         Options <- xl_state:value(Name, options),
@@ -186,20 +187,43 @@ nmapfilter(Name, N, Q, F) ->
         case xl_lists:kvfind(index_local_execution, Options, false) of
             true ->
                 Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query}),
-                {ok, process_values(N, F, Values, Random)};
+                {ok, nmapfilter_values(N, F, Values, Random)};
             false ->
                 Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, fun(Values) ->
-                    process_values(N, F, Values, Random)
+                    nmapfilter_values(N, F, Values, Random)
                 end}),
                 {ok, Values}
         end
     ]), []).
 
-process_values(N, F, Values, true) ->
-    xl_lists:nshufflemapfilter(N, F, Values);
-process_values(N, F, Values, false) ->
-    xl_lists:nmapfilter(N, F, Values).
+nmapfilter_values(N, F, Values, true) -> xl_lists:nshufflemapfilter(N, F, Values);
+nmapfilter_values(N, F, Values, false) -> xl_lists:nmapfilter(N, F, Values).
 
+-spec(mapfindc(atom(), xl_lists:kvlist_at(),
+        xl_lists:mapfindc_function(term(), term(), term()), term()) ->
+    option_m:monad(term())).
+mapfindc(Name, Q, F, Ctx) ->
+    option_m:get(do([option_m ||
+        Options <- xl_state:value(Name, options),
+        IndexPids <- xl_state:value(Name, index_pid),
+        IndexPid <- xl_lists:random(IndexPids),
+        Random <- return(xl_lists:kvfind(random, Options, false)),
+        QueryF <- xl_lists:kvfind(index_query, Options),
+        Query <- return(QueryF(Q)),
+        case xl_lists:kvfind(index_local_execution, Options, false) of
+            true ->
+                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query}),
+                {ok, mapfindc_values(F, Ctx, Values, Random)};
+            false ->
+                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, fun(Values) ->
+                    mapfindc_values(F, Ctx, Values, Random)
+                end}),
+                {ok, Values}
+        end
+    ]), []).
+
+mapfindc_values(F, Ctx, Values, true) -> xl_lists:shufflemapfindc(F, Ctx, Values);
+mapfindc_values(F, Ctx, Values, false) -> xl_lists:mapfindc(F, Ctx, Values).
 
 -spec(cursor(atom()) -> xl_stream:stream()).
 cursor(Name) ->
