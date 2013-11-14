@@ -313,7 +313,8 @@ real_space_test_() ->
             length(Points),
             xl_tdb_index:size(Tree),
             xl_tdb_index:depth(Tree),
-            xl_tdb_index:count(Tree),
+            0,
+%%             xl_tdb_index:count(Tree),
             Time
         ]),
         Qs = [{6, {false, <<"CC">>, <<"IAB-19">>, undefined, 1, undefined, site, mediba,
@@ -350,7 +351,8 @@ real_space_x_test_() ->
             length(Points),
             xl_tdb_index:size(Tree),
             xl_tdb_index:depth(Tree),
-            xl_tdb_index:count(Tree),
+            0,
+%%             xl_tdb_index:count(Tree),
             Time
         ]),
         Qs = [
@@ -369,9 +371,9 @@ real_space_x_test_() ->
                 undefined, undefined, undefined, undefined, undefined,
                 undefined, undefined, undefined, undefined, undefined}}
         ],
-        lists:foreach(fun({_R, Q}) ->
+        lists:foreach(fun({R, Q}) ->
 %%             ?assertEquals(R, length(element(2, xl_tdb_index:find(Q, Tree)))),
-            xl_eunit:performance(xl_tdb_index_real_space_find, fun() ->
+            xl_eunit:performance(xl_convert:make_atom([xl_tdb_index_real_space_find, R]), fun() ->
                 xl_tdb_index:find(Q, Tree)
             end, 1000)
         end, Qs)

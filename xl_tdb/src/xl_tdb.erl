@@ -83,9 +83,7 @@ close(Name) ->
     case xl_state:evalue(Name, updater_pid) of
         {ok, UpdaterPid} ->
             exit(UpdaterPid, normal),
-            receive
-                X -> X
-            end;
+            xl_lang:receive_something();
         E -> E
     end.
 
@@ -187,17 +185,13 @@ nmapfilter(Name, N, Q, F) ->
         Query <- return(QueryF(Q)),
         case xl_lists:kvfind(index_local_execution, Options, false) of
             true ->
-                IndexPid ! {read_index, self(), Query},
-                receive
-                    Values -> {ok, process_values(N, F , Values, Random)}
-                end;
+                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query}),
+                {ok, process_values(N, F, Values, Random)};
             false ->
-                IndexPid ! {read_index, self(), Query, fun(Values) ->
+                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, fun(Values) ->
                     process_values(N, F, Values, Random)
-                end},
-                receive
-                    Result -> {ok, Result}
-                end
+                end}),
+                {ok, Values}
         end
     ]), []).
 
@@ -213,7 +207,12 @@ cursor(Name) ->
     xl_stream:mapfilter(fun({_Id, O, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end, xl_ets:cursor(ETS)).
 
 -spec(index(atom()) -> option_m:monad(xl_tdb_index:tree())).
-index(Name) -> xl_state:value(Name, index).
+index(Name) ->
+    do([error_m ||
+        IndexPids <- xl_state:value(Name, index_pid),
+        IndexPid <- xl_lists:random(IndexPids),
+        xl_lang:send_and_receive(IndexPid, {get, self()})
+    ]).
 
 -spec(sync(atom()) -> error_m:monad(ok)).
 sync(Name) ->
@@ -311,6 +310,12 @@ index_read_loop(Name, Index) ->
         {read_index, From, _Query} when Index == undefined ->
             From ! [],
             index_read_loop(Name, Index);
+        {get, From} when Index == undefined ->
+            From ! undefined,
+            index_read_loop(Name, Index);
+        {get, From} ->
+            From ! {ok, Index},
+            index_read_loop(Name, Index);
         {read_index, From, _Query, _F} when Index == undefined ->
             From ! [],
             index_read_loop(Name, Index);
@@ -324,10 +329,7 @@ index_read_loop(Name, Index) ->
 
 mutate(Name, Fun) ->
     {ok, Pid} = xl_state:value(Name, updater_pid),
-    Pid ! {mutate, self(), Fun},
-    receive
-        R -> R
-    end.
+    xl_lang:send_and_receive(Pid, {mutate, self(), Fun}).
 
 wrap(Objects, Id) when is_list(Objects) -> lists:map(fun(O) -> wrap(O, Id) end, Objects);
 wrap(Object, Id) -> wrap(Object, Id, false).
@@ -349,15 +351,9 @@ build_index(Name) ->
                     (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
                     (_O, Points) -> Points
                 end, [], ETS), [{expansion_limit, ExpansionLimit}]),
-                [update_index(Pid, Index) || Pid <- IndexPids],
-                ok;
+                lists:foreach(fun(Pid) ->
+                    xl_lang:send_and_receive(Pid, {update_index, self(), Index})
+                end, IndexPids);
             undefined -> ok
         end
     ]).
-
-update_index(IndexPid, Index) ->
-    IndexPid !
-        {update_index, self(), Index},
-    receive
-        Result -> Result
-    end.

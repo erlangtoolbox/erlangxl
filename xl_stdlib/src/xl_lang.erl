@@ -29,7 +29,7 @@
 -module(xl_lang).
 
 -export([ifelse/3, record_to_proplist/2, safe_call/2, register/2, unregister/1, find_nif/2, priv_dir/2, priv_path/3,
-    delete_element/2, insert_element/3]).
+    delete_element/2, insert_element/3, receive_something/0, send_and_receive/2]).
 
 ifelse(true, Then, _) -> result(Then);
 ifelse(false, _, Else) -> result(Else).
@@ -90,3 +90,15 @@ insert_element(N, Tuple, Value) ->
     {H, T} = lists:split(N - 1, L),
     list_to_tuple(lists:append([H, [Value], T])).
 
+-spec(receive_something() -> term()).
+receive_something() ->
+    receive
+        X -> X
+    end.
+
+-spec(send_and_receive(
+        pid() | port() | (RegName :: atom()) | {RegName :: atom(), Node :: node()},
+        term()) -> term()).
+send_and_receive(Dest, Message) ->
+    Dest ! Message,
+    receive_something().
