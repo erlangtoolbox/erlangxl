@@ -182,14 +182,15 @@ nmapfilter(Name, N, Q, F) ->
         IndexPids <- xl_state:value(Name, index_pid),
         IndexPid <- xl_lists:random(IndexPids),
         Random <- return(xl_lists:kvfind(random, Options, false)),
+        EliminateDuplicates <- return(xl_lists:kvfind(index_eliminate_duplicates, Options, false)),
         QueryF <- xl_lists:kvfind(index_query, Options),
         Query <- return(QueryF(Q)),
         case xl_lists:kvfind(index_local_execution, Options, false) of
             true ->
-                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query}),
+                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, EliminateDuplicates}),
                 {ok, nmapfilter_values(N, F, Values, Random)};
             false ->
-                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, fun(Values) ->
+                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, EliminateDuplicates, fun(Values) ->
                     nmapfilter_values(N, F, Values, Random)
                 end}),
                 {ok, Values}
@@ -210,14 +211,16 @@ mapfindc(Name, Q, F, Ctx) ->
         Random <- return(xl_lists:kvfind(random, Options, false)),
         QueryF <- xl_lists:kvfind(index_query, Options),
         Query <- return(QueryF(Q)),
+        EliminateDuplicates <- return(xl_lists:kvfind(index_eliminate_duplicates, Options, false)),
         case xl_lists:kvfind(index_local_execution, Options, false) of
             true ->
-                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query}),
+                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, EliminateDuplicates}),
                 {ok, mapfindc_values(F, Ctx, Values, Random)};
             false ->
-                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, fun(Values) ->
-                    mapfindc_values(F, Ctx, Values, Random)
-                end}),
+                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query,
+                    EliminateDuplicates, fun(Values) ->
+                        mapfindc_values(F, Ctx, Values, Random)
+                    end}),
                 {ok, Values}
         end
     ]), []).
@@ -343,10 +346,16 @@ index_read_loop(Name, Index) ->
         {read_index, From, _Query, _F} when Index == undefined ->
             From ! [],
             index_read_loop(Name, Index);
-        {read_index, From, Query} ->
+        {read_index, From, Query, true} ->
+            From ! xl_lists:set(xl_tdb_index:find(Query, Index)),
+            index_read_loop(Name, Index);
+        {read_index, From, Query, false} ->
             From ! xl_tdb_index:find(Query, Index),
             index_read_loop(Name, Index);
-        {read_index, From, Query, F} ->
+        {read_index, From, Query, F, true} ->
+            From ! F(xl_lists:set(xl_tdb_index:find(Query, Index))),
+            index_read_loop(Name, Index);
+        {read_index, From, Query, F, false} ->
             From ! F(xl_tdb_index:find(Query, Index)),
             index_read_loop(Name, Index)
     end.
