@@ -410,6 +410,7 @@ fastsplitwith(Pred, [Hd | Tail], Taken) ->
 fastsplitwith(Pred, [], Taken) when is_function(Pred, 1) -> {Taken, []}.
 
 -spec(shufflemapfindc(mapfindc_function(term(), term(), term()), term(), [term()]) -> option_m:monad(term())).
+shufflemapfindc(_F, _Context, []) -> undefined;
 shufflemapfindc(F, Context, List) ->
     {L, R} = randomsplit(List),
     mapfindc(F, Context, R, L).
