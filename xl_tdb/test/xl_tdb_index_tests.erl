@@ -356,20 +356,20 @@ real_space_x_test_() ->
             Time
         ]),
         Qs = [
-            {9, {false, <<"CC">>, undefined, 1, undefined,
-                site, mediba, 'Mon', 1, '320x50',
-                <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>, undefined, undefined,
+            {9, {false, <<"CC">>, 1, site, mediba, undefined, 'Mon',
+                1, '320x50', undefined, undefined, undefined,
+                undefined, undefined, <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>,
+                undefined, undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined, undefined, undefined,
+                undefined, undefined, undefined}},
+            {296, {false, <<"US">>, 1, site, nexage, undefined, 'Mon',
+                1, '320x50', undefined, undefined, undefined,
+                undefined, undefined, <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>,
                 undefined, undefined, undefined, undefined, undefined,
                 undefined, undefined, undefined, undefined, undefined,
                 undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined, undefined}},
-            {296, {false, <<"US">>, undefined, 1, undefined,
-                site, nexage, 'Mon', 1, '320x50',
-                <<"Samsung">>, <<"Galaxy S">>, <<"Android 4.0">>, undefined, undefined,
-                undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined, undefined,
-                undefined, undefined, undefined, undefined, undefined}}
+                undefined, undefined, undefined}}
         ],
         lists:foreach(fun({R, Q}) ->
 %%             ?assertEquals(R, length(element(2, xl_tdb_index:find(Q, Tree)))),
