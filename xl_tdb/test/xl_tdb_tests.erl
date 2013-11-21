@@ -55,6 +55,8 @@ memory_options_test() ->
 
     ?assertOk(xl_tdb:delete_all(testtdbp)),
     ?assertEqual([], xl_tdb:select(testtdbp)),
+    ?assertEquals(0, xl_tdb:count(testtdbp)),
+
 
     ?assertOk(xl_tdb:close(testtdbp)).
 
@@ -94,6 +96,7 @@ disk_storage_test() ->
     ?assertEqual(ok, xl_tdb:close(testtdbpds)),
     ?assertOk(xl_tdb:start_link(testtdbpds, "/tmp/test/tdbp", xl_tdb:by_index(#testobj.id), [])),
     ?assertEqual([T1, T2], xl_tdb:select(testtdbpds)),
+    ?assertEquals(2, xl_tdb:count(testtdbpds)),
     ?assertEqual([T1, T2], xl_stream:to_list(xl_tdb:cursor(testtdbpds))),
     ?assertEqual(ok, xl_tdb:close(testtdbpds)).
 
@@ -152,6 +155,7 @@ rsync_test() ->
         xl_tdb:update(testrsync_master, "1", fun(X) -> {ok, X#testobj{name = "updated"}} end)),
     timer:sleep(500),
     ?assertEquals([TU, T2, T3, T4], xl_tdb:select(testrsync_slave)),
+    ?assertEquals(4, xl_tdb:count(testrsync_slave)),
     ?assertOk(xl_tdb:close(testrsync_slave)),
     ?assertOk(xl_tdb:close(testrsync_master)).
 
@@ -175,6 +179,7 @@ migration_test() ->
         ]}
     ]),
     ?assertEquals([{"1", "Comment"}, {"2", "Comment"}], xl_tdb:select(tdb_migration)),
+    ?assertEquals(2, xl_tdb:count(tdb_migration)),
     ?assertOk(xl_tdb:close(tdb_migration)).
 
 migrate2({Id, {Id, Name}, LastModified, Deleted}) -> {ok, {Id, {Id, Name, "Comment"}, LastModified, Deleted}}.

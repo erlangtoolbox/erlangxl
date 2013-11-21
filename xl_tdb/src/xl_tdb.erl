@@ -174,7 +174,7 @@ select(Name) ->
 -spec(count(atom()) -> pos_integer()).
 count(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
-    ets:select_count(ETS, [{'_', [], [true]}]).
+    ets:select_count(ETS, [{'$1', [{'==', false, {element, 4, '$1'}}], [true]}]).
 
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
