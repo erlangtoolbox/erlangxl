@@ -146,6 +146,8 @@ rsync_test() ->
     ])),
     timer:sleep(500),
     ?assertEquals([T1, T2, T3, T4], xl_tdb:select(testrsync_slave)),
+    ?assertEquals(4, xl_tdb:count(testrsync_slave)),
+
     ?assertEqual({ok, TU = #testobj{id = "1", name = "updated"}},
         xl_tdb:update(testrsync_master, "1", fun(X) -> {ok, X#testobj{name = "updated"}} end)),
     timer:sleep(500),
