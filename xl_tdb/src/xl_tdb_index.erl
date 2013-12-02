@@ -38,7 +38,7 @@
 
 -type(point() :: tuple()).
 -type(query_point() :: tuple()).
--type(leaf() :: option_m:monad([point()])).
+-type(leaf() :: [term()]).
 -type(tree_node() :: {
     term(), pos_integer(),
     Undefined :: tree_node(),
