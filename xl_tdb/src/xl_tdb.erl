@@ -32,7 +32,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, nmapfilter/4, index/1, cursor/1, update/3, updates/2, delete_all/1, sync/1, mapfindc/4]).
+-export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, count/1, nmapfilter/4, index/1, cursor/1, update/3, updates/2, delete_all/1, sync/1, mapfindc/4]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
@@ -170,6 +170,11 @@ select(Name) ->
         (O) when not ?is_deleted(O) -> {ok, unwrap(O)};
         (_) -> undefined
     end, ets:tab2list(ETS)).
+
+-spec(count(atom()) -> pos_integer()).
+count(Name) ->
+    {ok, ETS} = xl_state:value(Name, ets),
+    ets:select_count(ETS, [{'$1', [{'==', false, {element, 4, '$1'}}], [true]}]).
 
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
