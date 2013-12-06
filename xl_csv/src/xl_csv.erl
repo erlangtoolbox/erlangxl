@@ -33,21 +33,27 @@
 parse_line(L) when is_binary(L) -> [list_to_binary(X) || X <- parse_line(binary_to_list(L))];
 parse_line("") -> [];
 parse_line(L) ->
-    {Item, Rest} = parse_item_start(xl_string:strip(L)),
-    [Item | parse_line(Rest)].
+    case parse(L, "", []) of
+        parse_error -> [];
+        X -> X
+    end.
 
-parse_item_start([$" | T]) -> parse_item("", T);
-parse_item_start([$, | T]) -> parse_item_start(xl_string:strip(T)).
+parse([], Field, Acc) -> lists:reverse([lists:reverse(Field) | Acc]);
+parse([$\r | T], Field, Acc) -> parse(T, Field, Acc);
+parse([$\n | T], Field, Acc) -> parse(T, Field, Acc);
+parse([$" | T], Field, Acc) -> parse_quoted(T, Field, Acc);
+parse([$, | T], Field, Acc) -> parse(T, "", [lists:reverse(Field) | Acc]);
+parse([H | T], Field, Acc) -> parse(T, [H |Field], Acc);
+parse(_, _, _) -> parse_error.
 
-parse_item(Acc, [$"]) -> {lists:reverse(Acc), []};
-parse_item(Acc, [$", $" | T]) -> parse_item([$" | Acc], T);
-parse_item(Acc, [$", _ | T]) -> {lists:reverse(Acc), T};
-parse_item(Acc, [C | T]) -> parse_item([C | Acc], T).
-
+parse_quoted([$", $" | T], Field, Acc) -> parse_quoted(T, [$" | Field], Acc);
+parse_quoted([$" | T], Field, Acc) -> parse(T, Field, Acc);
+parse_quoted([H | T], Field, Acc) -> parse_quoted(T, [H | Field], Acc);
+parse_quoted(_, _, _) -> parse_error.
 
 lines(S) -> xl_stream:map(fun(L) -> parse_line(L) end, S).
 
--spec parse_file/1 :: (file:name()) -> error_m:monad([[string()]]).
+-spec(parse_file/1 :: (file:name()) -> error_m:monad([[string()]])).
 parse_file(Path) ->
     xl_file:using(Path, [read], fun(File) ->
         xl_stream:to_list(lines(xl_io:lines(File)))
