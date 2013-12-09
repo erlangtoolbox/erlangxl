@@ -251,3 +251,8 @@ set_test() ->
         end, 100)
     end, 5).
 
+nfmap_test() ->
+    Square = fun(X) -> X * X end,
+    Sum = fun(X) -> X + X end,
+    Funs = [Square, Sum, Sum, Square],
+    ?assertEquals([1, 4, 6, 16], xl_lists:nfmap(Funs, [1, 2, 3, 4])).
