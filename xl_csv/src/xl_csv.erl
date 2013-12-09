@@ -55,6 +55,9 @@ lines(S) -> xl_stream:map(fun(L) -> parse_line(L) end, S).
 
 -spec(parse_file/1 :: (file:name()) -> error_m:monad([[string()]])).
 parse_file(Path) ->
-    xl_file:using(Path, [read], fun(File) ->
-        xl_stream:to_list(lines(xl_io:lines(File)))
-    end).
+    case xl_file:read_file(Path) of
+        {ok, Bin} ->
+            Lines = binary:split(Bin, [<<"\r\n">>, <<"\r">>, <<"\n">>], [global, trim]),
+            {ok, lists:map(fun(L) -> parse_line(L) end, Lines)};
+        E -> E
+    end.

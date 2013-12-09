@@ -41,3 +41,11 @@ parse_line_empty_test() ->
 
 parse_line_quoted_test() ->
     ?assertEquals(["1", "2\"x\"3", "2"], xl_csv:parse_line("\"1\",\"2\"\"x\"\"3\",\"2\"")).
+
+perf_test_() ->
+    {timeout, 20000, fun() ->
+        xl_eunit:performance(parse_file, fun() ->
+            {ok, Lines} = xl_csv:parse_file("test/big.csv"),
+            ?assertEquals(40556, length(Lines))
+        end, 10)
+    end}.
