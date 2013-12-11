@@ -43,4 +43,6 @@ start_link() ->
 
 %% supervisor callbacks
 init([]) ->
-    {ok, {{one_for_one, 5, 10}, []}}.
+    {ok, {{one_for_one, 5, 10}, [
+        {xl_ets_server, {xl_ets_server, start_link, []}, permanent, 1000, worker, [xl_ets_server]}
+    ]}}.

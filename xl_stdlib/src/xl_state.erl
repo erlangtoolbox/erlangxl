@@ -30,37 +30,16 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([new/1, new/2, get/2, set/3, keys/1, start_link/0, value/2, delete/1, evalue/2, increment/2, increment/3, remove/2]).
-
-%% @todo make it supervised or bind this table to the application master
-start_link() ->
-    Pid = spawn_link(fun loop/0),
-    register(?MODULE, Pid),
-    ok.
+-export([new/1, new/2, get/2, set/3, keys/1, value/2, delete/1, evalue/2, increment/2, increment/3, remove/2]).
 
 -spec(new(atom()) -> atom()).
 new(Name) -> new(Name, []).
 
 -spec(new(atom(), [term()]) -> error_m:monad(ok)).
 new(Name, Options) ->
-    ?MODULE ! {init, Name, Options, self()},
-    receive
-        X -> X
-    end.
-
-loop() ->
-    receive
-        {init, Name, Options, Sender} ->
-            try
-                catch ets:delete(Name),
-                Name = ets:new(Name, [named_table, public | Options]),
-                Sender ! ok,
-                loop()
-            catch
-                _:E -> Sender ! {error, E}
-            end;
-        stop -> ok
-    end.
+    catch ets:delete(Name),
+    xl_ets_server:create(Name, [named_table, public | Options]),
+    ok.
 
 -spec(keys(atom()) -> [term()]).
 keys(Name) -> lists:flatten(ets:match(Name, {'$1', '_'})).

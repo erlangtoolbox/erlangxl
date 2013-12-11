@@ -39,15 +39,15 @@
 % application callbacks
 start(_Type, _Args) ->
     do([error_m ||
-        xl_state:start_link(),
+        Supervisor <- case xl_stdlib_sup:start_link() of
+            ignore -> {error, ignore};
+            X -> X
+        end,
         xl_uid:start(),
         xl_re:start(),
         xl_random:start(),
         xl_scheduler:start(),
-        case xl_stdlib_sup:start_link() of
-            ignore -> ok;
-            X -> X
-        end
+        return(Supervisor)
     ]).
 
 stop(_State) -> ok.
