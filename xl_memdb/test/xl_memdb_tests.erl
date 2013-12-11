@@ -29,7 +29,9 @@ dump_load_test() ->
     xl_memdb:store(testmemdb, {b, 1}, a2),
     xl_memdb:store(testmemdb, {b, 2}, b2),
     xl_memdb:dump(testmemdb, "/tmp/test/dump.memdb"),
-    xl_memdb:load(testmemdb, "/tmp/test/dump.memdb"),
-    ?assertEquals({ok, {{a, 1}, a1}}, xl_memdb:get(testmemdb, {a, 1})),
-    ?assertEquals({ok, {{b, 1}, a2}}, xl_memdb:get(testmemdb, {b, 1})),
-    xl_memdb:stop(testmemdb).
+    xl_memdb:stop(testmemdb),
+    xl_memdb:start(testmemdb2),
+    xl_memdb:load(testmemdb2, "/tmp/test/dump.memdb"),
+    ?assertEquals({ok, {{a, 1}, a1}}, xl_memdb:get(testmemdb2, {a, 1})),
+    ?assertEquals({ok, {{b, 1}, a2}}, xl_memdb:get(testmemdb2, {b, 1})),
+    xl_memdb:stop(testmemdb2).

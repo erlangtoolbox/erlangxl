@@ -53,11 +53,14 @@ dump(Name, Location) ->
 
 -spec(load(atom(), file:filename()) -> error_m:monad(ok)).
 load(Name, Location) ->
-    {ok, ETS} = xl_state:value(Name, ets),
-    ets:delete(ETS),
+    {ok, OldETS} = xl_state:value(Name, ets),
     do([error_m ||
-        Tab <- ets:file2tab(Location),
-        xl_state:set(Name, ets, Tab)
+        NewETS <- ets:file2tab(Location),
+        xl_state:set(Name, ets, NewETS),
+        case OldETS of
+            NewETS -> ok;
+            _ -> return(ets:delete(OldETS))
+        end
     ]).
 
 items(Name) ->
@@ -67,5 +70,5 @@ items(Name) ->
 %% @hidden
 create_ets(Name) ->
     xl_ets_server:create(
-        xl_convert:make_atom([Name, '_', ets]),
+        xl_convert:make_atom([Name, '_', xl_uid:next()]),
         [public, named_table, set]).
