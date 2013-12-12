@@ -11,7 +11,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([start/1, store/3, store/2, get/2, stop/1, dump/2, load/2, items/1]).
+-export([start/1, store/3, store/2, get/2, stop/1, dump/2, load/2, items/1, status/1]).
 
 -spec(start(atom()) -> ok).
 start(Name) ->
@@ -66,6 +66,10 @@ load(Name, Location) ->
 items(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
     ets:tab2list(ETS).
+
+status(Name) ->
+    {ok, ETS} = xl_state:value(Name, ets),
+    ets:info(ETS).
 
 %% @hidden
 create_ets(Name) ->
