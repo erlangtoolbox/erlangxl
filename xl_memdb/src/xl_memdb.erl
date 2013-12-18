@@ -56,6 +56,7 @@ load(Name, Location) ->
     {ok, OldETS} = xl_state:value(Name, ets),
     do([error_m ||
         NewETS <- ets:file2tab(Location),
+        xl_ets_server:takeover(NewETS),
         xl_state:set(Name, ets, NewETS),
         case OldETS of
             NewETS -> ok;

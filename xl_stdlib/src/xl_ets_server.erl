@@ -39,7 +39,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, create/2]).
+-export([start_link/0, create/2, takeover/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -70,6 +70,12 @@ start_link() ->
 -spec(create(atom(), [term()]) -> ets:tid() | atom()).
 create(Name, Options) ->
     gen_server:call(?MODULE, {create, Name, Options}).
+
+-spec(takeover(atom() | ets:tid()) -> ok).
+takeover(Tab) ->
+    Pid = gen_server:call(?MODULE, pid),
+    true = ets:give_away(Tab, Pid, undefined),
+    ok.
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -108,7 +114,9 @@ init([]) ->
     {stop, Reason :: term(), Reply :: term(), NewState :: #state{}} |
     {stop, Reason :: term(), NewState :: #state{}}).
 handle_call({create, Name, Options}, _From, State) ->
-    {reply, ets:new(Name, Options), State}.
+    {reply, ets:new(Name, Options), State};
+handle_call(pid, _From, State) ->
+    {reply, self(), State}.
 
 %%--------------------------------------------------------------------
 %% @private
