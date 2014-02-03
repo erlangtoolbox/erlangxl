@@ -28,12 +28,16 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_json_ebt_bindc).
 
--behaviour(ebt_task).
+-compile({parse_transform, do}).
 
 -export([perform/3]).
 
-perform(_Target, Dir, _Config) ->
+perform(_Target, Dir, Config) ->
     Bindings = filelib:wildcard(Dir ++ "/src/*.bind"),
-    xl_lists:eforeach(fun(File) ->
-        xl_json_bindc:compile(File, Dir)
-    end, Bindings).
+    do([error_m ||
+        xl_lists:eforeach(fun(File) ->
+            xl_json_bindc:compile(File, Dir)
+        end, Bindings),
+        return(Config)
+    ])
+.
