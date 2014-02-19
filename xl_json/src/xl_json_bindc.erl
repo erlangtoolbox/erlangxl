@@ -213,7 +213,7 @@ generate_to_json(Records, Out) ->
                         "to_json(R=#~p{}) ->\n\txl_string:join([\"{\",\n\txl_string:join(xl_lists:mapfilter(fun({false, undefined, _}) -> undefined;({_, _, X}) -> {ok, X} end, [\n~s\n\t]), \",\"),\n\t\"}\"])", [
                             RecordName,
                             xl_string:join([
-                                xl_string:format("\t\t{~p, R#~p.~p, xl_string:format(\"\\\"~p\\\":~~s\", [~s])}", [Required, RecordName, Name, Name, V])
+                                xl_string:format("\t\t{~p, R#~p.~p, xl_string:format(\"\\\"~s\\\":~~s\", [~s])}", [Required, RecordName, Name, Name, V])
                                 || {Required, Name, V} <- Generated
                             ], ",\n")
                         ]

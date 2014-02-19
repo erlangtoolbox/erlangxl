@@ -192,3 +192,7 @@
     {record_qualified, {dict, {alltypes, primitives}, integer}},
     {record_qualified_def, {dict, {alltypes, primitives}, {integer, []}}}
 ]}.
+
+{weirdwords, [
+    {'query', integer}
+]}.
