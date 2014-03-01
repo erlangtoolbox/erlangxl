@@ -31,7 +31,7 @@
 -export([empty/1, not_empty/1, strip/1, quote/1, unquote/1, stripthru/1, format/2,
     to_float/1, substitute/2, substitute/3, to_string/1, mk_atom/1, to_upper/1,
     to_lower/1, equal_ignore_case/2, join/2, join/1, to_atom/1, to_binary/1,
-    to_integer/1, replace/3, unquote/2, format_number/2, format_record/2]).
+    to_integer/1, replace/3, unquote/2, format_number/2, format_record/2, flatten/1]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
@@ -131,6 +131,17 @@ to_lower(S) when is_list(S) -> string:to_lower(S).
 -spec(to_upper(iostring()) -> iostring()).
 to_upper(S) when is_binary(S) -> list_to_binary(to_upper(binary_to_list(S)));
 to_upper(S) when is_list(S) -> string:to_upper(S).
+
+
+-spec(flatten([term()]) -> binary()).
+flatten(DeepList) -> flatten(DeepList, <<>>).
+
+flatten([], Acc) -> Acc;
+flatten([H | T], Acc) when is_list(H) -> flatten(T, flatten(H, Acc));
+flatten([H | T], Acc) ->
+    Value = xl_convert:to(binary, H),
+    flatten(T, <<Acc/binary, Value/binary>>).
+
 
 -spec(join([iostring()], iostring()) -> iostring()).
 join([], Delim) when is_binary(Delim) -> <<>>;

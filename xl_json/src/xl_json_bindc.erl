@@ -33,7 +33,7 @@
 -export([compile/2]).
 
 %runtime
--export([cast/4, cast/3, check_required/1]).
+-export([cast/4, cast/3, check_required/1, format/1]).
 
 -define(JSON_API, xl_json_jiffy).
 
@@ -168,9 +168,9 @@ generate_module(Records, Name, Out) ->
         file:write(Out, "-include(\"" ++ Name ++ ".hrl\").\n\n"),
         io:format(Out, "-define(JSON_API, ~s).\n\n", [?JSON_API]),
         file:write(Out, "-export([to_json/1, from_json/2, from_json_/2, from_proplist/2, from_proplist_/2]).\n\n"),
-        file:write(Out, "to_json(undefined) -> \"null\";\n\n"),
+        file:write(Out, "to_json(undefined) -> <<\"null\">>;\n\n"),
         file:write(Out, "to_json({ok, X}) -> to_json(X);\n\n"),
-        file:write(Out, "to_json(L) when is_list(L) -> \"[\" ++ string:join([to_json(R) || R <- L], \",\") ++ \"]\";\n\n"),
+        file:write(Out, "to_json(L) when is_list(L) -> xl_string:flatten([<<\"[\">>, xl_lists:disperse([to_json(R) || R <- L], <<\",\">>), <<\"]\">>]);\n\n"),
         generate_to_json(Records, Out),
         file:write(Out, "from_json(Json, Type) ->\n"
         "\tcase ?JSON_API:from_json(Json) of\n"
@@ -210,10 +210,10 @@ generate_to_json(Records, Out) ->
                     generate_to_json_field(RecordName, Field) end, serializable_fields(Fields)),
                 return(
                     xl_string:format(
-                        "to_json(R=#~p{}) ->\n\txl_string:join([\"{\",\n\txl_string:join(xl_lists:mapfilter(fun({false, undefined, _}) -> undefined;({_, _, X}) -> {ok, X} end, [\n~s\n\t]), \",\"),\n\t\"}\"])", [
+                        "to_json(R=#~p{}) ->\n\txl_string:flatten([<<\"{\">>,\n\txl_lists:disperse(xl_lists:mapfilter(fun({false, undefined, _}) -> undefined;({_, _, X}) -> {ok, X} end, [\n~s\n\t]), <<\",\">>),\n\t<<\"}\">>])", [
                             RecordName,
                             xl_string:join([
-                                xl_string:format("\t\t{~p, R#~p.~p, xl_string:format(\"\\\"~s\\\":~~s\", [~s])}", [Required, RecordName, Name, Name, V])
+                                xl_string:format("\t\t{~p, R#~p.~p, [<<\"\\\"\">>, ~p, <<\"\\\":\">>, ~s]}", [Required, RecordName, Name, Name, V])
                                 || {Required, Name, V} <- Generated
                             ], ",\n")
                         ]
@@ -227,35 +227,35 @@ generate_to_json(Records, Out) ->
 generate_to_json_field(RecordName, {Name, {enum, Type, _Enumeration}}) ->
     generate_to_json_field(RecordName, {Name, Type});
 generate_to_json_field(RecordName, {Name, {either, _Types}}) ->
-    {ok, {true, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
+    {ok, {true, Name, xl_string:format("xl_json_bindc:format(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, Type}) when ?is_primitive_type(Type) ->
-    {ok, {true, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
+    {ok, {true, Name, xl_string:format("xl_json_bindc:format(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {Type, _Default}}) when ?is_primitive_type(Type) ->
-    {ok, {false, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
+    {ok, {false, Name, xl_string:format("xl_json_bindc:format(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, Type}}) when ?is_primitive_type(Type) ->
-    {ok, {true, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
+    {ok, {true, Name, xl_string:format("xl_json_bindc:format(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, Type, _Default}}) when ?is_primitive_type(Type) ->
-    {ok, {false, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
+    {ok, {false, Name, xl_string:format("xl_json_bindc:format(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {option, Type}}) when ?is_primitive_type(Type) ->
-    {ok, {true, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
+    {ok, {true, Name, xl_string:format("xl_json_bindc:format(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {option, Type, _Default}}) when ?is_primitive_type(Type) ->
-    {ok, {false, Name, xl_string:format("xl_json:to_json(R#~p.~p)", [RecordName, Name])}};
+    {ok, {false, Name, xl_string:format("xl_json_bindc:format(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {option, Type}}) when is_atom(Type) ->
     {ok, {true, Name, xl_string:format("to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {option, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
     {ok, {true, Name, xl_string:format("~p:to_json(R#~p.~p)", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, Type}}) when is_atom(Type) ->
-    {ok, {true, Name, xl_string:format("\"[\" ++ string:join([to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [RecordName, Name])}};
+    {ok, {true, Name, xl_string:format("[<<\"[\">>, xl_lists:disperse([to_json(X)||X <- R#~p.~p], <<\",\">>), <<\"]\">>]", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, Type, _Default}}) when is_atom(Type) ->
-    {ok, {false, Name, xl_string:format("\"[\" ++ string:join([to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [RecordName, Name])}};
+    {ok, {false, Name, xl_string:format("[<<\"[\">>, xl_lists:disperse([to_json(X)||X <- R#~p.~p], <<\",\">>), <<\"]\">>]", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, {Module, Type}}}) when is_atom(Module), is_atom(Type) ->
-    {ok, {true, Name, xl_string:format("\"[\" ++ string:join([~p:to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Module, RecordName, Name])}};
+    {ok, {true, Name, xl_string:format("[<<\"[\">>, xl_lists:disperse([~p:to_json(X)||X <- R#~p.~p], <<\",\">>), <<\"]\">>]", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {list, {Module, Type}, _Default}}) when is_atom(Module), is_atom(Type) ->
-    {ok, {false, Name, xl_string:format("\"[\" ++ string:join([~p:to_json(X)||X <- R#~p.~p], \",\") ++ \"]\"", [Module, RecordName, Name])}};
+    {ok, {false, Name, xl_string:format("[<<\"[\">>, xl_lists:disperse([~p:to_json(X)||X <- R#~p.~p], <<\",\">>), <<\"]\">>]", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {dict, Type, _Opts}}) when is_atom(Type) ->
-    {ok, {true, Name, xl_string:format("\"[\" ++ string:join([to_json(X)||X <- gb_trees:values(R#~p.~p)], \",\") ++ \"]\"", [RecordName, Name])}};
+    {ok, {true, Name, xl_string:format("[<<\"[\">>, xl_lists:disperse([to_json(X)||X <- gb_trees:values(R#~p.~p)], <<\",\">>), <<\"]\">>]", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {dict, {Module, Type}, _Opts}}) when is_atom(Module), is_atom(Type) ->
-    {ok, {true, Name, xl_string:format("\"[\" ++ string:join([~p:to_json(X)||X <- gb_trees:values(R#~p.~p)], \",\") ++ \"]\"", [Module, RecordName, Name])}};
+    {ok, {true, Name, xl_string:format("[<<\"[\">>, xl_lists:disperse([~p:to_json(X)||X <- gb_trees:values(R#~p.~p)], <<\",\">>), <<\"]\">>]", [Module, RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, Type}) when is_atom(Type) ->
     {ok, {true, Name, xl_string:format("to_json(R#~p.~p)", [RecordName, Name])}};
 generate_to_json_field(RecordName, {Name, {Type, undefined}}) when is_atom(Type) ->
@@ -606,3 +606,14 @@ generate_from_proplist_field({Name, {Qualified = {Module, Type}, undefined}}) wh
 generate_from_proplist_field({Name, Qualified = {Module, Type}}) when is_atom(Module), is_atom(Type) ->
     {ok, xl_string:format("~p = xl_json_bindc:cast(proplist, {ok, J}, ~p, ~p)", [Name, Qualified, {required, Name}])};
 generate_from_proplist_field(Field) -> {error, {gen_from_proplist, dont_understand, Field}}.
+
+format(undefined) -> null;
+format(true) -> true;
+format(false) -> false;
+format(X) when is_atom(X) -> [<<"\"">>, atom_to_binary(X, utf8), <<"\"">>];
+format({ok, X}) -> format(X);
+format(X) when is_binary(X) -> [<<"\"">>, X, <<"\"">>];
+format(X = [H | _]) when is_tuple(H) andalso size(H) == 2 ->
+    [<<"{">>, xl_lists:disperse([[<<"\"">>, K, <<"\":">>, format(V)] || {K, V} <- X], <<",">>), <<"}">>];
+format(X) when is_list(X) -> [<<"[">>, xl_lists:disperse([format(E) || E <- X], <<",">>), <<"]">>];
+format(X) -> X.

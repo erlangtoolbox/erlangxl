@@ -31,20 +31,20 @@
 -include("xl_calendar.hrl").
 
 -export([format/3, format/2, now_millis/0, now_micros/0, add/3,
-         ms_to_datetime/1, day_of_week/1, datetime_to_ms/1, weekdays/0,
-         weekdays_order/0, adjust/4, whole_day/0, diff_hours/4,
-         daynum_of_week/1, diff_days/3, daynum/1, dayname/1,
-         weekdays_member/2, weekdays_mask/1, number_of_days/3,
-         hourly/2, filter_weekdays/2, filter_hours/2,
-         seconds_hourly/1, diff_periods/5]).
+    ms_to_datetime/1, day_of_week/1, datetime_to_ms/1, weekdays/0,
+    weekdays_order/0, whole_day/0,
+    daynum_of_week/1, daynum/1, dayname/1,
+    weekdays_member/2, weekdays_mask/1,
+    hourly/2, filter_weekdays/2, filter_hours/2,
+    seconds_hourly/1]).
 
 -export_type([weekday/0, hour_of_day/0]).
 
 -type(weekday() :: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun').
 -type(hour_of_day() :: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
-                       13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23).
+13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23).
 -type(month() :: 'Jan' | 'Feb' | 'Mar' | 'Apr' | 'May' | 'Jun' |
-                 'Jul' | 'Aug' | 'Sep' | 'Oct' | 'Nov' | 'Dec').
+'Jul' | 'Aug' | 'Sep' | 'Oct' | 'Nov' | 'Dec').
 -type(units() :: seconds | minutes | hours | days | weeks | months | years).
 
 % add code is borrowed from http://code.google.com/p/dateutils
@@ -80,7 +80,7 @@ add(DateTime, N, weeks) -> add(DateTime, 7 * N, days);
 add({{YYYY, MM, DD} = Date, Time}, 0, months) ->
     case calendar:valid_date(Date) of
         true -> {Date, Time};
-        % Rolling back illegal 31,29
+    % Rolling back illegal 31,29
         false -> add({{YYYY, MM, DD - 1}, Time}, 0, months)
     end;
 add({{YYYY, MM, DD}, Time}, N, months) when N > 0 andalso MM < 12 ->
@@ -224,13 +224,13 @@ hourly(StartMs, FinishMs, Acc) ->
     end.
 
 -spec(filter_weekdays([{calendar:datetime(), calendar:datetime()}],
-                      [weekday()]) -> [[calendar:datetime()]]).
+        [weekday()]) -> [[calendar:datetime()]]).
 filter_weekdays(Hourly, Weekdays) ->
     Pred = fun({Start, _}) -> not lists:member(day_of_week(Start), Weekdays) end,
     lists:filter(Pred, Hourly).
 
 -spec(filter_hours([{calendar:datetime(), calendar:datetime()}],
-                   [hour_of_day()]) ->[[calendar:datetime()]]).
+        [hour_of_day()]) -> [[calendar:datetime()]]).
 filter_hours(Hourly, Hours) ->
     Pred = fun({{_, {H, _, _}}, _}) -> not lists:member(H, Hours) end,
     lists:filter(Pred, Hourly).

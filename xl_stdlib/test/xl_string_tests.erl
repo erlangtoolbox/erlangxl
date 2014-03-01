@@ -130,3 +130,6 @@ lcs_vs_regexp_test() ->
     xl_eunit:performance(match_regexp, fun() ->
         binary:match(Bin1, Bin2) /= nomatch
     end, 1000000).
+
+flatten_test() ->
+    ?assertEquals(<<"1truesssfalse1.3">>, xl_string:flatten([1, [true, <<"sss">>], [[false], 1.3]])).
