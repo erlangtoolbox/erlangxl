@@ -610,10 +610,18 @@ generate_from_proplist_field(Field) -> {error, {gen_from_proplist, dont_understa
 format(undefined) -> null;
 format(true) -> true;
 format(false) -> false;
-format(X) when is_atom(X) -> [<<"\"">>, atom_to_binary(X, utf8), <<"\"">>];
+format(X) when is_atom(X) -> format(atom_to_binary(X, utf8));
 format({ok, X}) -> format(X);
-format(X) when is_binary(X) -> [<<"\"">>, X, <<"\"">>];
+format(X) when is_binary(X) ->
+    [<<"\"">>, quote(X, <<>>), <<"\"">>];
 format(X = [H | _]) when is_tuple(H) andalso size(H) == 2 ->
     [<<"{">>, xl_lists:disperse([[<<"\"">>, K, <<"\":">>, format(V)] || {K, V} <- X], <<",">>), <<"}">>];
 format(X) when is_list(X) -> [<<"[">>, xl_lists:disperse([format(E) || E <- X], <<",">>), <<"]">>];
 format(X) -> X.
+
+quote(<<>>, Acc) -> Acc;
+quote(<<$", Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $">>);
+quote(<<$\n, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $n>>);
+quote(<<$\r, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $r>>);
+quote(<<$\t, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $t>>);
+quote(<<X, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, X>>).

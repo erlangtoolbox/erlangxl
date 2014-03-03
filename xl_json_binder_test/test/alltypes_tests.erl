@@ -136,14 +136,14 @@ primitives_test() ->
     P = #primitives{
         integer = 1,
         float = 1.1,
-        string = <<"1">>,
+        string = <<"1\"1\n">>,
         atom = atom,
         boolean = true,
         record = undefined,
         record_qualified = undefined,
         any = [{a, 1}]
     },
-    Json = <<"{\"integer\":1,\"integer_def\":1,\"float\":1.1,\"float_def\":1.0,\"boolean\":true,\"boolean_def_true\":true,\"boolean_def_false\":false,\"atom\":\"atom\",\"atom_def\":\"a\",\"string\":\"1\",\"string_def\":\"a\",\"record\":null,\"record_qualified\":null,\"any\":{\"a\":1},\"any_def\":{\"a\":\"b\"}}">>,
+    Json = <<"{\"integer\":1,\"integer_def\":1,\"float\":1.1,\"float_def\":1.0,\"boolean\":true,\"boolean_def_true\":true,\"boolean_def_false\":false,\"atom\":\"atom\",\"atom_def\":\"a\",\"string\":\"1\\\"1\\n\",\"string_def\":\"a\",\"record\":null,\"record_qualified\":null,\"any\":{\"a\":1},\"any_def\":{\"a\":\"b\"}}">>,
     ?assertEquals(Json, alltypes:to_json(P)),
     ?assertEquals({ok, P}, alltypes:from_json(alltypes:to_json(P), primitives)).
 
