@@ -30,7 +30,7 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([new/1, new/2, get/2, set/3, keys/1, value/2, delete/1, evalue/2, increment/2, increment/3, remove/2]).
+-export([new/1, new/2, get/2, set/3, keys/1, value/2, delete/1, evalue/2, increment/2, increment/3, remove/2, exists/1, values/1]).
 
 -spec(new(atom()) -> atom()).
 new(Name) -> new(Name, []).
@@ -61,6 +61,9 @@ value(Name, Key) ->
 -spec(evalue(atom(), term()) -> error_m:monad(term())).
 evalue(Name, Key) -> option_m:to_error_m(value(Name, Key), {no, Key}).
 
+-spec(values(atom()) -> xl_lists:kvlist(atom(), term())).
+values(Name) -> ets:tab2list(Name).
+
 -spec(set(atom(), term(), term()) -> ok).
 set(Name, Key, Value) ->
     true = ets:insert(Name, {Key, Value}),
@@ -82,3 +85,5 @@ remove(Name, Key) ->
     true = ets:delete(Name, Key),
     ok.
 
+-spec(exists(atom()) -> boolean()).
+exists(Name) -> xl_ets:exists(Name).
