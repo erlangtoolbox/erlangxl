@@ -49,3 +49,10 @@ perf_test_() ->
             ?assertEquals(40556, length(Lines))
         end, 10)
     end}.
+
+parse_typed_test() ->
+    ?assertEquals({ok, {[key, value], [
+        [1, one],
+        [2, two],
+        [3, three]
+    ]}}, xl_csv:parse_file("test/csvdb.csv", [{key, integer}, {value, atom}])).

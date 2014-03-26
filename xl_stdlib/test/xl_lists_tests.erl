@@ -256,3 +256,6 @@ nfmap_test() ->
     Sum = fun(X) -> X + X end,
     Funs = [Square, Sum, Sum, Square],
     ?assertEquals([1, 4, 6, 16], xl_lists:nfmap(Funs, [1, 2, 3, 4])).
+
+zipmap_test() ->
+    ?assertEqual([{a, 1}, {b, 2}, {c, 3}], xl_lists:zipmap(fun(A, B) -> {A, B} end, [a, b, c], [1, 2, 3])).

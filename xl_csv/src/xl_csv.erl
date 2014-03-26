@@ -28,7 +28,7 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_csv).
 
--export([parse_line/1, lines/1, parse_file/1]).
+-export([parse_line/1, lines/1, parse_file/1, parse_file/2]).
 
 parse_line(L) when is_binary(L) -> [list_to_binary(X) || X <- parse_line(binary_to_list(L))];
 parse_line("") -> [];
@@ -43,7 +43,7 @@ parse([$\r | T], Field, Acc) -> parse(T, Field, Acc);
 parse([$\n | T], Field, Acc) -> parse(T, Field, Acc);
 parse([$" | T], Field, Acc) -> parse_quoted(T, Field, Acc);
 parse([$, | T], Field, Acc) -> parse(T, "", [lists:reverse(Field) | Acc]);
-parse([H | T], Field, Acc) -> parse(T, [H |Field], Acc);
+parse([H | T], Field, Acc) -> parse(T, [H | Field], Acc);
 parse(_, _, _) -> parse_error.
 
 parse_quoted([$", $" | T], Field, Acc) -> parse_quoted(T, [$" | Field], Acc);
@@ -53,11 +53,36 @@ parse_quoted(_, _, _) -> parse_error.
 
 lines(S) -> xl_stream:map(fun(L) -> parse_line(L) end, S).
 
--spec(parse_file/1 :: (file:name()) -> error_m:monad([[string()]])).
+-spec(parse_file(file:name()) -> error_m:monad([[binary()]])).
 parse_file(Path) ->
     case xl_file:read_file(Path) of
         {ok, Bin} ->
             Lines = binary:split(Bin, [<<"\r\n">>, <<"\r">>, <<"\n">>], [global, trim]),
             {ok, lists:map(fun(L) -> parse_line(L) end, Lines)};
+        E -> E
+    end.
+
+-spec(parse_file(file:name(), [{atom(), atom()}]) -> error_m:monad({[atom()], [[term()]]})).
+parse_file(Path, TypeMap) ->
+    case xl_file:read_file(Path) of
+        {ok, Bin} ->
+            case binary:split(Bin, [<<"\r\n">>, <<"\r">>, <<"\n">>], [global, trim]) of
+                [Header | Data] ->
+                    AtomizedHeader = [xl_convert:to(atom, E) || E <- parse_line(Header)],
+                    Types = [xl_lists:kvfind(E, TypeMap, binary) || E <- AtomizedHeader],
+                    case xl_lists:emap(fun(L) ->
+                        try
+                            {ok, xl_lists:zipmap(fun(Type, V) ->
+                                xl_convert:to(Type, V)
+                            end, Types, parse_line(L))}
+                        catch
+                            _: E -> {error, {E, Path, L}}
+                        end
+                    end, Data) of
+                        {ok, ConvertedData} -> {ok, {AtomizedHeader, ConvertedData}};
+                        E -> E
+                    end;
+                _ -> {error, wrong_format}
+            end;
         E -> E
     end.
