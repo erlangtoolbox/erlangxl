@@ -31,23 +31,25 @@
 
 -include_lib("xl_stdlib/include/xl_eunit.hrl").
 
-bloom_test() ->
-    {ok, [{values, BinValues}]} = xl_json:to_abstract(xl_json:parse_file(xl_eunit:resource(?MODULE, "4.json"))),
-    Values = [{xxx, binary_to_atom(V, utf8)} || V <- BinValues],
-    Counts = xl_lists:seq(1, 5, 0.2, fun(X) -> round(math:exp(X)) end),
+bloom_test_() ->
+    {timeout, 2000, fun() ->
+        {ok, [{values, BinValues}]} = xl_json:to_abstract(xl_json:parse_file(xl_eunit:resource(?MODULE, "4.json"))),
+        Values = [{xxx, binary_to_atom(V, utf8)} || V <- BinValues],
+        Counts = xl_lists:seq(1, 5, 0.2, fun(X) -> round(math:exp(X)) end),
 
-    lists:foreach(fun(Count) ->
-        {Actual, _} = xl_lists:split(Count, Values),
-        Bloom = xl_bloom:new(Actual),
-        Value = lists:nth(random:uniform(length(Actual)), Actual),
-        xl_lists:times(fun() ->
-            xl_eunit:performance(xl_convert:make_atom(['bloom#', Count]), fun() ->
-                true = xl_bloom:contains(Value, Bloom),
-                false = xl_bloom:contains({wtf, Value}, Bloom)
-            end, 1000),
-            xl_eunit:performance(xl_convert:make_atom(['list#', Count]), fun() ->
-                true = lists:member(Value, Actual),
-                false = lists:member({wtf, Value}, Actual)
-            end, 1000)
-        end, 10)
-    end, Counts).
+        lists:foreach(fun(Count) ->
+            {Actual, _} = xl_lists:split(Count, Values),
+            Bloom = xl_bloom:new(Actual),
+            Value = lists:nth(random:uniform(length(Actual)), Actual),
+            xl_lists:times(fun() ->
+                xl_eunit:performance(xl_convert:make_atom(['bloom#', Count]), fun() ->
+                    true = xl_bloom:contains(Value, Bloom),
+                    false = xl_bloom:contains({wtf, Value}, Bloom)
+                end, 1000),
+                xl_eunit:performance(xl_convert:make_atom(['list#', Count]), fun() ->
+                    true = lists:member(Value, Actual),
+                    false = lists:member({wtf, Value}, Actual)
+                end, 1000)
+            end, 10)
+        end, Counts)
+    end}.
