@@ -33,11 +33,13 @@
 
 -export([gen/2]).
 
-next_test() ->
-    application:start(xl_stdlib),
-    ?assert(xl_uid:next() < xl_uid:next()),
-    xl_eunit:performance(uid, fun() -> xl_uid:next() end, 100000),
-    xl_eunit:performance(uid_hex, fun() -> xl_uid:next_hex() end, 100000).
+next_test_() ->
+    {timeout, 2000, fun() ->
+        application:start(xl_stdlib),
+        ?assert(xl_uid:next() < xl_uid:next()),
+        xl_eunit:performance(uid, fun() -> xl_uid:next() end, 100000),
+        xl_eunit:performance(uid_hex, fun() -> xl_uid:next_hex() end, 100000)
+    end}.
 
 uniq_test() ->
     application:start(xl_stdlib),
