@@ -1,6 +1,5 @@
 <component name="CopyrightManager">
   <settings default="StrikeAd Open Source">
-    <module2copyright />
     <LanguageOptions name="Erlang">
       <option name="fileTypeOverride" value="3" />
       <option name="block" value="false" />

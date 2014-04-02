@@ -62,19 +62,21 @@ substitute_test() ->
     ?assertEqual("xyz{}",
         xl_string:substitute("x{a}z{}", [{a, "y"}])).
 
-substitute_performance_test() ->
-    application:start(xl_stdlib),
-    Text = <<"@IMPRESSION_ID@aaaaaa@PLATFORM-ID-MD5@sdfsdfs@PLATFORM-ID-SHA1@sadasd@MOBILE-ID-MD5@%#$%#$@MOBILE-ID-SHA1@">>,
-    Map = [
-        {'IMPRESSION_ID', "12312.3221312.123123123"},
-        {'PLATFORM-ID-MD5', "12312.3221312.123123123"},
-        {'PLATFORM-ID-SHA1', "12312.3221312.123123123"},
-        {'MOBILE-ID-MD5', "12312.3221312.123123123"},
-        {'MOBILE-ID-SHA1', "12312.3221312.123123123"}
-    ],
-    xl_eunit:performance(substitute, fun() ->
-        ?assertEquals(<<"12312.3221312.123123123aaaaaa12312.3221312.123123123sdfsdfs12312.3221312.123123123sadasd12312.3221312.123123123%#$%#$12312.3221312.123123123">>, xl_string:substitute(Text, Map, {$@, $@}))
-    end, 10000).
+substitute_performance_test_() ->
+    {timeout, 2000, fun() ->
+        application:start(xl_stdlib),
+        Text = <<"@IMPRESSION_ID@aaaaaa@PLATFORM-ID-MD5@sdfsdfs@PLATFORM-ID-SHA1@sadasd@MOBILE-ID-MD5@%#$%#$@MOBILE-ID-SHA1@">>,
+        Map = [
+            {'IMPRESSION_ID', "12312.3221312.123123123"},
+            {'PLATFORM-ID-MD5', "12312.3221312.123123123"},
+            {'PLATFORM-ID-SHA1', "12312.3221312.123123123"},
+            {'MOBILE-ID-MD5', "12312.3221312.123123123"},
+            {'MOBILE-ID-SHA1', "12312.3221312.123123123"}
+        ],
+        xl_eunit:performance(substitute, fun() ->
+            ?assertEquals(<<"12312.3221312.123123123aaaaaa12312.3221312.123123123sdfsdfs12312.3221312.123123123sadasd12312.3221312.123123123%#$%#$12312.3221312.123123123">>, xl_string:substitute(Text, Map, {$@, $@}))
+        end, 10000)
+    end}.
 
 equal_ignore_case_test() ->
     ?assert(xl_string:equal_ignore_case(<<"A">>, <<"a">>)),
