@@ -28,6 +28,8 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_csv).
 
+-include_lib("xl_stdlib/include/xl_lang.hrl").
+
 -export([parse_line/1, lines/1, parse_file/1, parse_file/2]).
 
 parse_line(L) when is_binary(L) -> [list_to_binary(X) || X <- parse_line(binary_to_list(L))];
@@ -72,8 +74,9 @@ parse_file(Path, TypeMap) ->
                     Types = [xl_lists:kvfind(E, TypeMap, binary) || E <- AtomizedHeader],
                     case xl_lists:emap(fun(L) ->
                         try
-                            {ok, xl_lists:zipmap(fun(Type, V) ->
-                                xl_convert:to(Type, V)
+                            {ok, xl_lists:zipmap(fun
+                                (_Type, <<>>) -> undefined;
+                                (Type, V) -> xl_convert:to(Type, V)
                             end, Types, parse_line(L))}
                         catch
                             _: E -> {error, {E, Path, L}}

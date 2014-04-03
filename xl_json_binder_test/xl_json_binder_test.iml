@@ -2,7 +2,11 @@
 <module type="ERLANG_MODULE" version="4">
   <component name="FacetManager">
     <facet type="erlang" name="Erlang">
-      <configuration />
+      <configuration>
+        <includePaths>
+          <path value="$MODULE_DIR$/include" />
+        </includePaths>
+      </configuration>
     </facet>
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
@@ -11,7 +15,6 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/include" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/include" type="erlang-include" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

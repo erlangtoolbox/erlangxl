@@ -54,5 +54,7 @@ parse_typed_test() ->
     ?assertEquals({ok, {[key, value], [
         [1, one],
         [2, two],
-        [3, three]
-    ]}}, xl_csv:parse_file("test/csvdb.csv", [{key, integer}, {value, atom}])).
+        [3, three],
+        [undefined, undefined],
+        [undefined, undefined]
+    ]}}, xl_csv:parse_file("test/typed.csv", [{key, integer}, {value, atom}])).
