@@ -170,20 +170,22 @@ transform_dict_test() ->
     Expected = dict:append([1, 2], x, dict:append([1, 2], y, dict:append([3, 3], z, dict:new()))),
     ?assertEqual(Expected, xl_lists:transform(dict, fun(X) -> X end, [{[3, 3], z}, {[1, 2], y}, {[1, 2], x}])).
 
-gb_tree_vs_random_access_list_test() ->
-    Counts = xl_lists:seq(1, 10, 0.5, fun(X) -> round(math:exp(X)) end),
-    lists:foreach(fun(Count) ->
-        T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
-        xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_list, '#', Count]), fun() ->
-            {ok, _} = xl_lists:keyfind(random:uniform(Count), 1, T)
-        end, 1000)
-    end, Counts),
-    lists:foreach(fun(Count) ->
-        T = xl_lists:transform(gb_tree, fun(X) -> {X, X} end, lists:seq(1, Count)),
-        xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_tree, '#', Count]), fun() ->
-            {value, _} = gb_trees:lookup(random:uniform(Count), T)
-        end, 1000)
-    end, Counts).
+gb_tree_vs_random_access_list_test_() ->
+    {timeout, 2000, fun() ->
+        Counts = xl_lists:seq(1, 10, 0.5, fun(X) -> round(math:exp(X)) end),
+        lists:foreach(fun(Count) ->
+            T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
+            xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_list, '#', Count]), fun() ->
+                {ok, _} = xl_lists:keyfind(random:uniform(Count), 1, T)
+            end, 1000)
+        end, Counts),
+        lists:foreach(fun(Count) ->
+            T = xl_lists:transform(gb_tree, fun(X) -> {X, X} end, lists:seq(1, Count)),
+            xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_tree, '#', Count]), fun() ->
+                {value, _} = gb_trees:lookup(random:uniform(Count), T)
+            end, 1000)
+        end, Counts)
+    end}.
 
 matchfilter_test() ->
     ?assertEqual([[{3, 1}, {3, 3}, {3, 2}], [{7, 1}, {7, 2}, {7, 3}]], xl_lists:matchfilter(fun xl_lists:compare_key/2, [
