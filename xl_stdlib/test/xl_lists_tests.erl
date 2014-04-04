@@ -75,13 +75,15 @@ sublistmatch_test() ->
     List3 = [{a, 1}, {x, y}, {b, "yy"}],
     ?assertNot(xl_lists:sublistmatch(Pattern, List3)).
 
-sublistmatch_perf_test() ->
-    Pattern = [{a, 1}, {b, ".+"}],
-    List = [{a, 1}, {x, y}, {b, "aaa"}],
-    Count = 100000,
-    xl_eunit:performance(regex, fun() -> xl_lists:sublistmatch(Pattern, List) end, Count),
-    Pattern2 = [{a, 1}, {b, not_empty}],
-    xl_eunit:performance(atom, fun() -> xl_lists:sublistmatch(Pattern2, List) end, Count).
+sublistmatch_perf_test_() ->
+    {timeout, 2000, fun() ->
+        Pattern = [{a, 1}, {b, ".+"}],
+        List = [{a, 1}, {x, y}, {b, "aaa"}],
+        Count = 100000,
+        xl_eunit:performance(regex, fun() -> xl_lists:sublistmatch(Pattern, List) end, Count),
+        Pattern2 = [{a, 1}, {b, not_empty}],
+        xl_eunit:performance(atom, fun() -> xl_lists:sublistmatch(Pattern2, List) end, Count)
+    end}.
 
 substitute_test() ->
     ?assertOk(xl_application:start(xl_stdlib)),
