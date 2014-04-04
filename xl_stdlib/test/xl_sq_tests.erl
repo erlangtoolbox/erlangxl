@@ -57,7 +57,8 @@ select_test() ->
     L2 = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
     ?assertEquals({ok, [x1, x2]}, xl_sq:select([{all, {'>', 1, 2}}, 2, 1], L2)),
     L2 = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
-    ?assertEquals({ok, [a, b, {x1, y1}, {x2, y2}]}, xl_sq:select([all, 2], L2)).
+    ?assertEquals({ok, [a, b, {x1, y1}, {x2, y2}]}, xl_sq:select([all, 2], L2)),
+    ?assertEquals({ok, {2, b}}, xl_sq:select([2], L2)).
 
 update_replace_test() ->
     L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
@@ -70,7 +71,13 @@ update_replace_test() ->
     ?assertEquals({ok, [{1, a}, {2, b}, {3, {z, y1}}, {5, {x2, y2}}]},
         xl_sq:update([{'>', 1, 2}, 2, 1], {replace, z}, L)),
     ?assertEquals({ok, [{1, a}, {2, b}, z, {5, {x2, y2}}]},
-        xl_sq:update([{'>', 1, 2}], {replace, z}, L)).
+        xl_sq:update([{'>', 1, 2}], {replace, z}, L)),
+    ?assertEquals({ok, [z, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}]},
+        xl_sq:update([1], {replace, z}, L)),
+    ?assertEquals({ok, [z]},
+        xl_sq:update([1], {replace, z}, [undefined])),
+    ?assertEquals({ok, {z}},
+        xl_sq:update([1], {replace, z}, {undefined})).
 
 update_insert_test() ->
     L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
@@ -82,7 +89,9 @@ update_insert_test() ->
 update_delete_test() ->
     L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
     ?assertEquals({ok, [{1, a}, {2, b}, {3, {y1}}, {5, {y2}}]},
-        xl_sq:update([{all, {'>', 1, 2}}, 2, 1], delete, L)).
+        xl_sq:update([{all, {'>', 1, 2}}, 2, 1], delete, L)),
+    ?assertEquals({ok, [{1, a}, {3, {x1, y1}}, {5, {x2, y2}}]},
+        xl_sq:update([2], delete, L)).
 
 update_append_tuple_test() ->
     L = [{1, a}, {2, b}, {3, {x1, y1}}, {5, {x2, y2}}],
@@ -106,4 +115,4 @@ update_f_test() ->
         {registered, []},
         x,
         {env, []}
-    ]}}, xl_sq:update([3, {'==', 1, applications}], fun({applications, _}) -> x end, ?APP)).
+    ]}}, xl_sq:update([3, {'==', 1, applications}], fun({applications, _}) -> {ok, x} end, ?APP)).

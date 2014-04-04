@@ -79,26 +79,35 @@ predicate({Op, Path, Value}) when is_list(Path) ->
     end.
 
 -spec(update([path()], update(), term()) -> error_m:monad(term())).
-update([], _Update, undefined) -> {ok, undefined};
 update([], {replace, Value}, _Target) -> {ok, Value};
+update([], _Update, undefined) -> {ok, undefined};
 update([], {insert, N, Value}, Target) when is_tuple(Target) andalso N < size(Target) + 1 ->
     {H, T} = lists:split(N - 1, tuple_to_list(Target)),
-    {ok, list_to_tuple(lists:append([H, [Value], T]))};
+    {ok, list_to_tuple(H ++ [Value | T])};
 update([], {insert, N, Value}, Target) when is_list(Target) andalso N < length(Target) + 1 ->
     {H, T} = lists:split(N - 1, Target),
-    {ok, lists:append([H, [Value], T])};
-update([], {append, List}, Target) when is_list(Target) andalso is_list(List) ->
-    {ok, lists:append([Target, List])};
+    {ok, H ++ [Value | T]};
 update([], {append, List}, Target) when is_tuple(Target) andalso is_list(List) ->
-    {ok, list_to_tuple(lists:append([tuple_to_list(Target), List]))};
-update([], F, Target) when is_function(F, 1) -> {ok, F(Target)};
+    {ok, list_to_tuple(tuple_to_list(Target) ++ List)};
+update([], {append, List}, Target) when is_list(Target) andalso is_list(List) ->
+    {ok, Target ++ List};
+update([], F, Target) when is_function(F, 1) -> F(Target);
 update([N], delete, Target) when is_integer(N) andalso ?is_correct_tuple(N, Target) ->
     {H, [_ | T]} = lists:split(N - 1, tuple_to_list(Target)),
     {ok, list_to_tuple(H ++ T)};
+update([N], delete, Target) when is_integer(N) andalso ?is_correct_list(N, Target) ->
+    {H, [_ | T]} = lists:split(N - 1, Target),
+    {ok, H ++ T};
 update([N | Path], Update, Target) when is_integer(N) andalso ?is_correct_tuple(N, Target) ->
     Element = element(N, Target),
     case update(Path, Update, Element) of
         {ok, X} -> {ok, setelement(N, Target, X)};
+        E -> E
+    end;
+update([N | Path], Update, Target) when is_integer(N) andalso ?is_correct_list(N, Target) ->
+    {Head, [Element | Tail]} = lists:split(N - 1, Target),
+    case update(Path, Update, Element) of
+        {ok, X} -> {ok, Head ++ [X | Tail]};
         E -> E
     end;
 update([P | Path], Update, Target) when is_list(Target) andalso ?is_predicate(P) ->
