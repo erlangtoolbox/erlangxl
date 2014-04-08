@@ -66,6 +66,11 @@ select([{all, P} | Path], Target) when is_list(Target) andalso ?is_predicate(P) 
         Targets <- xl_lists:efilter(predicate(P), Target),
         xl_lists:emap(fun(T) -> select(Path, T) end, Targets)
     ]);
+select([{'|', Variants} | Path], Target) when is_list(Target), is_list(Variants) ->
+    case xl_lists:emapfind(fun(V) -> select([V], Target) end, Variants) of
+        {ok, X} -> select(Path, X);
+        E -> E
+    end;
 select(Path, Target) -> {error, {structural_mismatch, Path, Target}}.
 
 predicate(F) when is_function(F) -> fun(X) -> {ok, F(X)} end;

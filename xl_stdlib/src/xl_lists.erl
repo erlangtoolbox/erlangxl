@@ -35,7 +35,7 @@
     mapfind/2, set/1, union/2, count/2, times/2, etimes/2, transform/3, seq/4, matchfilter/2,
     compare/2, compare_key/2, zip_with_index/1, nth/2, keymerge/4, shuffle/1, init/2, ifoldl/3, keyfilter/3,
     keypartition/3, fastsplitwith/2, nshufflemapfilter/3, nmapfilter/3, ekvfind/2, eflatmap/2, efind/2, efilter/2,
-    esplitwith/2, not_epredicate/1, delete_all/2, fastpartition/2, shufflemapfindc/3, mapfindc/3, nfmap/2, disperse/2, zipmap/3]).
+    esplitwith/2, not_epredicate/1, delete_all/2, fastpartition/2, shufflemapfindc/3, mapfindc/3, nfmap/2, disperse/2, zipmap/3, emapfind/2]).
 -export_type([kvlist/2, kvlist_at/0, mapping_predicate/2, fold_function/2, efold_function/2, epredicate/1, mapfindc_function/3]).
 
 -type(kvlist(A, B) :: [{A, B}]).
@@ -85,6 +85,15 @@ mapfind(Pred, [H | T]) ->
     case Pred(H) of
         undefined -> mapfind(Pred, T);
         X -> X
+    end.
+
+-spec(emapfind(fun((term()) -> error_m:monad(option_m:monad(term()))), [term()]) -> option_m:monad(term())).
+emapfind(_Pred, []) -> {ok, undefined};
+emapfind(Pred, [H | T]) ->
+    case Pred(H) of
+        {ok, undefined} -> emapfind(Pred, T);
+        X = {ok, _} -> X;
+        E -> E
     end.
 
 -spec(first([term()]) -> option_m:monad(term())).
