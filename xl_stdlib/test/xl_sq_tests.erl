@@ -47,7 +47,7 @@ select_test() ->
     ?assertEquals({ok, kernel},
         xl_sq:select([3, {'==', 1, applications}, 2, 1], ?APP)),
     ?assertEquals({ok, kernel},
-        xl_sq:select([3, {'|', [{'==', 1, annotations}, {'==', 1, applications}]}, 2, 1], ?APP)),
+        xl_sq:select([3, {any, [{'==', 1, annotations}, {'==', 1, applications}]}, 2, 1], ?APP)),
     ?assertEquals({ok, {vsn, "1"}},
         xl_sq:select([3, {'==', 2, "1"}], ?APP)),
     ?assertEquals({ok, description},
