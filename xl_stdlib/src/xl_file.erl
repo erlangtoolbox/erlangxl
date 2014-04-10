@@ -33,7 +33,7 @@
 -compile({parse_transform, do}).
 
 -behaviour(xl_autoresource).
--export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2, delete_filtered/2]).
+-export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2, delete_filtered/2, read_link_info/1, write_file_info/2]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
     read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3,
     absolute/1]).
@@ -105,31 +105,32 @@ write_terms(File, L) ->
 
 -spec copy(file:filename(), file:filename()) -> error_m:monad(ok).
 copy(Src, Dst) ->
-    case type(Src) of
-        {ok, regular} ->
+    case read_link_info(Src) of
+        {ok, Info = #file_info{type = regular}} ->
             DestinationFile = filename:join(Dst, filename:basename(Src)),
             do([error_m ||
                 ensure_dir(DestinationFile),
                 xl_io:apply_io(file, copy, [Src, DestinationFile]),
-                ok
+                write_file_info(DestinationFile, Info)
             ]);
-        {ok, directory} ->
+        {ok, Info = #file_info{type = directory}} ->
             do([error_m ||
                 Files <- list_dir(Src),
                 NewDst <- return(filename:join(Dst, filename:basename(Src))),
                 mkdirs(NewDst),
                 xl_lists:eforeach(fun(F) ->
                     copy(filename:join(Src, F), NewDst)
-                end, Files)
+                end, Files),
+                write_file_info(NewDst, Info)
             ]);
-        {ok, symlink} ->
+        {ok, Info = #file_info{type = symlink}} ->
             DestinationFile = filename:join(Dst, filename:basename(Src)),
             do([error_m ||
                 ensure_dir(DestinationFile),
                 xl_io:apply_io(file, copy, [Src, DestinationFile]),
-                ok
+                write_file_info(DestinationFile, Info)
             ]);
-        {ok, T} -> {error, {cannot_copy, T, [Src, Dst]}};
+        {ok, #file_info{type = T}} -> {error, {cannot_copy, T, [Src, Dst]}};
         E -> E
     end.
 
@@ -168,6 +169,7 @@ write_file(Path, Data) ->
 open(File, Mode) -> xl_io:apply_io(file, open, [File, Mode]).
 close(Fd) -> xl_io:apply_io(file, close, [Fd]).
 make_symlink(Target, Link) -> xl_io:apply_io(file, make_symlink, [Target, Link]).
+write_file_info(Path, Info) -> xl_io:apply_io(file, write_file_info, [Path, Info]).
 read_file_info(Path) -> xl_io:apply_io(file, read_file_info, [Path]).
 read_link_info(Path) -> xl_io:apply_io(file, read_link_info, [Path]).
 change_mode(Path, Mode) -> xl_io:apply_io(file, change_mode, [Path, Mode]).

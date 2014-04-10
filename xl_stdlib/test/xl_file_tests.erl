@@ -28,14 +28,19 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_file_tests).
 
--include_lib("eunit/include/eunit.hrl").
 -include_lib("xl_stdlib/include/xl_eunit.hrl").
+-include_lib("kernel/include/file.hrl").
 
 copy_file_test() ->
     ok = xl_file:delete("/tmp/test"),
     ok = xl_file:write_file("/tmp/test/x", "data"),
-    ?assertEqual(ok, xl_file:copy("/tmp/test/x", "/tmp/test/y")),
+    xl_file:change_mode("/tmp/test/x", 321),
+    ?assertEquals(ok, xl_file:copy("/tmp/test/x", "/tmp/test/y")),
     ?assertFilesEqual("/tmp/test/x", "/tmp/test/y/x"),
+    ?assertEquals(
+        (element(2, xl_file:read_file_info("/tmp/test/x")))#file_info{inode = undefined},
+        (element(2, xl_file:read_file_info("/tmp/test/y/x")))#file_info{inode = undefined}
+    ),
     ok = xl_file:delete("/tmp/test").
 
 copy_recursive_test() ->
