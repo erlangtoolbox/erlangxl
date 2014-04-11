@@ -34,7 +34,7 @@
 -export([new/1, insert/2, contains/2]).
 -export_type([ref/0]).
 
--opaque(ref() :: term()).
+-type(ref() :: term()).
 
 -spec(new(pos_integer() | [term()]) -> ref()).
 new(Size) when is_integer(Size) -> bloom:bloom(max(Size, 4000));
