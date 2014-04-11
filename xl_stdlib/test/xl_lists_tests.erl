@@ -210,16 +210,18 @@ keymerge_test() ->
     ?assertEqual([{b, 1}, {c, 5}], xl_lists:keymerge(Plus, 1, [{b, 1}, {c, 5}], [])).
 
 shuffle_test() ->
-    ?assertEqual([], xl_lists:shuffle([])),
-    L = lists:seq(1, 1000),
-    ?assertNotEqual(xl_lists:shuffle(L), xl_lists:shuffle(L)),
-    Counts = xl_lists:seq(1, 5, 0.5, fun(X) -> round(math:exp(X)) end),
-    lists:foreach(fun(Count) ->
-        T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
-        xl_eunit:performance(xl_convert:make_atom([shuffle, '#', Count]), fun() ->
-            xl_lists:shuffle(T)
-        end, 1000)
-    end, Counts).
+    {timeout, 2000, fun() ->
+        ?assertEqual([], xl_lists:shuffle([])),
+        L = lists:seq(1, 1000),
+        ?assertNotEqual(xl_lists:shuffle(L), xl_lists:shuffle(L)),
+        Counts = xl_lists:seq(1, 5, 0.5, fun(X) -> round(math:exp(X)) end),
+        lists:foreach(fun(Count) ->
+            T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
+            xl_eunit:performance(xl_convert:make_atom([shuffle, '#', Count]), fun() ->
+                xl_lists:shuffle(T)
+            end, 1000)
+        end, Counts)
+    end}.
 
 
 nshufflemapfilter_test() ->
@@ -242,18 +244,20 @@ delete_all_test() ->
     ?assertEqual([1, 2, 3, 4], xl_lists:delete_all(x, [1, x, 2, x, x, 3, 4])).
 
 set_test() ->
-    L = [random:uniform(1000) || _ <- lists:seq(1, 1000)],
-    ?assertEquals(length(xl_lists:set(L)), length(sets:to_list(sets:from_list(L)))),
-    xl_lists:times(fun() ->
-        xl_eunit:performance(xl_lists_set, fun() ->
-            xl_lists:set(L)
-        end, 100)
-    end, 5),
-    xl_lists:times(fun() ->
-        xl_eunit:performance(sets_from_list, fun() ->
-            sets:to_list(sets:from_list(L))
-        end, 100)
-    end, 5).
+    {timeout, 2000, fun() ->
+        L = [random:uniform(1000) || _ <- lists:seq(1, 1000)],
+        ?assertEquals(length(xl_lists:set(L)), length(sets:to_list(sets:from_list(L)))),
+        xl_lists:times(fun() ->
+            xl_eunit:performance(xl_lists_set, fun() ->
+                xl_lists:set(L)
+            end, 100)
+        end, 5),
+        xl_lists:times(fun() ->
+            xl_eunit:performance(sets_from_list, fun() ->
+                sets:to_list(sets:from_list(L))
+            end, 100)
+        end, 5)
+    end}.
 
 nfmap_test() ->
     Square = fun(X) -> X * X end,

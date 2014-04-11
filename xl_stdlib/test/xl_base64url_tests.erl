@@ -33,10 +33,12 @@
 -include("xl_eunit.hrl").
 
 encode_test() ->
-    ?assertEquals(<<"aHR0cDovL3N0cmlrZWFkLmNvbS94P3k9eiZmPWYrNA">>, xl_base64url:encode("http://strikead.com/x?y=z&f=f+4")),
-    xl_eunit:performance(b64_encode, fun() ->
-        xl_base64url:encode("http://strikead.com/x?y=z&f=f+4")
-    end, 100000).
+    {timeout, 2000, fun() ->
+        ?assertEquals(<<"aHR0cDovL3N0cmlrZWFkLmNvbS94P3k9eiZmPWYrNA">>, xl_base64url:encode("http://strikead.com/x?y=z&f=f+4")),
+        xl_eunit:performance(b64_encode, fun() ->
+            xl_base64url:encode("http://strikead.com/x?y=z&f=f+4")
+        end, 100000)
+    end}.
 
 b64e_test() ->
     lists:foreach(fun(X) ->
