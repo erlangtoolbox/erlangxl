@@ -66,6 +66,8 @@ select([{all, P} | Path], Target) when is_list(Target) andalso ?is_predicate(P) 
         Targets <- xl_lists:efilter(predicate(P), Target),
         xl_lists:emap(fun(T) -> select(Path, T) end, Targets)
     ]);
+select([{any, Variants} | Path], Target) when is_tuple(Target) ->
+    select([{any, Variants} | Path], tuple_to_list(Target));
 select([{any, Variants} | Path], Target) when is_list(Target), is_list(Variants) ->
     case xl_lists:emapfind(fun(V) -> select([V], Target) end, Variants) of
         {ok, X} -> select(Path, X);
