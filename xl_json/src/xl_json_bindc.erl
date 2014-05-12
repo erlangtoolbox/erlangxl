@@ -375,13 +375,21 @@ check_enumeration(Value, Enumeration) when is_list(Enumeration) ->
         false -> error({illegal_enum_value, Value})
     end.
 
-check_array_content(string, List) -> check_array_content(binary, List);
-check_array_content(binary, List) ->
-    case lists:all(fun is_binary/1, List) of
+check_list(string, List) -> check_list_content(fun is_binary/1, List);
+check_list(binary, List) -> check_list_content(fun is_binary/1, List);
+check_list(integer, List) -> check_list_content(fun is_integer/1, List);
+check_list(float, List) -> check_list_content(fun is_float/1, List);
+check_list(boolean, List) -> check_list_content(fun is_boolean/1, List);
+check_list(atom, List) -> check_list_content(fun is_atom/1, List);
+check_list(_, List) -> List.
+
+check_list_content(F, List) when is_list(List) ->
+    case lists:all(F, List) of
         true -> List;
-        false -> error({illegal_array_value, List})
+        false -> error({illegal_list_value, List})
     end;
-check_array_content(_, Value) -> Value.
+check_list_content(_F, List) -> error({illegal_list_value, List}).
+
 
 is_type(V, integer) when is_integer(V) -> true;
 is_type(V, float) when is_float(V) -> true;
@@ -409,7 +417,7 @@ cast(_Source, V, {enum, {list, string}, Enumeration}) when is_list(V) ->
     [check_enumeration(X, Enumeration) || X <- V];
 cast(_Source, V, string) when is_binary(V) -> V;
 cast(_Source, V, string) when is_integer(V) -> xl_convert:to(binary, V);
-cast(_Source, V, {list, string}) when is_list(V) -> check_array_content(string, V);
+cast(_Source, V, {list, string}) -> check_list(string, V);
 cast(_Source, V, {option, string}) when is_binary(V) -> {ok, V};
 cast(_Source, V, {option, string}) when is_integer(V) -> {ok, xl_convert:to(binary, V)};
 
@@ -417,7 +425,7 @@ cast(_Source, V, {enum, binary, Enumeration}) -> check_enumeration(V, Enumeratio
 cast(_Source, V, {enum, {list, binary}, Enumeration}) when is_list(V) ->
     lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
 cast(_Source, V, binary) when is_binary(V) -> V;
-cast(_Source, V, {list, binary}) when is_list(V) -> check_array_content(binary, V);
+cast(_Source, V, {list, binary}) -> check_list(binary, V);
 cast(_Source, V, {option, binary}) when is_binary(V) -> {ok, V};
 
 cast(_Source, V, {enum, integer, Enumeration}) -> check_enumeration(V, Enumeration);
@@ -425,7 +433,7 @@ cast(_Source, V, {enum, {list, integer}, Enumeration}) when is_list(V) ->
     [check_enumeration(X, Enumeration) || X <- V];
 cast(_Source, V, integer) when is_integer(V) -> V;
 cast(_Source, V, integer) when is_binary(V) -> xl_convert:to(integer, V);
-cast(_Source, V, {list, integer}) when is_list(V) -> V;
+cast(_Source, V, {list, integer}) -> V;
 cast(_Source, V, {option, integer}) when is_integer(V) -> {ok, V};
 
 cast(_Source, V, {enum, float, Enumeration}) -> check_enumeration(xl_convert:to(float, V), Enumeration);
@@ -433,7 +441,7 @@ cast(_Source, V, {enum, {list, float}, Enumeration}) when is_list(V) ->
     [check_enumeration(xl_convert:to(float, X), Enumeration) || X <- V];
 cast(_Source, V, float) when is_float(V) -> V;
 cast(_Source, V, float) when is_integer(V); is_binary(V) -> xl_convert:to(float, V);
-cast(_Source, V, {list, float}) when is_list(V) -> [xl_convert:to(float, X) || X <- V];
+cast(_Source, V, {list, float}) -> [xl_convert:to(float, X) || X <- V];
 cast(_Source, V, {option, float}) when is_float(V) -> {ok, V};
 cast(_Source, V, {option, float}) when is_integer(V); is_binary(V) -> {ok, xl_convert:to(float, V)};
 
@@ -441,11 +449,12 @@ cast(_Source, true, boolean) -> true;
 cast(_Source, false, boolean) -> false;
 cast(_Source, <<"true">>, boolean) -> true;
 cast(_Source, <<"false">>, boolean) -> false;
-cast(_Source, V, {list, boolean}) when is_list(V) -> V;
+cast(_Source, V, {list, boolean}) -> check_list(boolean, V);
 cast(_Source, V, {option, boolean}) when V == true; V == false -> {ok, V};
 
 cast({json, JsonApi}, V, any) -> JsonApi:to_abstract(V);
 cast({json, JsonApi}, V, {list, any}) when is_list(V) -> [JsonApi:to_abstract(X) || X <- V];
+cast({json, _JsonApi}, V, {list, any}) -> error({illegal_list_value, V});
 cast({json, JsonApi}, V, {option, any}) -> {ok, JsonApi:to_abstract(V)};
 
 cast(Source, V, {dict, {Module, Record}, {Key, _}}) when is_list(V) -> cast(Source, V, {dict, {Module, Record}, Key});
@@ -459,6 +468,7 @@ cast({json, JsonApi}, V, {dict, {Module, Record}, Key}) when is_list(V) ->
 
     end, gb_trees:empty(), V);
 cast({json, _JsonApi}, V, {list, {Module, Record}}) when is_list(V) -> [Module:from_json_(O, Record) || O <- V];
+cast({json, _JsonApi}, V, {list, {_Module, _Record}}) -> error({illegal_list_value, V});
 cast({json, _JsonApi}, V, {option, {Module, Record}}) -> {ok, Module:from_json_(V, Record)};
 cast({json, _JsonApi}, V, {Module, Record}) -> Module:from_json_(V, Record);
 
@@ -485,7 +495,7 @@ cast(_Source, {ok, V}, {enum, {list, string}, Enumeration}, _Default) when is_li
     [check_enumeration(X, Enumeration) || X <- V];
 cast(_Source, {ok, V}, string, _Default) when is_binary(V) -> V;
 cast(_Source, {ok, V}, string, _Default) when is_integer(V) -> xl_convert:to(binary, V);
-cast(_Source, {ok, V}, {list, string}, _Default) when is_list(V) -> check_array_content(string, V);
+cast(_Source, {ok, V}, {list, string}, _Default) when is_list(V) -> check_list(string, V);
 cast(_Source, {ok, V}, {option, string}, _Default) when is_binary(V) -> {ok, V};
 cast(_Source, {ok, V}, {option, string}, _Default) when is_integer(V) -> {ok, xl_convert:to(binary, V)};
 
@@ -493,7 +503,7 @@ cast(_Source, {ok, V}, {enum, binary, Enumeration}, _Default) -> check_enumerati
 cast(_Source, {ok, V}, {enum, {list, binary}, Enumeration}, _Default) when is_list(V) ->
     lists:map(fun(X) -> check_enumeration(X, Enumeration) end, V);
 cast(_Source, {ok, V}, binary, _Default) when is_binary(V) -> V;
-cast(_Source, {ok, V}, {list, binary}, _Default) when is_list(V) -> check_array_content(binary, V);
+cast(_Source, {ok, V}, {list, binary}, _Default) when is_list(V) -> check_list(binary, V);
 cast(_Source, {ok, V}, {option, binary}, _Default) when is_binary(V) -> {ok, V};
 
 cast(_Source, {ok, V}, {enum, integer, Enumeration}, _Default) -> check_enumeration(V, Enumeration);

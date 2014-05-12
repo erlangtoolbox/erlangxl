@@ -325,7 +325,7 @@ list_content_validation_test() ->
         {[1], <<"{\"integer\":[],\"float\":[],\"boolean\":[],\"atom\":[],\"string\":[1],\"record\":[],\"record_qualified\":[]}">>}
     ],
     lists:foreach(fun({Value, Json}) ->
-        ?assertEquals({error, {illegal_array_value, Value}}, alltypes:from_json(Json, lists))
+        ?assertEquals({error, {illegal_list_value, Value}}, alltypes:from_json(Json, lists))
     end, Asserts).
 
 either_primitives_test() ->
@@ -359,9 +359,11 @@ dicts_test() ->
 
 
 weirdowrds_test() ->
-    ?assertEquals(<<"{\"query\":11}">>, alltypes:to_json(#weirdwords{
+    WW = #weirdwords{
         'query' = 11
-    })).
+    },
+    ?assertEquals(<<"{\"query\":11}">>, alltypes:to_json(WW)),
+    ?assertEquals({ok, WW}, alltypes:from_json(alltypes:to_json(WW), weirdwords)).
 
 %% PERFORMANCE to_json: 11033.9 op/s, time: 9.063 ms, threads: 1
 performance_test_() ->
