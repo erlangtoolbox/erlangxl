@@ -38,7 +38,7 @@
 
 -type(path() :: [pos_integer() | fun((term()) -> boolean()) | {comparison(), pos_integer(), term()}]).
 -type(comparison() :: '==' | '/=' | '=>' | '<=' | '=:=' | '=:=' | '<' | '>').
--type(update() :: {replace, term()} | {append, [term()]} | delete).
+-type(update() :: {replace, term()} | {append, [term()]} | {insert, pos_integer(), term()} | delete).
 
 -define(is_correct_tuple(N, T), (is_tuple(Target) andalso N =< size(Target))).
 -define(is_correct_list(N, T), (is_list(Target) andalso N =< length(Target))).
