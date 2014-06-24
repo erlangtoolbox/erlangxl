@@ -634,4 +634,5 @@ quote(<<$", Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $">>);
 quote(<<$\n, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $n>>);
 quote(<<$\r, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $r>>);
 quote(<<$\t, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $t>>);
+quote(<<$\\, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, $\\, $\\>>);
 quote(<<X, Rest/binary>>, Acc) -> quote(Rest, <<Acc/binary, X>>).
