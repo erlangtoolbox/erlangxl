@@ -63,8 +63,10 @@ load(Name, Location) ->
 load_list(Name, List) ->
     replace(Name, fun() ->
         ETS = create_ets(Name),
-        true = ets:insert(ETS, List),
-        {ok, ETS}
+        case ets:insert(ETS, List) of
+            true -> error_m:return(ETS);
+            false -> error_m:fail({"cannot store data to table", Name, List})
+        end
     end).
 
 -spec(load_file(atom(), file:filename()) -> error_m:monad(ok)).
