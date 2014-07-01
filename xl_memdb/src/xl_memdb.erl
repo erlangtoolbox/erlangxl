@@ -51,12 +51,39 @@ dump(Name, Location) ->
         ets:tab2file(ETS, Location)
     ]).
 
--spec(load(atom(), file:filename()) -> error_m:monad(ok)).
+-spec(load(atom(), list({term(), term()}) | file:filename()) -> error_m:monad(ok)).
+load(Name, []) ->
+    load_list(Name, []);
+load(Name, List = [{_, _} | _]) ->
+    load_list(Name, List);
 load(Name, Location) ->
+    load_file(Name, Location).
+
+-spec(load_list(atom(), list({term(), term()})) -> error_m:monad(ok)).
+load_list(Name, List) ->
+    replace(Name, fun() ->
+        ETS = create_ets(Name),
+        case ets:insert(ETS, List) of
+            true -> error_m:return(ETS);
+            false -> error_m:fail({"cannot store data to table", Name, List})
+        end
+    end).
+
+-spec(load_file(atom(), file:filename()) -> error_m:monad(ok)).
+load_file(Name, Location) ->
+    replace(Name, fun() ->
+        do([error_m ||
+            ETS <- ets:file2tab(Location),
+            xl_ets_server:takeover(ETS),
+            return(ETS)
+        ])
+    end).
+
+-spec(replace(atom(), fun(() -> error_m:monad(ets:tab()))) -> error_m:monad(ok)).
+replace(Name, Fun) ->
     {ok, OldETS} = xl_state:value(Name, ets),
     do([error_m ||
-        NewETS <- ets:file2tab(Location),
-        xl_ets_server:takeover(NewETS),
+        NewETS <- Fun(),
         xl_state:set(Name, ets, NewETS),
         case OldETS of
             NewETS -> ok;

@@ -34,4 +34,10 @@ dump_load_test() ->
     xl_memdb:load(testmemdb2, "/tmp/test/dump.memdb"),
     ?assertEquals({ok, {{a, 1}, a1}}, xl_memdb:get(testmemdb2, {a, 1})),
     ?assertEquals({ok, {{b, 1}, a2}}, xl_memdb:get(testmemdb2, {b, 1})),
+    xl_memdb:load(testmemdb2, []),
+    ?assertEquals(undefined, xl_memdb:get(testmemdb2, {a, 1})),
+    ?assertEquals(undefined, xl_memdb:get(testmemdb2, {b, 1})),
+    xl_memdb:load(testmemdb2, [{my_key, my_value}, {{other, key}, "Boo!"}]),
+    ?assertEquals({ok, {my_key, my_value}}, xl_memdb:get(testmemdb2, my_key)),
+    ?assertEquals({ok, {{other, key}, "Boo!"}}, xl_memdb:get(testmemdb2, {other, key})),
     xl_memdb:stop(testmemdb2).
