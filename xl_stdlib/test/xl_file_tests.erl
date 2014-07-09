@@ -87,3 +87,6 @@ read_files_base_test() ->
 absolute_test() ->
     ?assertEqual("/a/b/c", xl_file:absolute("/a/b/c/d/e/./../../.")),
     ?assertEqual("/", xl_file:absolute("/a/b/../../../../..")).
+
+md5_test() ->
+    ?assertEquals({ok, <<"827ccb0eea8a706c4c34a16891f84e7b">>}, xl_file:md5("test/md5.txt")).

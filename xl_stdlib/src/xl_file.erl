@@ -33,7 +33,7 @@
 -compile({parse_transform, do}).
 
 -behaviour(xl_autoresource).
--export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2, delete_filtered/2, read_link_info/1, write_file_info/2]).
+-export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2, delete_filtered/2, read_link_info/1, write_file_info/2, md5/1]).
 -export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
     read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3,
     absolute/1]).
@@ -234,6 +234,12 @@ delete(Path) ->
 
 wildcards(Wildcards) -> [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)].
 
+-spec(md5(file:name()) -> error_m:monad(string())).
+md5(Path) ->
+    case read_file(Path) of
+        {ok, Bytes} -> {ok, xl_codec:md5(Bytes)};
+        E -> E
+    end.
 %%
 % autoresource
 %%
