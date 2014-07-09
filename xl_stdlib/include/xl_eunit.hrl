@@ -24,8 +24,18 @@ end).
         case X of
             Expect -> ok;
             Value ->
-                xl_eunit:format("\033[31m\033[1mFAILED\033[m ~s (~p)~nexpression: ~s~nexpected: ~9000p~n but was:\033[31m ~9000p~n\033[m", [?FILE, ?LINE, ??Expr, Expect, Value]),
+                xl_eunit:format("\033[31m\033[1mFAILED\033[0m ~s (~p)~nexpression: ~s~nexpected: ~9000p~n but was:\033[31m ~9000p~n\033[0m", [?FILE, ?LINE, ??Expr, Expect, Value]),
                 erlang:error(assertEquals_failed)
         end
     end)(Expr))
 ).
+
+-define(assertMatches(Guard, Expr),
+    ((fun () ->
+        case (Expr) of
+            Guard -> ok;
+            Value ->
+                xl_eunit:format("\033[31m\033[1mFAILED\033[0m ~s (~p)~nexpression: ~s~nexpected: ~s~n but was:\033[31m ~9000p~n\033[0m", [?FILE, ?LINE, ??Expr, ??Guard, Value]),
+                erlang:error(assertMatch_failed)
+        end
+    end)())).
