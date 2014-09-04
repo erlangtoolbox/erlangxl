@@ -87,7 +87,7 @@ predicate({Op, Path, Value}) when is_list(Path) ->
 
 -spec(update([path()], update(), term()) -> error_m:monad(term())).
 update([], {replace, Value}, _Target) -> {ok, Value};
-update([], _Update, undefined) -> {ok, undefined};
+update(_Path, _Update, undefined) -> {ok, undefined};
 update([], {insert, N, Value}, Target) when is_tuple(Target) andalso N < size(Target) + 1 ->
     {H, T} = lists:split(N - 1, tuple_to_list(Target)),
     {ok, list_to_tuple(H ++ [Value | T])};
