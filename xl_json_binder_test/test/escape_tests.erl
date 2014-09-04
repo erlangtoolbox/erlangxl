@@ -45,3 +45,7 @@ escape_test() ->
     {ok, J} = xl_file:read_file("test/escape.json"),
     ?assertMatch({ok, #escape{string = <<"1\\d\"1\n">>}}, escape:from_json(J, escape)),
     ?assertEquals(J, escape:to_json(escape:from_json(J, escape))).
+
+file_test() ->
+    ?assertMatch({ok, #escape{string = <<"1\\d\"1\n">>}},
+        escape:from_file("test/escape.json", escape)).

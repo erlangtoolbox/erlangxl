@@ -167,27 +167,35 @@ generate_module(Records, Name, Out) ->
         file:write(Out, "-module(" ++ Name ++ ").\n\n"),
         file:write(Out, "-include(\"" ++ Name ++ ".hrl\").\n\n"),
         io:format(Out, "-define(JSON_API, ~s).\n\n", [?JSON_API]),
-        file:write(Out, "-export([to_json/1, from_json/2, from_json_/2, from_proplist/2, from_proplist_/2]).\n\n"),
+        file:write(Out, "-export([to_json/1, from_json/2, from_json_/2, from_proplist/2, from_proplist_/2, from_file/2]).\n\n"),
         file:write(Out, "to_json(undefined) -> <<\"null\">>;\n\n"),
         file:write(Out, "to_json({ok, X}) -> to_json(X);\n\n"),
         file:write(Out, "to_json(L) when is_list(L) -> xl_string:flatten([<<\"[\">>, xl_lists:disperse([to_json(R) || R <- L], <<\",\">>), <<\"]\">>]);\n\n"),
         generate_to_json(Records, Out),
-        file:write(Out, "from_json(Json, Type) ->\n"
-        "\tcase ?JSON_API:from_json(Json) of\n"
-        "\t\t{ok, List} when is_list(List)->\n"
-        "\t\t\ttry\n"
-        "\t\t\t\t{ok, [from_json_(R, Type) || R <- List]}\n"
-        "\t\t\tcatch\n"
-        "\t\t\t\terror:X -> {error, X}\n"
-        "\t\t\tend;\n"
-        "\t\t{ok, Document} ->\n"
-        "\t\t\ttry\n"
-        "\t\t\t\t{ok, from_json_(Document, Type)}\n"
-        "\t\t\tcatch\n"
-        "\t\t\t\terror:X -> {error, X}\n"
-        "\t\t\tend;\n"
-        "\t\tError -> Error\n"
-        "end.\n\n"),
+        file:write(Out,
+            "from_file(Path, Type) ->\n"
+            "\tcase xl_file:read_file(Path) of\n"
+            "\t\t{ok, Data} -> from_json(Data, Type);\n"
+            "\t\tE -> E\n"
+            "\tend.\n"
+        ),
+        file:write(Out,
+            "from_json(Json, Type) ->\n"
+            "\tcase ?JSON_API:from_json(Json) of\n"
+            "\t\t{ok, List} when is_list(List)->\n"
+            "\t\t\ttry\n"
+            "\t\t\t\t{ok, [from_json_(R, Type) || R <- List]}\n"
+            "\t\t\tcatch\n"
+            "\t\t\t\terror:X -> {error, X}\n"
+            "\t\t\tend;\n"
+            "\t\t{ok, Document} ->\n"
+            "\t\t\ttry\n"
+            "\t\t\t\t{ok, from_json_(Document, Type)}\n"
+            "\t\t\tcatch\n"
+            "\t\t\t\terror:X -> {error, X}\n"
+            "\t\t\tend;\n"
+            "\t\tError -> Error\n"
+            "end.\n\n"),
         file:write(Out, "from_json_(undefined, _Type)  -> undefined;\n\n"),
         generate_from_json(Records, Out),
         file:write(Out, "from_proplist(Proplist, Type) -> {ok, from_proplist_(Proplist, Type)}.\n\n"),
