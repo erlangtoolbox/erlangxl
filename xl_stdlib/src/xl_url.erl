@@ -54,6 +54,6 @@ domain(Level, Domain) ->
 host(Url) ->
     case http_uri:parse(xl_convert:to(string, Url)) of
         {error, no_scheme} -> Url;
-        {error, _Reason} -> <<>>;
+        {error, _Reason} -> undefined;
         {ok, {_, _, Host, _, _, _}} -> xl_convert:to(binary, Host)
     end.
