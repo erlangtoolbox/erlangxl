@@ -28,28 +28,32 @@
 %%  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -module(xl_url).
 
--export([to_query/1, escape_params/1, escape/1, substitute/2, domain/2]).
+-export([to_query/1, escape_params/1, escape/1, substitute/2, domain/2, host/1]).
 
--spec to_query/1 :: ([{atom(), term()}]) -> string().
+-spec(to_query([{atom(), term()}]) -> string()).
 to_query(List) ->
-    string:join(
-        [atom_to_list(Key) ++ "=" ++ escape(Value) || {Key, Value} <- List],
-        "&").
+    string:join([atom_to_list(Key) ++ "=" ++ escape(Value) || {Key, Value} <- List], "&").
 
--spec escape_params/1 :: (xl_lists:kvlist_at())
-        -> xl_lists:kvlist_at().
+-spec(escape_params(xl_lists:kvlist_at()) -> xl_lists:kvlist_at()).
 escape_params(List) ->
     lists:map(fun({K, V}) -> {K, escape(V)} end, List).
 
--spec escape/1 :: (term()) -> string().
+-spec(escape(term()) -> string()).
 escape(V) -> edoc_lib:escape_uri(xl_convert:to(string, V)).
 
--spec substitute/2 :: (string(), xl_lists:kvlist_at()) -> string().
+-spec(substitute(string(), xl_lists:kvlist_at()) -> string()).
 substitute(Url, Map) ->
     xl_string:substitute(Url, escape_params(Map)).
 
--spec domain(pos_integer(), string()) -> string().
+-spec(domain(pos_integer(), string()) -> string()).
 domain(Level, Domain) ->
     string:join(lists:reverse(element(1, xl_lists:split(Level,
         lists:reverse(string:tokens(Domain, "."))))), ".").
 
+-spec(host(binary()) -> binary()).
+host(Url) ->
+    case http_uri:parse(xl_convert:to(string, Url)) of
+        {error, no_scheme} -> Url;
+        {error, _Reason} -> <<>>;
+        {ok, {_, _, Host, _, _, _}} -> xl_convert:to(binary, Host)
+    end.
