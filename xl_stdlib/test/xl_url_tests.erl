@@ -52,6 +52,7 @@ domain_test() ->
 host_test() ->
     Hostname = <<"184891.iphone.com.weather.TWC.adsenseformobileapps.com">>,
     ?assertEquals(Hostname, xl_url:host(Hostname)),
+    ?assertEquals(undefined, xl_url:host(undefined)),
     URL = <<"http://184891.iphone.com.weather.TWC.adsenseformobileapps.com">>,
     ?assertEquals(Hostname, xl_url:host(URL)).
 
