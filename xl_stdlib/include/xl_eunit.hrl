@@ -5,7 +5,7 @@
 -define(assertFilesEqual(File1, File2), begin
     ?assertEquals({ok, true}, xl_file:exists(File1)),
     ?assertEquals({ok, true}, xl_file:exists(File2)),
-    ?assertEquals(xl_file:read_file(File1), xl_file:read_file(File2))
+    ?assertEquals(xl_file:read(File1), xl_file:read(File2))
 end).
 
 -define(assertOk(Expr),

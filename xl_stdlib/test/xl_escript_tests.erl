@@ -40,7 +40,7 @@ read_file_test() ->
         {archive, Zip}
     ]),
     File = "/tmp/test/testescript",
-    ok = xl_file:write_file(File, EScript),
+    ok = xl_file:write(File, EScript),
     ?assertEqual({ok, <<"xxx">>}, xl_escript:read_file(File, "x.txt")).
 
 unpack_priv_test() ->
@@ -53,6 +53,6 @@ unpack_priv_test() ->
         {archive, Zip}
     ]),
     File = "/tmp/test/testescript",
-    ok = xl_file:write_file(File, EScript),
+    ok = xl_file:write(File, EScript),
     ?assertEqual(ok, xl_escript:unpack_priv(File, "/tmp/test/xx/testescript")),
     ?assertEqual({ok, true}, xl_file:exists("/tmp/test/xx/testescript/priv/x.txt")).

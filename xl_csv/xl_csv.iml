@@ -14,5 +14,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="xl_lang" />
+    <orderEntry type="module" module-name="xl_stdlib" />
   </component>
 </module>

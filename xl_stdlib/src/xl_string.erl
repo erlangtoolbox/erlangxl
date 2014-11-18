@@ -29,19 +29,11 @@
 -module(xl_string).
 
 -export([empty/1, not_empty/1, strip/1, quote/1, unquote/1, stripthru/1, format/2,
-    to_float/1, substitute/2, substitute/3, to_string/1, mk_atom/1, to_upper/1,
-    to_lower/1, equal_ignore_case/2, join/2, join/1, to_atom/1, to_binary/1,
-    to_integer/1, replace/3, unquote/2, format_number/2, format_record/2, flatten/1]).
+     substitute/2, substitute/3,  to_upper/1,      to_lower/1, equal_ignore_case/2, join/2, join/1,
+   replace/3, unquote/2, format_number/2, format_record/2, flatten/1, join_atom/1]).
 
 -type iostring() :: string() | binary().
 -export_type([iostring/0]).
-
--deprecated({to_float, 1}).
--deprecated({to_string, 1}).
--deprecated({mk_atom, 1}).
--deprecated({to_atom, 1}).
--deprecated({to_binary, 1}).
--deprecated({to_integer, 1}).
 
 -spec(empty(string()) -> boolean()).
 empty(S) -> S == "".
@@ -86,8 +78,6 @@ replace(S, Search, Replace, Acc) ->
 -spec(format(io:format(), [term()]) -> string()).
 format(Pattern, Values) -> lists:flatten(io_lib:format(Pattern, Values)).
 
--spec(to_float(iostring()) -> float()).
-to_float(X) -> xl_convert:to_float(X).
 
 -spec(substitute(string(), xl_lists:kvlist_at()) -> string()).
 substitute(Str, Map) -> substitute(Str, Map, {${, $}}).
@@ -107,18 +97,6 @@ replace_macro(<<Open:8, T/binary>>, Map, {Open, _Close}) ->
         undefined -> ""
     end;
 replace_macro(X, _Map, _Braces) -> X.
-
-
--spec(to_string(atom() | binary() | string() | float() | integer()) -> string()).
-to_string(X) -> xl_convert:to_string(X).
-
--spec(mk_atom([atom() | binary() | string() | float() | integer()]) -> atom()).
-mk_atom(L) -> xl_convert:make_atom(L).
-
--spec(to_atom(iostring() | atom()) -> atom()).
-to_atom(X) when is_binary(X) -> binary_to_atom(X, utf8);
-to_atom(X) when is_list(X) -> list_to_atom(X);
-to_atom(X) when is_atom(X) -> X.
 
 -spec(equal_ignore_case(iostring(), iostring()) -> boolean()).
 equal_ignore_case(A, B) ->
@@ -165,12 +143,8 @@ join([H | T], Acc, "") -> join(T, Acc ++ xl_convert:to(string, H), "");
 join([H | T], Acc, Delim) when is_list(Delim) ->
     join(T, Acc ++ Delim ++ xl_convert:to(string, H), Delim).
 
-
--spec(to_binary(integer() | iostring() | atom()) -> binary()).
-to_binary(X) -> xl_convert:to_binary(X).
-
--spec(to_integer(iostring() | atom() | binary()) -> integer()).
-to_integer(X) -> xl_convert:to_integer(X).
+-spec(join_atom([term()]) -> atom()).
+join_atom(List) -> xl_convert:to(atom, join(List)).
 
 format_number(1, Num) when is_integer(Num) -> integer_to_list(Num);
 format_number(2, Num) when is_integer(Num), Num < 10 -> [$0, Num + $0];

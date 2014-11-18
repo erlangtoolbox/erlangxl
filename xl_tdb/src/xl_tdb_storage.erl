@@ -39,7 +39,7 @@ load(Location, Version, Migrations) ->
         perform_migration(Location, Version, Migrations),
         Files <- xl_file:list_dir(Location, "*.tdb"),
         xl_lists:emap(fun(F) ->
-            case xl_file:read_file(filename:join(Location, F)) of
+            case xl_file:read(filename:join(Location, F)) of
                 {ok, Content} -> {ok, binary_to_term(Content)};
                 E -> E
             end
@@ -48,7 +48,7 @@ load(Location, Version, Migrations) ->
 
 -spec(store(file:name(), xl_string:iostring(), term()) -> error_m:monad(ok)).
 store(Location, Id, X) ->
-    xl_file:write_file(xl_string:join([Location, "/", Id, ".tdb"]), term_to_binary(X)).
+    xl_file:write(xl_string:join([Location, "/", Id, ".tdb"]), term_to_binary(X)).
 
 -spec(delete(file:name(), xl_string:iostring()) -> error_m:monad(ok)).
 delete(Location, Id) ->
@@ -72,21 +72,20 @@ perform_migration(Location, TargetVersion, Migrations) ->
         {ok, OldVersion} ->
             backup(Location, OldVersion),
             ApplicableMigrations = lists:dropwhile(fun({V, _M}) -> V =< OldVersion end, Migrations),
-            try
-                do([error_m ||
-                    Files <- xl_file:list_dir(Location, "*.tdb"),
-                    xl_lists:eforeach(fun(F) ->
-                        Filename = filename:join(Location, F),
-                        do([error_m ||
-                            Content <- xl_file:read_file(Filename),
-                            Object <- xl_lists:efoldl(fun({_, M}, T) ->
-                                M(T)
-                            end, binary_to_term(Content), ApplicableMigrations),
-                            xl_file:write_file(Filename, term_to_binary(Object))
-                        ])
-                    end, Files)
-                ]) of
-                ok -> xl_file:write_term(VersionFile, {version, TargetVersion})                ;
+            try do([error_m ||
+                Files <- xl_file:list_dir(Location, "*.tdb"),
+                xl_lists:eforeach(fun(F) ->
+                    Filename = filename:join(Location, F),
+                    do([error_m ||
+                        Content <- xl_file:read(Filename),
+                        Object <- xl_lists:efoldl(fun({_, M}, T) ->
+                            M(T)
+                        end, binary_to_term(Content), ApplicableMigrations),
+                        xl_file:write(Filename, term_to_binary(Object))
+                    ])
+                end, Files)
+            ]) of
+                ok -> xl_file:write_term(VersionFile, {version, TargetVersion});
                 E ->
                     case restore(Location, OldVersion) of
                         ok -> E;

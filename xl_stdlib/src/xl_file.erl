@@ -33,12 +33,14 @@
 -compile({parse_transform, do}).
 
 -behaviour(xl_autoresource).
--export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2, delete_filtered/2, read_link_info/1, write_file_info/2, md5/1]).
--export([list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
+-export([auto_open/1, auto_close/1, using/3, rename/2, wildcards/1, write_term/2, delete_filtered/2, read_link_info/1,
+    write_file_info/2, md5/1, wildcard/1, list_dir/2, compile_mask/1, find/2, exists/1, mkdirs/1, write_terms/2,
     read_terms/1, read_files/1, read_files/2, copy_if_exists/2, copy_filtered/3,
-    absolute/1]).
--export([read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
-    list_dir/1, copy/2, open/2, close/1, change_mode/2, read_file_info/1]).
+    absolute/1, read_file/1, delete/1, make_symlink/2, write_file/2, ensure_dir/1,
+    list_dir/1, copy/2, open/2, close/1, change_mode/2, read_file_info/1, read_lines/1, read/1, write/2]).
+
+-deprecated({read_file, 1}).
+-deprecated({write_file, 2}).
 
 
 list_dir(Dir, Filter) when is_function(Filter) ->
@@ -49,7 +51,7 @@ list_dir(Dir, Filter) when is_function(Filter) ->
 
 list_dir(Dir, Mask) when is_list(Mask) -> list_dir(Dir, compile_mask(Mask)).
 
-list_dir(Dir) -> xl_io:apply_io(file, list_dir, [Dir]).
+list_dir(Dir) -> posix_apply(file, list_dir, [Dir]).
 
 find(Dir, Mask) when is_list(Mask) ->
     case list_dir(Dir, Mask) of
@@ -73,18 +75,18 @@ compile_mask([H | T], Acc) -> compile_mask(T, Acc ++ [H]).
 
 -spec exists/1 :: (file:name()) -> error_m:monad(boolean()).
 exists(Path) ->
-    case xl_io:apply_io(file, read_file_info, [Path]) of
+    case posix_apply(file, read_file_info, [Path]) of
         {ok, _} -> {ok, true};
         {error, {enoent, _, _}} -> {ok, false};
         E -> E
     end.
 
-ensure_dir(Path) -> xl_io:apply_io(filelib, ensure_dir, [Path]).
+ensure_dir(Path) -> posix_apply(filelib, ensure_dir, [Path]).
 
 mkdirs(Path) -> ensure_dir(filename:join(Path, "X")).
 
 -spec read_terms/1 :: (file:name()) -> {ok, [term()]} | xl_io:posix_error().
-read_terms(Filename) -> xl_io:apply_io(file, consult, [Filename]).
+read_terms(Filename) -> posix_apply(file, consult, [Filename]).
 
 write_term(File, T) -> write_terms(File, [T]).
 
@@ -110,7 +112,7 @@ copy(Src, Dst) ->
             DestinationFile = filename:join(Dst, filename:basename(Src)),
             do([error_m ||
                 ensure_dir(DestinationFile),
-                xl_io:apply_io(file, copy, [Src, DestinationFile]),
+                posix_apply(file, copy, [Src, DestinationFile]),
                 write_file_info(DestinationFile, Info)
             ]);
         {ok, Info = #file_info{type = directory}} ->
@@ -127,7 +129,7 @@ copy(Src, Dst) ->
             DestinationFile = filename:join(Dst, filename:basename(Src)),
             do([error_m ||
                 ensure_dir(DestinationFile),
-                xl_io:apply_io(file, copy, [Src, DestinationFile]),
+                posix_apply(file, copy, [Src, DestinationFile]),
                 write_file_info(DestinationFile, Info)
             ]);
         {ok, #file_info{type = T}} -> {error, {cannot_copy, T, [Src, Dst]}};
@@ -160,20 +162,35 @@ copy_if_exists(Src, Dst) ->
         E -> E
     end.
 
-read_file(Path) -> xl_io:apply_io(file, read_file, [Path]).
-write_file(Path, Data) ->
+-spec(read(file:name()) -> error_m:monad(binary())).
+read(Path) -> posix_apply(file, read_file, [Path]).
+
+-spec(write(file:name(), iodata()) -> error_m:monad(ok)).
+write(Path, Data) ->
     case ensure_dir(Path) of
-        ok -> xl_io:apply_io(file, write_file, [Path, Data]);
+        ok -> posix_apply(file, write_file, [Path, Data]);
         E -> E
     end.
-open(File, Mode) -> xl_io:apply_io(file, open, [File, Mode]).
-close(Fd) -> xl_io:apply_io(file, close, [Fd]).
-make_symlink(Target, Link) -> xl_io:apply_io(file, make_symlink, [Target, Link]).
-write_file_info(Path, Info) -> xl_io:apply_io(file, write_file_info, [Path, Info]).
-read_file_info(Path) -> xl_io:apply_io(file, read_file_info, [Path]).
-read_link_info(Path) -> xl_io:apply_io(file, read_link_info, [Path]).
-change_mode(Path, Mode) -> xl_io:apply_io(file, change_mode, [Path, Mode]).
-rename(From, To) -> xl_io:apply_io(file, rename, [From, To]).
+
+-spec(read_lines(file:name()) -> error_m:monad([binary()])).
+read_lines(Path) ->
+    case read(Path) of
+        {ok, Bin} -> {ok, binary:split(Bin, [<<"\r\n">>, <<"\r">>, <<"\n">>], [global, trim])};
+        E -> E
+    end.
+
+
+read_file(Path) -> read(Path).
+write_file(Path, Data) -> write(Path, Data).
+
+open(File, Mode) -> posix_apply(file, open, [File, Mode]).
+close(Fd) -> posix_apply(file, close, [Fd]).
+make_symlink(Target, Link) -> posix_apply(file, make_symlink, [Target, Link]).
+write_file_info(Path, Info) -> posix_apply(file, write_file_info, [Path, Info]).
+read_file_info(Path) -> posix_apply(file, read_file_info, [Path]).
+read_link_info(Path) -> posix_apply(file, read_link_info, [Path]).
+change_mode(Path, Mode) -> posix_apply(file, change_mode, [Path, Mode]).
+rename(From, To) -> posix_apply(file, rename, [From, To]).
 
 absolute(Path) ->
     Abs = lists:reverse(lists:filter(fun(X) -> X /= "." end,
@@ -196,7 +213,7 @@ read_files(Wildcards, Option) ->
         case type(Name) of
             {ok, directory} -> read_files([Name ++ "/*"], Option);
             {ok, regular} ->
-                case read_file(Name) of
+                case read(Name) of
                     {ok, Bin} ->
                         N = case Option of
                             name ->
@@ -218,25 +235,30 @@ read_files(Wildcards, Option) ->
 delete(Path) ->
     case type(Path) of
         {ok, regular} ->
-            xl_io:apply_io(file, delete, [Path]);
+            posix_apply(file, delete, [Path]);
         {ok, symlink} ->
-            xl_io:apply_io(file, delete, [Path]);
+            posix_apply(file, delete, [Path]);
         {ok, directory} ->
             do([error_m ||
                 Files <- list_dir(Path),
                 xl_lists:eforeach(fun(P) -> delete(filename:join(Path, P)) end, Files),
-                xl_io:apply_io(file, del_dir, [Path])
+                posix_apply(file, del_dir, [Path])
             ]);
         {ok, T} -> {error, {cannot_delete, T, [Path]}};
         {error, {enoent, _, _}} -> ok;
         E -> E
     end.
 
-wildcards(Wildcards) -> [Filename || Wildcard <- Wildcards, Filename <- filelib:wildcard(Wildcard)].
+-spec(wildcard(string()) -> [string()]).
+wildcard(Wildcard) when is_binary(Wildcard) -> wildcard(binary_to_list(Wildcard));
+wildcard(Wildcard) -> filelib:wildcard(Wildcard).
+
+-spec(wildcards([string()]) -> [string()]).
+wildcards(Wildcards) -> [Filename || Wildcard <- Wildcards, Filename <- wildcard(Wildcard)].
 
 -spec(md5(file:name()) -> error_m:monad(string())).
 md5(Path) ->
-    case read_file(Path) of
+    case read(Path) of
         {ok, Bytes} -> {ok, xl_codec:md5(Bytes)};
         E -> E
     end.
@@ -246,3 +268,13 @@ md5(Path) ->
 auto_open([File, Mode]) -> open(File, Mode).
 auto_close(D) -> close(D).
 using(File, Mode, F) -> xl_auto:using(?MODULE, [File, Mode], F).
+
+
+-spec(posix_apply(module(), atom(), [term()]) -> error_m:monad(any)).
+posix_apply(Module, Func, Args) ->
+    case apply(Module, Func, Args) of
+        {error, Code} -> {error, {Code, erl_posix_msg:message(Code), Args}};
+        ok -> ok;
+        Ok = {ok, _} -> Ok;
+        X -> {ok, X}
+    end.

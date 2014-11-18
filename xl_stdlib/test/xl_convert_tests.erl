@@ -30,20 +30,28 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-export([convert/1]).
+
 to_float_test() ->
-    ?assertEqual(0.0, xl_convert:to_float("0")),
-    ?assertEqual(0.0, xl_convert:to_float("0.0")).
+    ?assertEqual(0.0, xl_convert:to(float, "0")),
+    ?assertEqual(0.0, xl_convert:to(float, "0.0")).
 
 to_string_test() ->
-    ?assertEqual("1", xl_convert:to_string(1)),
-    ?assertEqual("2.2", xl_convert:to_string(2.2)),
-    ?assertEqual("true", xl_convert:to_string(true)),
-    ?assertEqual("x", xl_convert:to_string("x")),
-    ?assertEqual("Y", xl_convert:to_string(<<"Y">>)).
+    ?assertEqual("1", xl_convert:to(string, 1)),
+    ?assertEqual("2.2", xl_convert:to(string, 2.2)),
+    ?assertEqual("true", xl_convert:to(string, true)),
+    ?assertEqual("x", xl_convert:to(string, "x")),
+    ?assertEqual("Y", xl_convert:to(string, <<"Y">>)).
 
 to_atom_test() ->
-    ?assertEqual('AB', xl_convert:to_atom("AB")).
+    ?assertEqual('AB', xl_convert:to(atom, "AB")).
 
 to_binary_test() ->
-    ?assertEqual(<<"1">>, xl_convert:to_binary(1)),
-    ?assertEqual(<<"str">>, xl_convert:to_binary("str")).
+    ?assertEqual(<<"1">>, xl_convert:to(binary, 1)),
+    ?assertEqual(<<"str">>, xl_convert:to(binary, "str")).
+
+to_extension_test() ->
+    ?assertEqual({fine, a}, xl_convert:to(tests, a)).
+
+convert(X) -> {fine, X}.
+

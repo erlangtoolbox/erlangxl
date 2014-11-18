@@ -41,7 +41,7 @@
 
 -spec(start_link(atom(), file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(ok)).
 start_link(Name, Location, Identify, Options) ->
-    ETS = ets:new(xl_convert:make_atom([Name, '_tdb']), [
+    ETS = ets:new(xl_string:join_atom([Name, '_tdb']), [
         ordered_set, {keypos, 1}, public
     ]),
     xl_state:new(Name),
@@ -68,7 +68,7 @@ start_link(Name, Location, Identify, Options) ->
         build_index(Name),
         xl_state:set(Name, last_fsync, xl_calendar:now_micros()),
         xl_state:set(Name, last_rsync, 0),
-        xl_scheduler:interval(xl_convert:make_atom([Name, sync]),
+        xl_scheduler:interval(xl_string:join_atom([Name, sync]),
             xl_lists:kvfind(sync, Options, 5000), ?MODULE, sync, [Name]),
         return(Pid)
     ]).
@@ -316,7 +316,7 @@ update_loop(Name) ->
     receive
         {'EXIT', From, _Reason} ->
             From ! do([error_m ||
-                xl_scheduler:cancel(xl_convert:make_atom([Name, sync])),
+                xl_scheduler:cancel(xl_string:join_atom([Name, sync])),
                 fsync(Name),
                 case xl_state:value(Name, ets) of
                     {ok, ETS} -> ets:delete(ETS), ok;

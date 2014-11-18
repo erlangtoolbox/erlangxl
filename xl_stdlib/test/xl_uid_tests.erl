@@ -46,7 +46,7 @@ uniq_test() ->
         application:start(xl_stdlib),
         xl_state:new(state1),
         lists:foreach(fun(X) ->
-            spawn(?MODULE, gen, [state1, xl_convert:make_atom([result, X])])
+            spawn(?MODULE, gen, [state1, xl_string:join_atom([result, X])])
         end, lists:seq(1, 100)),
         timer:sleep(1000),
         [H | T] = xl_state:keys(state1),

@@ -102,5 +102,5 @@ status(Name) ->
 %% @hidden
 create_ets(Name) ->
     xl_ets_server:create(
-        xl_convert:make_atom([Name, '_', xl_uid:next()]),
+        xl_string:join_atom([Name, '_', xl_uid:next()]),
         [public, named_table, set]).

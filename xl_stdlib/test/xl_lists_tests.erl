@@ -177,13 +177,13 @@ gb_tree_vs_random_access_list_test_() ->
         Counts = xl_lists:seq(1, 10, 0.5, fun(X) -> round(math:exp(X)) end),
         lists:foreach(fun(Count) ->
             T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
-            xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_list, '#', Count]), fun() ->
+            xl_eunit:performance(xl_string:join_atom([lists_vs_gb_trees_list, '#', Count]), fun() ->
                 {ok, _} = xl_lists:keyfind(random:uniform(Count), 1, T)
             end, 1000)
         end, Counts),
         lists:foreach(fun(Count) ->
             T = xl_lists:transform(gb_tree, fun(X) -> {X, X} end, lists:seq(1, Count)),
-            xl_eunit:performance(xl_convert:make_atom([lists_vs_gb_trees_tree, '#', Count]), fun() ->
+            xl_eunit:performance(xl_string:join_atom([lists_vs_gb_trees_tree, '#', Count]), fun() ->
                 {value, _} = gb_trees:lookup(random:uniform(Count), T)
             end, 1000)
         end, Counts)
@@ -217,7 +217,7 @@ shuffle_test() ->
         Counts = xl_lists:seq(1, 5, 0.5, fun(X) -> round(math:exp(X)) end),
         lists:foreach(fun(Count) ->
             T = lists:map(fun(X) -> {X, X} end, lists:seq(1, Count)),
-            xl_eunit:performance(xl_convert:make_atom([shuffle, '#', Count]), fun() ->
+            xl_eunit:performance(xl_string:join_atom([shuffle, '#', Count]), fun() ->
                 xl_lists:shuffle(T)
             end, 1000)
         end, Counts)

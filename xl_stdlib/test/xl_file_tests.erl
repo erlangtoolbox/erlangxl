@@ -33,7 +33,7 @@
 
 copy_file_test() ->
     ok = xl_file:delete("/tmp/test"),
-    ok = xl_file:write_file("/tmp/test/x", "data"),
+    ok = xl_file:write("/tmp/test/x", "data"),
     xl_file:change_mode("/tmp/test/x", 321),
     ?assertEquals(ok, xl_file:copy("/tmp/test/x", "/tmp/test/y")),
     ?assertFilesEqual("/tmp/test/x", "/tmp/test/y/x"),
@@ -45,9 +45,9 @@ copy_file_test() ->
 
 copy_recursive_test() ->
     ok = xl_file:delete("/tmp/test"),
-    ok = xl_file:write_file("/tmp/test/a/a", "data"),
-    ok = xl_file:write_file("/tmp/test/a/b/c", "data"),
-    ok = xl_file:write_file("/tmp/test/a/b/d", "data"),
+    ok = xl_file:write("/tmp/test/a/a", "data"),
+    ok = xl_file:write("/tmp/test/a/b/c", "data"),
+    ok = xl_file:write("/tmp/test/a/b/d", "data"),
     ok = xl_file:mkdirs("/tmp/test/a/b/e"),
 
     ?assertEqual(ok, xl_file:copy("/tmp/test/a", "/tmp/test/y")),
@@ -64,16 +64,16 @@ write_term_test() ->
     ok = xl_file:delete("/tmp/test").
 
 read_files_test() ->
-    ok = xl_file:write_file("/tmp/test/1/a", "dataa"),
-    ok = xl_file:write_file("/tmp/test/2/b", "datab"),
-    ok = xl_file:write_file("/tmp/test/2/c", "datac"),
+    ok = xl_file:write("/tmp/test/1/a", "dataa"),
+    ok = xl_file:write("/tmp/test/2/b", "datab"),
+    ok = xl_file:write("/tmp/test/2/c", "datac"),
     ?assertEqual({ok, [{"a", <<"dataa">>}, {"b", <<"datab">>}, {"c", <<"datac">>}]},
         xl_file:read_files(["/tmp/test/1/*", "/tmp/test/2/*"])),
     ok = xl_file:delete("/tmp/test").
 
 read_files_base_test() ->
-    ok = xl_file:write_file("/tmp/test/2/b", "datab"),
-    ok = xl_file:write_file("/tmp/test/2/c", "datac"),
+    ok = xl_file:write("/tmp/test/2/b", "datab"),
+    ok = xl_file:write("/tmp/test/2/c", "datac"),
     ?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},
         xl_file:read_files(["/tmp/test/2/*"], {base, "/tmp/test"})),
     ?assertEqual({ok, [{"2/b", <<"datab">>}, {"2/c", <<"datac">>}]},

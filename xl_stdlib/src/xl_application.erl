@@ -31,12 +31,14 @@
 
 -compile({parse_transform, do}).
 
-%% API
 -export([eget_env/2, get_env/3, is_started/1, start/1]).
 
 -spec(eget_env(atom(), atom()) -> error_m:monad(any())).
 eget_env(Application, Env) ->
-    option_m:to_error_m(application:get_env(Application, Env), {undefined, {Application, Env}}).
+    case application:get_env(Application, Env) of
+        undefined -> {error, {undefined, Application, Env}};
+        X -> X
+    end.
 
 -spec(get_env(atom(), atom(), term()) -> term()).
 get_env(Application, Env, Default) ->
@@ -52,26 +54,18 @@ is_started(App) -> lists:keymember(App, 1, application:which_applications()).
 -spec(start(atom()) -> error_m:monad(ok)).
 start(App) ->
     do([error_m ||
-        load_safely(App),
+        ensure_loaded(App),
         case application:get_key(App, applications) of
             {ok, Deps} -> xl_lists:eforeach(fun(Dep) -> start(Dep) end, Deps);
             _ -> ok
         end,
-        start_safely(App)
+        application:ensure_started(App)
     ]).
 
--spec(load_safely(atom()) -> error_m:monad(ok)).
-load_safely(App) ->
+-spec(ensure_loaded(atom()) -> error_m:monad(ok)).
+ensure_loaded(App) ->
     case application:load(App) of
         ok -> ok;
         {error, {already_loaded, _}} -> ok;
-        E -> E
-    end.
-
--spec(start_safely(atom()) -> error_m:monad(ok)).
-start_safely(App) ->
-    case application:start(App) of
-        ok -> ok;
-        {error, {already_started, _}} -> ok;
         E -> E
     end.

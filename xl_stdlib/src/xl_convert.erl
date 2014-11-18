@@ -29,31 +29,13 @@
 -module(xl_convert).
 -author("volodymyr.kyrychenko@strikead.com").
 
--type primitive_type() :: atom() | binary() | string() | float() | integer().
-
 %% API
--export([to_string/1, to_atom/1, to_float/1, to_binary/1, to_integer/1,
-    make_atom/1, to/2]).
+-export([make_atom/1, to/2]).
 
--spec to_string/1 :: (primitive_type()) -> string().
-to_string(X) -> to(string, X).
+-deprecated({make_atom, 1}).
+make_atom(L) -> xl_string:join_atom(L).
 
--spec to_atom/1 :: (binary() | string() | atom()) -> atom().
-to_atom(X) -> to(atom, X).
-
--spec to_float/1 :: (string() | binary()) -> float().
-to_float(X) -> to(float, X).
-
--spec to_binary/1 :: (primitive_type()) -> binary().
-to_binary(X) -> to(binary, X).
-
--spec to_integer/1 :: (string() | atom() | binary()) -> integer().
-to_integer(X) -> to(integer, X).
-
--spec make_atom/1 :: ([primitive_type()]) -> atom().
-make_atom(L) -> list_to_atom(string:join([to_string(X) || X <- L], "")).
-
--spec to/2 :: (atom(), term()) -> term().
+-spec(to(atom(), term()) -> term()).
 to(binary, X) when is_binary(X) -> X;
 to(binary, X) when is_float(X) -> to(binary, io_lib:format("~p", [X]));
 to(binary, X) when is_integer(X) -> to(binary, integer_to_list(X));
@@ -79,7 +61,8 @@ to(float, X) when is_list(X) ->
         _:_ -> float(list_to_integer(X))
     end;
 
-
 to(integer, X) when is_list(X) -> list_to_integer(X);
 to(integer, X) when is_atom(X) -> list_to_integer(atom_to_list(X));
-to(integer, X) when is_binary(X) -> list_to_integer(binary_to_list(X)).
+to(integer, X) when is_binary(X) -> list_to_integer(binary_to_list(X));
+
+to(Extension, X) -> apply(xl_string:join_atom([xl_convert_, Extension]), convert, [X]).

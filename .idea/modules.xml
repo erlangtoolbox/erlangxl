@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/project.iml" filepath="$PROJECT_DIR$/project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_code/xl_code.iml" filepath="$PROJECT_DIR$/xl_code/xl_code.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_code_testapp/xl_code_testapp.iml" filepath="$PROJECT_DIR$/xl_code_testapp/xl_code_testapp.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_csv/xl_csv.iml" filepath="$PROJECT_DIR$/xl_csv/xl_csv.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_json/xl_json.iml" filepath="$PROJECT_DIR$/xl_json/xl_json.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_json_testapp/xl_json_testapp.iml" filepath="$PROJECT_DIR$/xl_json_testapp/xl_json_testapp.iml" />

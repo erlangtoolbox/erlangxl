@@ -73,6 +73,6 @@ field_name_presentation(Name) -> Name.
 -spec(parse_file(file:name()) -> error_m:monad(xl_json_api:json_document())).
 parse_file(Path) ->
     do([error_m ||
-        Data <- xl_file:read_file(Path),
+        Data <- xl_file:read(Path),
         from_json(Data)
     ]).

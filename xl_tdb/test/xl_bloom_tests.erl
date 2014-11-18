@@ -42,11 +42,11 @@ bloom_test_() ->
             Bloom = xl_bloom:new(Actual),
             Value = lists:nth(random:uniform(length(Actual)), Actual),
             xl_lists:times(fun() ->
-                xl_eunit:performance(xl_convert:make_atom(['bloom#', Count]), fun() ->
+                xl_eunit:performance(xl_string:join_atom(['bloom#', Count]), fun() ->
                     true = xl_bloom:contains(Value, Bloom),
                     false = xl_bloom:contains({wtf, Value}, Bloom)
                 end, 1000),
-                xl_eunit:performance(xl_convert:make_atom(['list#', Count]), fun() ->
+                xl_eunit:performance(xl_string:join_atom(['list#', Count]), fun() ->
                     true = lists:member(Value, Actual),
                     false = lists:member({wtf, Value}, Actual)
                 end, 1000)
