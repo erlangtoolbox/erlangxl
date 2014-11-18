@@ -1,6 +1,3 @@
-Copyright (c) 2013-2015
-ErlangToolbox Organization http://github.com/erlangtoolbox
-
 Copyright (c) 2012-2013
 StrikeAd LLC http://www.strikead.com
 

@@ -6,10 +6,10 @@
       <module fileurl="file://$PROJECT_DIR$/xl_csv/xl_csv.iml" filepath="$PROJECT_DIR$/xl_csv/xl_csv.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_json/xl_json.iml" filepath="$PROJECT_DIR$/xl_json/xl_json.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_json_binder_test/xl_json_binder_test.iml" filepath="$PROJECT_DIR$/xl_json_binder_test/xl_json_binder_test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xl_lang/xl_lang.iml" filepath="$PROJECT_DIR$/xl_lang/xl_lang.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_memdb/xl_memdb.iml" filepath="$PROJECT_DIR$/xl_memdb/xl_memdb.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_stdlib/xl_stdlib.iml" filepath="$PROJECT_DIR$/xl_stdlib/xl_stdlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/xl_tdb/xl_tdb.iml" filepath="$PROJECT_DIR$/xl_tdb/xl_tdb.iml" />
     </modules>
   </component>
 </project>
-
