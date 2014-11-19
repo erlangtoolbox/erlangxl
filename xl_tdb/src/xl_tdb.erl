@@ -307,7 +307,7 @@ rsync(Name) ->
         end
     ]).
 
--spec(updates(atom(), pos_integer()) -> [term()]).
+-spec(updates(atom(), pos_integer()) -> xl_stream:stream(term())).
 updates(Name, Since) ->
     {ok, ETS} = xl_state:evalue(Name, ets),
     xl_ets:cursor(ETS, fun({_Id, _O, LastUpdate, _Deleted}) -> LastUpdate > Since end).

@@ -11,7 +11,7 @@
 -compile({parse_transform, do}).
 
 %% API
--export([start/1, store/3, store/2, get/2, stop/1, dump/2, load/2, items/1, status/1]).
+-export([start/1, store/3, store/2, get/2, stop/1, dump/2, load/2, items/1, status/1, updates/2]).
 
 -spec(start(atom()) -> ok).
 start(Name) ->
@@ -23,7 +23,7 @@ start(Name) ->
 -spec(store(atom(), term(), term()) -> ok).
 store(Name, Key, Value) ->
     {ok, ETS} = xl_state:value(Name, ets),
-    true = ets:insert(ETS, {Key, Value}),
+    true = ets:insert(ETS, {Key, Value, xl_calendar:now_micros()}),
     ok.
 
 -spec(store(atom(), [{term(), term()}]) -> ok).
@@ -34,19 +34,27 @@ store(Name, List) ->
 
 -spec(get(atom(), term()) -> option_m:monad(term())).
 get(Name, Key) ->
-    {ok, ETS} = xl_state:value(Name, ets),
-    xl_ets:lookup_object(ETS, Key).
+    do([option_m ||
+        ETS <- xl_state:value(Name, ets),
+        O <- xl_ets:lookup_object(ETS, Key),
+        case O of
+            {Key, Value} -> return(Value);
+            {Key, Value, _Meta} -> return(Value)
+        end
+    ]).
 
 -spec(stop(atom()) -> ok).
 stop(Name) ->
-    {ok, ETS} = xl_state:value(Name, ets),
-    ets:delete(ETS),
+    case xl_state:value(Name, ets) of
+        {ok, ETS} -> ets:delete(ETS);
+        undefined -> ok
+    end,
     xl_state:delete(Name).
 
 -spec(dump(atom(), file:filename()) -> error_m:monad(ok)).
 dump(Name, Location) ->
-    {ok, ETS} = xl_state:value(Name, ets),
     do([error_m ||
+        ETS <- option_m:to_error_m(xl_state:value(Name, ets), no_ets_in_memory),
         xl_file:ensure_dir(Location),
         ets:tab2file(ETS, Location)
     ]).
@@ -64,8 +72,8 @@ load_list(Name, List) ->
     replace(Name, fun() ->
         ETS = create_ets(Name),
         case ets:insert(ETS, List) of
-            true -> error_m:return(ETS);
-            false -> error_m:fail({"cannot store data to table", Name, List})
+            true -> {ok, ETS};
+            false -> {error, {"cannot store data to table", Name, List}}
         end
     end).
 
@@ -81,8 +89,8 @@ load_file(Name, Location) ->
 
 -spec(replace(atom(), fun(() -> error_m:monad(ets:tab()))) -> error_m:monad(ok)).
 replace(Name, Fun) ->
-    {ok, OldETS} = xl_state:value(Name, ets),
     do([error_m ||
+        OldETS <- option_m:to_error_m(xl_state:value(Name, ets), no_ets_in_memory),
         NewETS <- Fun(),
         xl_state:set(Name, ets, NewETS),
         case OldETS of
@@ -91,13 +99,30 @@ replace(Name, Fun) ->
         end
     ]).
 
+-spec(items(atom()) -> [{term(), term()}]).
 items(Name) ->
-    {ok, ETS} = xl_state:value(Name, ets),
-    ets:tab2list(ETS).
+    case xl_state:value(Name, ets) of
+        {ok, ETS} ->
+            lists:map(fun
+                (KV = {_, _}) -> KV;
+                ({Key, Value, _}) -> {Key, Value}
+            end, ets:tab2list(ETS));
+        _ -> []
+    end.
 
+-spec(status(atom()) -> term()).
 status(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
     ets:info(ETS).
+
+-spec(updates(atom(), pos_integer()) -> xl_stream:stream(term())).
+updates(Name, Since) ->
+    {ok, ETS} = xl_state:evalue(Name, ets),
+    xl_ets:cursor(ETS, fun
+        ({_Key, _Value}) -> true;
+        ({_Key, _Value, LastUpdate}) -> LastUpdate > Since
+    end).
+
 
 %% @hidden
 create_ets(Name) ->

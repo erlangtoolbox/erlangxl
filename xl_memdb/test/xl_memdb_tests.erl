@@ -15,10 +15,13 @@ memdb_test() ->
     xl_memdb:start(testmemdb),
     xl_memdb:store(testmemdb, {a, 1}, a1),
     xl_memdb:store(testmemdb, {a, 2}, b1),
+    Since = xl_calendar:now_micros(),
     xl_memdb:store(testmemdb, {b, 1}, a2),
     xl_memdb:store(testmemdb, {b, 2}, b2),
-    ?assertEquals({ok, {{a, 1}, a1}}, xl_memdb:get(testmemdb, {a, 1})),
-    ?assertEquals({ok, {{b, 1}, a2}}, xl_memdb:get(testmemdb, {b, 1})),
+    ?assertEquals({ok, a1}, xl_memdb:get(testmemdb, {a, 1})),
+    ?assertEquals({ok, a2}, xl_memdb:get(testmemdb, {b, 1})),
+    ?assertEquals([{{a, 1}, a1}, {{a, 2}, b1}, {{b, 1}, a2}, {{b, 2}, b2}], lists:usort(xl_memdb:items(testmemdb))),
+    ?assertMatches([{{b, 1}, a2, _}, {{b, 2}, b2, _}], lists:usort(xl_stream:to_list(xl_memdb:updates(testmemdb, Since)))),
     xl_memdb:stop(testmemdb).
 
 dump_load_test() ->
@@ -32,12 +35,12 @@ dump_load_test() ->
     xl_memdb:stop(testmemdb),
     xl_memdb:start(testmemdb2),
     xl_memdb:load(testmemdb2, "/tmp/test/dump.memdb"),
-    ?assertEquals({ok, {{a, 1}, a1}}, xl_memdb:get(testmemdb2, {a, 1})),
-    ?assertEquals({ok, {{b, 1}, a2}}, xl_memdb:get(testmemdb2, {b, 1})),
+    ?assertEquals({ok, a1}, xl_memdb:get(testmemdb2, {a, 1})),
+    ?assertEquals({ok, a2}, xl_memdb:get(testmemdb2, {b, 1})),
     xl_memdb:load(testmemdb2, []),
     ?assertEquals(undefined, xl_memdb:get(testmemdb2, {a, 1})),
     ?assertEquals(undefined, xl_memdb:get(testmemdb2, {b, 1})),
-    xl_memdb:load(testmemdb2, [{my_key, my_value}, {{other, key}, "Boo!"}]),
-    ?assertEquals({ok, {my_key, my_value}}, xl_memdb:get(testmemdb2, my_key)),
-    ?assertEquals({ok, {{other, key}, "Boo!"}}, xl_memdb:get(testmemdb2, {other, key})),
+    xl_memdb:load(testmemdb2, [{a1, v1}, {{a, 2}, "v2"}]),
+    ?assertEquals({ok, v1}, xl_memdb:get(testmemdb2, a1)),
+    ?assertEquals({ok, "v2"}, xl_memdb:get(testmemdb2, {a, 2})),
     xl_memdb:stop(testmemdb2).
