@@ -44,3 +44,25 @@ dump_load_test() ->
     ?assertEquals({ok, v1}, xl_memdb:get(testmemdb2, a1)),
     ?assertEquals({ok, "v2"}, xl_memdb:get(testmemdb2, {a, 2})),
     xl_memdb:stop(testmemdb2).
+
+replication_test() ->
+    ?assertOk(xl_application:start(xl_stdlib)),
+    ?assertOk(xl_memdb:start(testrsync_master)),
+    xl_memdb:store(testrsync_master, 1, a),
+    xl_memdb:store(testrsync_master, 2, b),
+    xl_memdb:store(testrsync_master, 3, c),
+    xl_memdb:store(testrsync_master, 4, d),
+    ?assertOk(xl_memdb:start(testrsync_slave, [
+        {replication_safe_interval, 100},
+        {replication_master_node, node()},
+        {replication_master_db, testrsync_master},
+        {replication_bucket, 2},
+        {replication_interval, 100}
+    ])),
+    timer:sleep(300),
+    ?assertEquals([{1, a}, {2, b}, {3, c}, {4, d}], lists:usort(xl_memdb:items(testrsync_slave))),
+    xl_memdb:store(testrsync_master, 3, ccc),
+    timer:sleep(300),
+    ?assertEquals([{1, a}, {2, b}, {3, ccc}, {4, d}], lists:usort(xl_memdb:items(testrsync_slave))),
+    ?assertOk(xl_memdb:stop(testrsync_slave)),
+    ?assertOk(xl_memdb:stop(testrsync_master)).

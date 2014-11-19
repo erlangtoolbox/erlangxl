@@ -75,6 +75,7 @@ start_link(Name, Location, Identify, Options) ->
 
 -spec(close(atom()) -> error_m:monad(ok)).
 close(Name) ->
+    xl_scheduler:cancel(xl_string:join_atom([Name, sync])),
     case xl_state:value(Name, index_pid) of
         {ok, IndexPids} -> [exit(Pid, normal) || Pid <- IndexPids];
         undefined -> undefined
@@ -85,7 +86,8 @@ close(Name) ->
             exit(UpdaterPid, normal),
             xl_lang:receive_something();
         E -> E
-    end.
+    end,
+    fsync(Name).
 
 -spec(store(atom(), [term()]) -> error_m:monad(ok)).
 store(Name, Objects) ->
