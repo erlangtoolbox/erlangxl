@@ -167,12 +167,8 @@ index_query([{name, Name}]) -> {Name}.
 
 migration_test() ->
     xl_file:delete("/tmp/test/tdb"),
+    xl_eunit:explode(?MODULE, "tdb", "/tmp/test"),
     xl_application:start(xl_stdlib),
-    ?assertOk(xl_tdb:start_link(tdb_migration, "/tmp/test/tdb", xl_tdb:by_index(1), [{version, 1}])),
-    T1 = {"1", <<"n1">>},
-    T2 = {"2", <<"n2">>},
-    ?assertOk(xl_tdb:store(tdb_migration, [T1, T2])),
-    ?assertOk(xl_tdb:close(tdb_migration)),
     xl_tdb:start_link(tdb_migration, "/tmp/test/tdb", xl_tdb:by_index(1), [
         {version, 3},
         {migrations, [
