@@ -166,19 +166,22 @@ index_object(O = #testobj{name = Name}) -> [{Name, O}].
 index_query([{name, Name}]) -> {Name}.
 
 migration_test() ->
-    xl_file:delete("/tmp/test/tdb"),
-    xl_eunit:explode(?MODULE, "tdb", "/tmp/test"),
-    xl_application:start(xl_stdlib),
-    xl_tdb:start_link(tdb_migration, "/tmp/test/tdb", xl_tdb:by_index(1), [
-        {version, 3},
-        {migrations, [
-            {2, fun migrate2/1},
-            {3, fun migrate3/1}
-        ]}
-    ]),
-    ?assertEquals([{"1", "Comment"}, {"2", "Comment"}], xl_tdb:select(tdb_migration)),
-    ?assertEquals(2, xl_tdb:count(tdb_migration)),
-    ?assertOk(xl_tdb:close(tdb_migration)).
+    lists:foreach(fun(Dir) ->
+        xl_file:delete("/tmp/test"),
+        xl_eunit:explode(?MODULE, Dir, "/tmp/test"),
+        xl_application:start(xl_stdlib),
+        ?assertOk(xl_tdb:start_link(tdb_migration, "/tmp/test/" ++ Dir, xl_tdb:by_index(1), [
+            {version, 3},
+            {migrations, [
+                {2, fun migrate2/1},
+                {3, fun migrate3/1}
+            ]}
+        ])),
+        ?assertEquals([{"1", "Comment"}, {"2", "Comment"}], xl_tdb:select(tdb_migration)),
+        ?assertEquals(2, xl_tdb:count(tdb_migration)),
+        ?assertEquals({ok, false}, xl_file:exists("/tmp/test/" ++ Dir ++ "/.version")),
+        ?assertOk(xl_tdb:close(tdb_migration))
+    end, ["tdb", "tdb.new"]).
 
-migrate2({Id, {Id, Name}, LastModified, Deleted}) -> {ok, {Id, {Id, Name, "Comment"}, LastModified, Deleted}}.
-migrate3({Id, {Id, _Name, Comment}, LastModified, Deleted}) -> {ok, {Id, {Id, Comment}, LastModified, Deleted}}.
+migrate2({Id, Name}) -> {ok, {Id, Name, "Comment"}}.
+migrate3({Id, _Name, Comment}) -> {ok, {Id, Comment}}.

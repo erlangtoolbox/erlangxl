@@ -32,12 +32,11 @@
 -compile({parse_transform, do}).
 
 %% API
--export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, count/1, nmapfilter/4, index/1, cursor/1, update/3, updates/2, delete_all/1, sync/1, mapfindc/4]).
+-export([start_link/4, close/1, store/2, get/2, delete/2, by_index/1, select/1, count/1, nmapfilter/4, index/1,
+    cursor/1, update/3, updates/2, delete_all/1, sync/1, mapfindc/4]).
 -export_type([identify/0]).
 
 -type(identify() :: fun((term()) -> xl_string:iostring())).
-
--define(is_deleted(O), element(4, O)).
 
 -spec(start_link(atom(), file:name(), identify(), xl_lists:kvlist_at()) -> error_m:monad(ok)).
 start_link(Name, Location, Identify, Options) ->
@@ -53,6 +52,7 @@ start_link(Name, Location, Identify, Options) ->
             xl_lists:kvfind(migrations, Options, [])
         ),
         lists:foreach(fun(O) -> ets:insert(ETS, O) end, Objects),
+        xl_state:set(Name, version, xl_lists:kvfind(version, Options, 1)),
         xl_state:set(Name, options, Options),
         xl_state:set(Name, location, Location),
         xl_state:set(Name, identify, Identify),
@@ -95,7 +95,9 @@ store(Name, Objects) ->
         do([error_m ||
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
-            lists:foreach(fun(O) -> ets:insert(ETS, wrap(O, Identify)) end, Objects),
+            Version <- xl_state:evalue(Name, version),
+            lists:foreach(fun(O) ->
+                ets:insert(ETS, {Identify(O), O, Version, xl_calendar:now_micros(), false}) end, Objects),
             build_index(Name)
         ])
     end).
@@ -105,10 +107,9 @@ delete(Name, Id) ->
     mutate(Name, fun() ->
         do([error_m ||
             ETS <- xl_state:evalue(Name, ets),
-            Identify <- xl_state:evalue(Name, identify),
             case xl_ets:lookup_object(ETS, Id) of
-                {ok, {_Id, O, _LastUpdate, _Deleted}} ->
-                    ets:insert(ETS, wrap(O, Identify, true)),
+                {ok, {Id, O, Version, _LastUpdate, _Deleted}} ->
+                    ets:insert(ETS, {Id, O, Version, xl_calendar:now_micros(), true}),
                     build_index(Name);
                 _ -> ok
             end
@@ -120,11 +121,10 @@ delete_all(Name) ->
     mutate(Name, fun() ->
         do([error_m ||
             ETS <- xl_state:evalue(Name, ets),
-            Identify <- xl_state:evalue(Name, identify),
             xl_ets:foreach(fun
-                (_Key, [{_Id, _O, _LastUpdate, true}]) -> ok;
-                (_Key, [{_Id, O, _LastUpdate, false}]) ->
-                    ets:insert(ETS, wrap(O, Identify, true))
+                (_Key, [{_Id, _O, _Version, _LastUpdate, true}]) -> ok;
+                (_Key, [{Id, O, Version, _LastUpdate, false}]) ->
+                    ets:insert(ETS, {Id, O, Version, xl_calendar:now_micros(), true})
             end, ETS),
             build_index(Name)
         ])
@@ -136,17 +136,18 @@ update(Name, Id, F) ->
         do([option_m ||
             ETS <- xl_state:evalue(Name, ets),
             Identify <- xl_state:evalue(Name, identify),
+            Version <- xl_state:evalue(Name, version),
             Obj <- return(case xl_ets:lookup_object(ETS, Id) of
-                {ok, {_Id, O, _LastUpdate, _Deleted}} -> O;
+                {ok, {_Id, O, _Version, _LastUpdate, _Deleted}} -> O;
                 _ -> undefined
             end),
             case F(Obj) of
                 {ok, {context, R, Ctx}} ->
-                    ets:insert(ETS, wrap(R, Identify)),
+                    ets:insert(ETS, {Identify(R), R, Version, xl_calendar:now_micros(), false}),
                     build_index(Name),
                     return({R, Ctx});
                 {ok, R} ->
-                    ets:insert(ETS, wrap(R, Identify)),
+                    ets:insert(ETS, {Identify(R), R, Version, xl_calendar:now_micros(), false}),
                     build_index(Name),
                     return(R);
                 undefined ->
@@ -160,7 +161,7 @@ get(Name, Id) ->
     do([option_m ||
         ETS <- xl_state:value(Name, ets),
         case xl_ets:lookup_object(ETS, Id) of
-            {ok, O} when not ?is_deleted(O) -> {ok, unwrap(O)};
+            {ok, {_Id, O, _Version, _LastModified, false}} -> {ok, O};
             _ -> undefined
         end
     ]).
@@ -169,14 +170,14 @@ get(Name, Id) ->
 select(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
     xl_lists:mapfilter(fun
-        (O) when not ?is_deleted(O) -> {ok, unwrap(O)};
+        ({_Id, O, _Version, _LastModified, false}) -> {ok, O};
         (_) -> undefined
     end, ets:tab2list(ETS)).
 
 -spec(count(atom()) -> pos_integer()).
 count(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
-    ets:select_count(ETS, [{'$1', [{'==', false, {element, 4, '$1'}}], [true]}]).
+    ets:select_count(ETS, [{'$1', [{'==', false, {element, 5, '$1'}}], [true]}]).
 
 -spec(by_index(pos_integer()) -> fun((term()) -> xl_string:iostring())).
 by_index(N) -> fun(X) -> element(N, X) end.
@@ -238,7 +239,7 @@ mapfindc_values(F, Ctx, Values, false) -> xl_lists:mapfindc(F, Ctx, Values).
 -spec(cursor(atom()) -> xl_stream:stream()).
 cursor(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
-    xl_stream:mapfilter(fun({_Id, O, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end, xl_ets:cursor(ETS)).
+    xl_stream:mapfilter(fun({_Id, O, _Version, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end, xl_ets:cursor(ETS)).
 
 -spec(index(atom()) -> option_m:monad(xl_tdb_index:tree())).
 index(Name) ->
@@ -259,7 +260,7 @@ fsync(Name) ->
     do([error_m ||
         Location <- xl_state:evalue(Name, location),
         LastFSync <- xl_state:evalue(Name, last_fsync),
-        xl_stream:eforeach(fun(Wrapped = {Id, _O, _LastUpdate, _Deleted}) ->
+        xl_stream:eforeach(fun(Wrapped = {Id, _O, _Version, _LastUpdate, _Deleted}) ->
             xl_tdb_storage:store(Location, Id, Wrapped)
         end, updates(Name, LastFSync)),
         xl_state:set(Name, last_fsync, NewLastFSync)
@@ -278,7 +279,6 @@ rsync(Name) ->
                     MasterDb <- xl_lists:ekvfind(rsync_master_db, Options),
                     Treshold <- return(xl_lists:kvfind(rsync_treshold, Options, 20)),
                     SafeInterval <- return(xl_lists:kvfind(rsync_safe_interval, Options, 2000000)),
-                    Identify <- xl_state:evalue(Name, identify),
                     S <- xl_rpc:call(MasterNode, xl_tdb, updates, [MasterDb, LastRSync - SafeInterval]),
                     ETS <- xl_state:evalue(Name, ets),
                     Updated <- xl_stream:efoldl(fun(Items, Count) ->
@@ -287,8 +287,8 @@ rsync(Name) ->
                                 error_logger:info_msg("~p rsync: ~p items read~n", [Name, length(Ok)]),
                                 mutate(Name, fun() ->
                                     error_logger:info_msg("~p rsync: adding to ets~n", [Name]),
-                                    lists:foreach(fun({ok, {_Id, O, _LastMidified, Deleted}}) ->
-                                        ets:insert(ETS, wrap(O, Identify, Deleted))
+                                    lists:foreach(fun({ok, {Id, O, Version, _LastMidified, Deleted}}) ->
+                                        ets:insert(ETS, {Id, O, Version, xl_calendar:now_micros(), Deleted})
                                     end, Ok)
                                 end),
                                 {ok, Count + length(Items)};
@@ -312,7 +312,7 @@ rsync(Name) ->
 -spec(updates(atom(), pos_integer()) -> xl_stream:stream(term())).
 updates(Name, Since) ->
     {ok, ETS} = xl_state:evalue(Name, ets),
-    xl_ets:cursor(ETS, fun({_Id, _O, LastUpdate, _Deleted}) -> LastUpdate > Since end).
+    xl_ets:cursor(ETS, fun({_Id, _O, _Version, LastUpdate, _Deleted}) -> LastUpdate > Since end).
 
 update_loop(Name) ->
     receive
@@ -371,14 +371,6 @@ mutate(Name, Fun) ->
     {ok, Pid} = xl_state:value(Name, updater_pid),
     xl_lang:send_and_receive(Pid, {mutate, self(), Fun}).
 
-wrap(Objects, Id) when is_list(Objects) -> lists:map(fun(O) -> wrap(O, Id) end, Objects);
-wrap(Object, Id) -> wrap(Object, Id, false).
-
-wrap(Object, Id, Deleted) -> {Id(Object), Object, xl_calendar:now_micros(), Deleted}.
-
-unwrap(Objects) when is_list(Objects) -> lists:map(fun(O) -> unwrap(O) end, Objects);
-unwrap({_Id, O, _LastUpdate, _Deleted}) -> O.
-
 build_index(Name) ->
     do([error_m ||
         Options <- xl_state:evalue(Name, options),
@@ -388,7 +380,7 @@ build_index(Name) ->
         case xl_lists:kvfind(index_object, Options) of
             {ok, F} ->
                 Index = xl_tdb_index:new(ets:foldl(fun
-                    (O, Points) when not ?is_deleted(O) -> F(unwrap(O)) ++ Points;
+                    ({_Id, O, _Version, _LastModified, false}, Points) -> F(O) ++ Points;
                     (_O, Points) -> Points
                 end, [], ETS), [{expansion_limit, ExpansionLimit}]),
                 lists:foreach(fun(Pid) ->
