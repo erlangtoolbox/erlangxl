@@ -45,8 +45,8 @@
     Less :: tree_node(),
     Equal :: tree_node(),
     Greater :: tree_node(),
-    Excluded :: [{xl_bloom:ref(), tree_node()}],
-    Included :: [{xl_bloom:ref(), tree_node()}]
+    Excluded :: [{term(), tree_node()}],
+    Included :: [{term(), tree_node()}]
 } | leaf()).
 -type(tree() :: {tree_node(), xl_lists:kvlist_at()}).
 
@@ -95,12 +95,12 @@ new_list_tree(Points, Plane, PlanePos, Planes, IsInclude) ->
     case IsInclude of
         true ->
             [case length(Values) > 100 of
-                true -> {bloom, {xl_bloom:new(Values), Values}, new_tree(Pts, PlanePos, Planes)};
+                true -> {bloom, {etbloom:bloom(Values), Values}, new_tree(Pts, PlanePos, Planes)};
                 false -> {list, Values, new_tree(Pts, PlanePos, Planes)}
             end || {Values, Pts} <- dict:to_list(Dict)];
         false ->
             [case length(Values) > 10 of
-                true -> {xbloom, xl_bloom:new(Values), new_tree(Pts, PlanePos, Planes)};
+                true -> {xbloom, etbloom:bloom(Values), new_tree(Pts, PlanePos, Planes)};
                 false when length(Values) == 1 -> {xitem, hd(Values), new_tree(Pts, PlanePos, Planes)};
                 false -> {xlist, Values, new_tree(Pts, PlanePos, Planes)}
             end || {Values, Pts} <- dict:to_list(Dict)]
@@ -219,9 +219,9 @@ xi_find(Query, Value, List, Acc) ->
     end, Acc, List).
 
 xi_match(Value, {bloom, {Bloom, Values}, _T}) ->
-    xl_bloom:contains(Value, Bloom) andalso lists:member(Value, Values);
+    etbloom:member(Value, Bloom) andalso lists:member(Value, Values);
 xi_match(Value, {xbloom, Bloom, _T}) ->
-    not xl_bloom:contains(Value, Bloom);
+    not etbloom:member(Value, Bloom);
 xi_match(Value, {list, Values, _T}) ->
     lists:member(Value, Values);
 xi_match(Value, {xlist, Values, _T}) ->
