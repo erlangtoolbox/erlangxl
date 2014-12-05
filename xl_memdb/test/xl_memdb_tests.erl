@@ -37,12 +37,6 @@ dump_load_test() ->
     xl_memdb:load(testmemdb2, "/tmp/test/dump.memdb"),
     ?assertEquals({ok, a1}, xl_memdb:get(testmemdb2, {a, 1})),
     ?assertEquals({ok, a2}, xl_memdb:get(testmemdb2, {b, 1})),
-    xl_memdb:load(testmemdb2, []),
-    ?assertEquals(undefined, xl_memdb:get(testmemdb2, {a, 1})),
-    ?assertEquals(undefined, xl_memdb:get(testmemdb2, {b, 1})),
-    xl_memdb:load(testmemdb2, [{a1, v1}, {{a, 2}, "v2"}]),
-    ?assertEquals({ok, v1}, xl_memdb:get(testmemdb2, a1)),
-    ?assertEquals({ok, "v2"}, xl_memdb:get(testmemdb2, {a, 2})),
     xl_memdb:stop(testmemdb2).
 
 replication_test() ->
