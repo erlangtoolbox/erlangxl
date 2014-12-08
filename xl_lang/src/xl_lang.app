@@ -21,7 +21,7 @@
 %%  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 %% =============================================================================
 {application, xl_lang, [
-    {description, "erlangtoolbox.org Language Extentions (from erlangdo)"},
+    {description, "erlangtoolbox.org Language Extentions"},
     {applications, [
         kernel,
         stdlib

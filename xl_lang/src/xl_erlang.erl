@@ -20,14 +20,21 @@
 %%  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 %%  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 %% =============================================================================
-{application, xl_memdb, [
-    {description, "Memory DB"},
-    {registered, []},
-    {applications, [
-        kernel,
-        stdlib,
-        xl_stdlib,
-        xl_lang
-    ]},
-    {env, []}
-]}.
+-module(xl_erlang).
+-author("Volodymyr Kyrychenko <vladimir.kirichenko@gmail.com>").
+
+%% API
+-export([send_and_receive/2, receive_something/0]).
+
+-spec(receive_something() -> term()).
+receive_something() ->
+    receive
+        X -> X
+    end.
+
+-spec(send_and_receive(
+        pid() | port() | (RegName :: atom()) | {RegName :: atom(), Node :: node()},
+        term()) -> term()).
+send_and_receive(Dest, Message) ->
+    Dest ! {self(), Message},
+    receive_something().

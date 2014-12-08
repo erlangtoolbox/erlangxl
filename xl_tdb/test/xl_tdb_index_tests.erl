@@ -161,121 +161,121 @@ find_with_variance_test() ->
     Tree = xl_tdb_index:new(?POINTS_FOR_SMALL_TREE_WITH_EXCLUDES),
     Q = {1, [b, c]},
     ?assertEquals([b, c, xb2], lists:sort(xl_tdb_index:find(Q, Tree))).
+%%
+%% new_performance_test_() ->
+%%     xl_application:start(xl_stdlib),
+%%     {timeout, 2000, fun() ->
+%%         xl_eunit:performance(xl_tdb_index, fun() ->
+%%             prepare_space(10, 1000)
+%%         end, 5)
+%%     end}.
+%%
+%%
+%% find_test_() ->
+%%     xl_application:start(xl_stdlib),
+%%     {timeout, 2000, fun() ->
+%%         {Tree, Points} = prepare_space(10, 1000),
+%%         Queries = make_random_queries(Points, 10),
+%%         ExpectedResuts = extract_results(Points, Queries, fun erlang:'=='/2),
+%%         xl_lists:times(fun() ->
+%%             {ok, Q} = xl_lists:random(Queries),
+%%             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResuts),
+%%             ?assertEquals(Expected, xl_tdb_index:find(Q, Tree)),
+%%             xl_eunit:performance(xl_tdb_index_find, fun() ->
+%%                 xl_tdb_index:find(Q, Tree)
+%%             end, 1000)
+%%         end, 10)
+%%     end}.
+%%
+%% find_undefined_test_() ->
+%%     xl_application:start(xl_stdlib),
+%%     {timeout, 2000, fun() ->
+%%         {Tree, Points} = prepare_space(10, 1000),
+%%         Queries = [undefine(Q, 8, 10) || Q <- make_random_queries(Points, 10)],
+%%         ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
+%%         xl_eunit:format("muplitple results expected: ~p~n", [
+%%             length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
+%%         ]),
+%%         xl_lists:times(fun() ->
+%%             {ok, Q} = xl_lists:random(Queries),
+%%             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
+%%             ?assertEquals(Expected, lists:sort(xl_tdb_index:find(Q, Tree))),
+%%             xl_eunit:performance(xl_tdb_index_find_undef_q, fun() ->
+%%                 xl_tdb_index:find(Q, Tree)
+%%             end, 1000)
+%%         end, 10)
+%%     end}.
+%%
+%% find_with_any_test_() ->
+%%     xl_application:start(xl_stdlib),
+%%     {timeout, 2000, fun() ->
+%%         {Tree, Points} = prepare_space(10, 1000, 5),
+%%         Queries = make_random_queries(Points, 10),
+%%         ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
+%%         xl_eunit:format("muplitple results expected: ~p~n", [
+%%             length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
+%%         ]),
+%%         xl_lists:times(fun() ->
+%%             {ok, Q} = xl_lists:random(Queries),
+%%             {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
+%%             ?assertEquals(Expected, lists:sort(xl_tdb_index:find(Q, Tree))),
+%%             xl_eunit:performance(xl_tdb_index_find_w_any, fun() ->
+%%                 xl_tdb_index:find(Q, Tree)
+%%             end, 1000)
+%%         end, 10)
+%%     end}.
 
-new_performance_test_() ->
-    xl_application:start(xl_stdlib),
-    {timeout, 2000, fun() ->
-        xl_eunit:performance(xl_tdb_index, fun() ->
-            prepare_space(10, 1000)
-        end, 5)
-    end}.
-
-
-find_test_() ->
-    xl_application:start(xl_stdlib),
-    {timeout, 2000, fun() ->
-        {Tree, Points} = prepare_space(10, 1000),
-        Queries = make_random_queries(Points, 10),
-        ExpectedResuts = extract_results(Points, Queries, fun erlang:'=='/2),
-        xl_lists:times(fun() ->
-            {ok, Q} = xl_lists:random(Queries),
-            {ok, Expected} = xl_lists:kvfind(Q, ExpectedResuts),
-            ?assertEquals(Expected, xl_tdb_index:find(Q, Tree)),
-            xl_eunit:performance(xl_tdb_index_find, fun() ->
-                xl_tdb_index:find(Q, Tree)
-            end, 1000)
-        end, 10)
-    end}.
-
-find_undefined_test_() ->
-    xl_application:start(xl_stdlib),
-    {timeout, 2000, fun() ->
-        {Tree, Points} = prepare_space(10, 1000),
-        Queries = [undefine(Q, 8, 10) || Q <- make_random_queries(Points, 10)],
-        ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
-        xl_eunit:format("muplitple results expected: ~p~n", [
-            length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
-        ]),
-        xl_lists:times(fun() ->
-            {ok, Q} = xl_lists:random(Queries),
-            {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-            ?assertEquals(Expected, lists:sort(xl_tdb_index:find(Q, Tree))),
-            xl_eunit:performance(xl_tdb_index_find_undef_q, fun() ->
-                xl_tdb_index:find(Q, Tree)
-            end, 1000)
-        end, 10)
-    end}.
-
-find_with_any_test_() ->
-    xl_application:start(xl_stdlib),
-    {timeout, 2000, fun() ->
-        {Tree, Points} = prepare_space(10, 1000, 5),
-        Queries = make_random_queries(Points, 10),
-        ExpectedResults = extract_results(Points, Queries, fun undefined_match/2),
-        xl_eunit:format("muplitple results expected: ~p~n", [
-            length(lists:filter(fun({_, Values}) -> length(Values) > 1 end, ExpectedResults))
-        ]),
-        xl_lists:times(fun() ->
-            {ok, Q} = xl_lists:random(Queries),
-            {ok, Expected} = xl_lists:kvfind(Q, ExpectedResults),
-            ?assertEquals(Expected, lists:sort(xl_tdb_index:find(Q, Tree))),
-            xl_eunit:performance(xl_tdb_index_find_w_any, fun() ->
-                xl_tdb_index:find(Q, Tree)
-            end, 1000)
-        end, 10)
-    end}.
-
-undefined_match(P, Q) when is_tuple(P) -> undefined_match(tuple_to_list(P), tuple_to_list(Q));
-undefined_match([], []) -> true;
-undefined_match([undefined | PT], [_ | QT]) -> undefined_match(PT, QT);
-undefined_match([_ | PT], [undefined | QT]) -> undefined_match(PT, QT);
-undefined_match([H | PT], [H | QT]) -> undefined_match(PT, QT);
-undefined_match(_, _) -> false.
-
-generate_points(PlaneSizes, Count, Undefined) ->
-    Planes = lists:map(fun(Size) -> lists:seq(1, Size) end, PlaneSizes),
-    [undefine(list_to_tuple([element(2, xl_lists:random(P)) || P <- Planes] ++ [V]), Undefined, length(Planes)) || V <- lists:seq(1, Count)].
-
-generate_planes(Variabililty, Count) ->
-    [element(2, xl_lists:random(Variabililty)) || _ <- lists:seq(1, Count)].
-
-prepare_space(Dimensions, TotalPoints) -> prepare_space(Dimensions, TotalPoints, 0).
-prepare_space(Dimensions, TotalPoints, Undefined) ->
-    Planes = generate_planes([100, 50, 10], Dimensions),
-    Points = generate_points(Planes, TotalPoints, Undefined),
-    {Time, Tree} = timer:tc(xl_tdb_index, new, [Points]),
-    xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\t'any' positions: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
-        length(Planes),
-        list_to_tuple(Planes),
-        TotalPoints,
-        Undefined,
-        xl_tdb_index:size(Tree),
-        xl_tdb_index:depth(Tree),
-        Time
-    ]),
-    {Tree, Points}.
-
-
-point_to_query(P) -> list_to_tuple(element(1, lists:split(tuple_size(P) - 1, tuple_to_list(P)))).
-
-make_random_queries(Points, Count) ->
-    [point_to_query(element(2, xl_lists:random(Points))) || _ <- lists:seq(1, Count)].
-
-extract_results(Points, Queries, Match) ->
-    [{Q, lists:sort(lists:map(
-        fun(T) -> element(tuple_size(T), T) end,
-        lists:filter(fun(P) -> Match(point_to_query(P), Q) end, Points)
-    ))} || Q <- Queries].
-
-
-undefine(Tuple, Count, Length) ->
-    {Positions, _} = lists:foldl(fun(_, {R, L}) ->
-        {ok, E} = xl_lists:random(L),
-        {[E | R], lists:delete(E, L)}
-    end, {[], lists:seq(1, Length)}, lists:seq(1, Count)),
-    lists:foldl(fun(P, Q) ->
-        setelement(P, Q, undefined)
-    end, Tuple, Positions).
+%% undefined_match(P, Q) when is_tuple(P) -> undefined_match(tuple_to_list(P), tuple_to_list(Q));
+%% undefined_match([], []) -> true;
+%% undefined_match([undefined | PT], [_ | QT]) -> undefined_match(PT, QT);
+%% undefined_match([_ | PT], [undefined | QT]) -> undefined_match(PT, QT);
+%% undefined_match([H | PT], [H | QT]) -> undefined_match(PT, QT);
+%% undefined_match(_, _) -> false.
+%%
+%% generate_points(PlaneSizes, Count, Undefined) ->
+%%     Planes = lists:map(fun(Size) -> lists:seq(1, Size) end, PlaneSizes),
+%%     [undefine(list_to_tuple([element(2, xl_lists:random(P)) || P <- Planes] ++ [V]), Undefined, length(Planes)) || V <- lists:seq(1, Count)].
+%%
+%% generate_planes(Variabililty, Count) ->
+%%     [element(2, xl_lists:random(Variabililty)) || _ <- lists:seq(1, Count)].
+%%
+%% prepare_space(Dimensions, TotalPoints) -> prepare_space(Dimensions, TotalPoints, 0).
+%% prepare_space(Dimensions, TotalPoints, Undefined) ->
+%%     Planes = generate_planes([100, 50, 10], Dimensions),
+%%     Points = generate_points(Planes, TotalPoints, Undefined),
+%%     {Time, Tree} = timer:tc(xl_tdb_index, new, [Points]),
+%%     xl_eunit:format("planes: ~p:~p\t\t\tpoints: ~p\t'any' positions: ~p\tsize: ~p\tdepth: ~p\tconstruction time: ~p mcs~n", [
+%%         length(Planes),
+%%         list_to_tuple(Planes),
+%%         TotalPoints,
+%%         Undefined,
+%%         xl_tdb_index:size(Tree),
+%%         xl_tdb_index:depth(Tree),
+%%         Time
+%%     ]),
+%%     {Tree, Points}.
+%%
+%%
+%% point_to_query(P) -> list_to_tuple(element(1, lists:split(tuple_size(P) - 1, tuple_to_list(P)))).
+%%
+%% make_random_queries(Points, Count) ->
+%%     [point_to_query(element(2, xl_lists:random(Points))) || _ <- lists:seq(1, Count)].
+%%
+%% extract_results(Points, Queries, Match) ->
+%%     [{Q, lists:sort(lists:map(
+%%         fun(T) -> element(tuple_size(T), T) end,
+%%         lists:filter(fun(P) -> Match(point_to_query(P), Q) end, Points)
+%%     ))} || Q <- Queries].
+%%
+%%
+%% undefine(Tuple, Count, Length) ->
+%%     {Positions, _} = lists:foldl(fun(_, {R, L}) ->
+%%         {ok, E} = xl_lists:random(L),
+%%         {[E | R], lists:delete(E, L)}
+%%     end, {[], lists:seq(1, Length)}, lists:seq(1, Count)),
+%%     lists:foldl(fun(P, Q) ->
+%%         setelement(P, Q, undefined)
+%%     end, Tuple, Positions).
 
 %% basic: points: 145250 size: 52344 depth: 26	construction time: 1628181 mcs
 %% PERFORMANCE xl_uxekdtree_real_space_find: 126823.1 op/s, time: 7.885 ms

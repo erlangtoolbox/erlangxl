@@ -84,7 +84,7 @@ close(Name) ->
     case xl_state:evalue(Name, updater_pid) of
         {ok, UpdaterPid} ->
             exit(UpdaterPid, normal),
-            xl_lang:receive_something();
+            xl_erlang:receive_something();
         E -> E
     end,
     fsync(Name).
@@ -195,10 +195,10 @@ nmapfilter(Name, N, Q, F) ->
         Query <- return(QueryF(Q)),
         case xl_lists:kvfind(index_local_execution, Options, false) of
             true ->
-                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, EliminateDuplicates}),
+                Values = xl_erlang:send_and_receive(IndexPid, {read_index, Query, EliminateDuplicates}),
                 {ok, nmapfilter_values(N, F, Values, Random)};
             false ->
-                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, EliminateDuplicates, fun(Values) ->
+                Values = xl_erlang:send_and_receive(IndexPid, {read_index, Query, EliminateDuplicates, fun(Values) ->
                     nmapfilter_values(N, F, Values, Random)
                 end}),
                 {ok, Values}
@@ -222,10 +222,10 @@ mapfindc(Name, Q, F, Ctx) ->
         EliminateDuplicates <- return(xl_lists:kvfind(index_eliminate_duplicates, Options, false)),
         case xl_lists:kvfind(index_local_execution, Options, false) of
             true ->
-                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query, EliminateDuplicates}),
+                Values = xl_erlang:send_and_receive(IndexPid, {read_index, Query, EliminateDuplicates}),
                 {ok, mapfindc_values(F, Ctx, Values, Random)};
             false ->
-                Values = xl_lang:send_and_receive(IndexPid, {read_index, self(), Query,
+                Values = xl_erlang:send_and_receive(IndexPid, {read_index, Query,
                     EliminateDuplicates, fun(Values) ->
                         mapfindc_values(F, Ctx, Values, Random)
                     end}),
@@ -239,14 +239,15 @@ mapfindc_values(F, Ctx, Values, false) -> xl_lists:mapfindc(F, Ctx, Values).
 -spec(cursor(atom()) -> xl_stream:stream()).
 cursor(Name) ->
     {ok, ETS} = xl_state:value(Name, ets),
-    xl_stream:mapfilter(fun({_Id, O, _Version, _LastUpdate, false}) -> {ok, O}; (_) -> undefined end, xl_ets:cursor(ETS)).
+    xl_stream:mapfilter(fun({_Id, O, _Version, _LastUpdate, false}) -> {ok, O}; (_) ->
+        undefined end, xl_ets:cursor(ETS)).
 
 -spec(index(atom()) -> option_m:monad(xl_tdb_index:tree())).
 index(Name) ->
     do([error_m ||
         IndexPids <- xl_state:value(Name, index_pid),
         IndexPid <- xl_lists:random(IndexPids),
-        xl_lang:send_and_receive(IndexPid, {get, self()})
+        xl_erlang:send_and_receive(IndexPid, get)
     ]).
 
 -spec(sync(atom()) -> error_m:monad(ok)).
@@ -326,7 +327,7 @@ update_loop(Name) ->
                 end,
                 xl_state:delete(Name)
             ]);
-        {mutate, From, Fun} ->
+        {From, {mutate, Fun}} ->
             From ! try
                 Fun()
             catch
@@ -338,38 +339,38 @@ update_loop(Name) ->
 index_read_loop(Name, Index) ->
     receive
         {'EXIT', _From, _Reason} -> ok;
-        {update_index, From, NewIndex} ->
+        {From, {update_index, NewIndex}} ->
             From ! ok,
             index_read_loop(Name, NewIndex);
-        {read_index, From, _Query} when Index == undefined ->
+        {From, {read_index, _Query}} when Index == undefined ->
             From ! [],
             index_read_loop(Name, Index);
-        {get, From} when Index == undefined ->
+        {From, get} when Index == undefined ->
             From ! undefined,
             index_read_loop(Name, Index);
-        {get, From} ->
+        {From, get} ->
             From ! {ok, Index},
             index_read_loop(Name, Index);
-        {read_index, From, _Query, _F} when Index == undefined ->
+        {From, {read_index, _Query, _F}} when Index == undefined ->
             From ! [],
             index_read_loop(Name, Index);
-        {read_index, From, Query, true} ->
+        {From, {read_index, Query, true}} ->
             From ! xl_lists:set(xl_tdb_index:find(Query, Index)),
             index_read_loop(Name, Index);
-        {read_index, From, Query, false} ->
+        {From, {read_index, Query, false}} ->
             From ! xl_tdb_index:find(Query, Index),
             index_read_loop(Name, Index);
-        {read_index, From, Query, true, F} ->
+        {From, {read_index, Query, true, F}} ->
             From ! F(xl_lists:set(xl_tdb_index:find(Query, Index))),
             index_read_loop(Name, Index);
-        {read_index, From, Query, false, F} ->
+        {From, {read_index, Query, false, F}} ->
             From ! F(xl_tdb_index:find(Query, Index)),
             index_read_loop(Name, Index)
     end.
 
 mutate(Name, Fun) ->
     {ok, Pid} = xl_state:value(Name, updater_pid),
-    xl_lang:send_and_receive(Pid, {mutate, self(), Fun}).
+    xl_erlang:send_and_receive(Pid, {mutate, Fun}).
 
 build_index(Name) ->
     do([error_m ||
@@ -384,7 +385,7 @@ build_index(Name) ->
                     (_O, Points) -> Points
                 end, [], ETS), [{expansion_limit, ExpansionLimit}]),
                 lists:foreach(fun(Pid) ->
-                    xl_lang:send_and_receive(Pid, {update_index, self(), Index})
+                    xl_erlang:send_and_receive(Pid, {update_index, Index})
                 end, IndexPids);
             undefined -> ok
         end

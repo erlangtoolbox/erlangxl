@@ -3,7 +3,7 @@
 -author("volodymyr.kyrychenko@strikead.com").
 
 %% API
--export([foreach/2, lookup_object/2, cursor/1, cursor/2, exists/1]).
+-export([foreach/2, lookup_object/2, cursor/1, cursor/2, exists/1, transform/2]).
 
 -spec(foreach(fun((term(), term()) -> ok), ets:tab()) -> ok).
 foreach(F, Tab) -> foreach(F, Tab, ets:first(Tab)).
@@ -25,7 +25,7 @@ cursor(Tab) ->
     xl_stream:stream(ets:first(Tab), fun
         ('$end_of_table') -> empty;
         (Key) ->
-            case xl_ets:lookup_object(Tab, Key) of
+            case lookup_object(Tab, Key) of
                 {ok, O} -> {O, ets:next(Tab, Key)};
                 _ -> empty
             end
@@ -36,3 +36,10 @@ cursor(Tab, F) -> xl_stream:filter(F, cursor(Tab)).
 
 -spec(exists(ets:tab()) -> boolean()).
 exists(Tab) -> ets:info(Tab) /= undefined.
+
+-spec(transform(ets:tab(), fun((term()) -> term())) -> ok).
+transform(Tab, F) -> transform(Tab, ets:first(Tab), F).
+transform(_Tab, '$end_of_table', _F) -> ok;
+transform(Tab, Key, F) ->
+    lists:foreach(fun(O) -> ets:insert(Tab, F(O)) end, ets:lookup(Tab, Key)),
+    transform(Tab, ets:next(Tab, Key), F).

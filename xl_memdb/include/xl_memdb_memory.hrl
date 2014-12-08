@@ -20,14 +20,9 @@
 %%  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 %%  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 %% =============================================================================
-{application, xl_memdb, [
-    {description, "Memory DB"},
-    {registered, []},
-    {applications, [
-        kernel,
-        stdlib,
-        xl_stdlib,
-        xl_lang
-    ]},
-    {env, []}
-]}.
+-author("Volodymyr Kyrychenko <vladimir.kirichenko@gmail.com>").
+
+-record(xl_memdb_memory, {
+    module :: module,
+    data :: any()
+}).
