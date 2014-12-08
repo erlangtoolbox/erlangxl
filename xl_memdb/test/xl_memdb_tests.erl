@@ -32,7 +32,8 @@ complex_test() ->
         basic_test(Options),
         dump_load_test(Options),
         update_test(Options),
-        replication_test(Options)
+        replication_test(Options),
+        migration_test(Options)
     end, Configs).
 
 basic_test(Options) ->
@@ -51,6 +52,7 @@ basic_test(Options) ->
 
 dump_load_test(Options) ->
     ?assertOk(xl_application:start(xl_stdlib)),
+
     xl_memdb:start(testmemdb, Options),
     xl_memdb:store(testmemdb, {a, 1}, a1),
     xl_memdb:store(testmemdb, {a, 2}, b1),
@@ -58,6 +60,21 @@ dump_load_test(Options) ->
     xl_memdb:store(testmemdb, {b, 2}, b2),
     xl_memdb:dump(testmemdb, "/tmp/test/dump.memdb"),
     xl_memdb:stop(testmemdb),
+
+    xl_memdb:start(testmemdb2, Options),
+    xl_memdb:load(testmemdb2, "/tmp/test/dump.memdb"),
+    ?assertEquals({ok, a1}, xl_memdb:get(testmemdb2, {a, 1})),
+    ?assertEquals({ok, a2}, xl_memdb:get(testmemdb2, {b, 1})),
+    xl_memdb:stop(testmemdb2).
+
+migration_test(Options) ->
+    ?assertOk(xl_application:start(xl_stdlib)),
+
+    ets:new(old_format, [public, named_table, set]),
+    true = ets:insert(old_format, [{{a, 1}, a1}, {{b, 1}, a2}]),
+    ets:tab2file(old_format, "/tmp/test/dump.memdb"),
+    ets:delete(old_format),
+
     xl_memdb:start(testmemdb2, Options),
     xl_memdb:load(testmemdb2, "/tmp/test/dump.memdb"),
     ?assertEquals({ok, a1}, xl_memdb:get(testmemdb2, {a, 1})),

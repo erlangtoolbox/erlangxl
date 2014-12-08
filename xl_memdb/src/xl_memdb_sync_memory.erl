@@ -114,9 +114,7 @@ items(#xl_memdb_memory{data = #memory{ets = ETS}}) ->
 
 -spec(updates(#xl_memdb_memory{}, pos_integer()) -> xl_stream:stream(term())).
 updates(#xl_memdb_memory{data = #memory{ets = ETS}}, Since) ->
-    xl_ets:cursor(ETS, fun
-        ({_Key, _Value, LastUpdate}) -> LastUpdate > Since
-    end).
+    xl_ets:cursor(ETS, fun({_Key, _Value, LastUpdate}) -> LastUpdate > Since end).
 
 %% @hidden
 update_loop(ETS) ->

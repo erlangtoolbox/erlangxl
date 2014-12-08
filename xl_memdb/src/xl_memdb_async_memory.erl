@@ -65,14 +65,10 @@ store(#xl_memdb_memory{data = ETS}, List) ->
 
 -spec(get(#xl_memdb_memory{}, term()) -> option_m:monad(term())).
 get(#xl_memdb_memory{data = ETS}, Key) ->
-    do([option_m ||
-        O <- xl_ets:lookup_object(ETS, Key),
-        case O of
-            {Key, Value} -> {ok, Value};   % backward compatibility, todo migrate on load
-            {Key, Value, _Meta} -> {ok, Value};
-            undefined -> undefined
-        end
-    ]).
+    case xl_ets:lookup_object(ETS, Key) of
+        {ok, {Key, Value, _Meta}} -> {ok, Value};
+        undefined -> undefined
+    end.
 
 -spec(reload(#xl_memdb_memory{}, ets:tab()) -> #xl_memdb_memory{}).
 reload(Memory = #xl_memdb_memory{data = OldETS}, NewETS) ->
@@ -103,14 +99,8 @@ ets(#xl_memdb_memory{data = ETS}) -> {ok, ETS}.
 
 -spec(items(#xl_memdb_memory{}) -> [{term(), term()}]).
 items(#xl_memdb_memory{data = ETS}) ->
-    lists:map(fun
-        (KV = {_, _}) -> KV;  % backward compatibility
-        ({Key, Value, _}) -> {Key, Value}
-    end, ets:tab2list(ETS)).
+    lists:map(fun({Key, Value, _}) -> {Key, Value} end, ets:tab2list(ETS)).
 
 -spec(updates(#xl_memdb_memory{}, pos_integer()) -> xl_stream:stream(term())).
 updates(#xl_memdb_memory{data = ETS}, Since) ->
-    xl_ets:cursor(ETS, fun
-        ({_Key, _Value}) -> true;   % backward compatibility
-        ({_Key, _Value, LastUpdate}) -> LastUpdate > Since
-    end).
+    xl_ets:cursor(ETS, fun({_Key, _Value, LastUpdate}) -> LastUpdate > Since end).

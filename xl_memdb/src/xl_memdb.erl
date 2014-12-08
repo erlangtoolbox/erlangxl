@@ -84,6 +84,10 @@ dump(Name, Location) ->
 load(Name, Location) ->
     do([error_m ||
         ETS <- ets:file2tab(Location),
+        xl_ets:transform(ETS, fun
+            (X) when size(X) == 3 -> X;
+            ({Key, Value}) -> {Key, Value, xl_calendar:now_micros()}
+        end),
         xl_ets_server:takeover(ETS),
         Memory <- xl_state:value(Name, memory),
         xl_state:set(Name, memory, xl_memdb_memory:reload(Memory, ETS))
