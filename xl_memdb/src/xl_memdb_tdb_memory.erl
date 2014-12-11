@@ -20,7 +20,7 @@
 %%  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 %%  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 %% =============================================================================
--module(xl_memdb_sync_memory).
+-module(xl_memdb_tdb_memory).
 -author("Volodymyr Kyrychenko <vladimir.kirichenko@gmail.com>").
 
 -compile({parse_transform, do}).
@@ -29,7 +29,7 @@
 
 -behaviour(xl_memdb_memory).
 %% API
--export([store/3, get/2, release/1, reload/2, new/1, store/2, update/3, ets/1, items/1, updates/2]).
+-export([store/3, get/2, release/1, reload/2, new/1, store/2, update/3, items/1, updates/2, load/2, dump/2, status/1]).
 
 -record(memory, {
     ets :: ets:tab(),
@@ -41,7 +41,7 @@ new(Name) ->
     ETS = xl_ets_server:create(xl_string:join_atom([Name, '_', xl_uid:next()]), [public, named_table, set]),
     #xl_memdb_memory{
         module = ?MODULE,
-        data = #memory{
+        memory = #memory{
             ets = ETS,
             updater = spawn_link(fun() ->
                 process_flag(trap_exit, true),
@@ -54,7 +54,7 @@ new(Name) ->
 store(Memory, Key, Value) -> store(Memory, [{Key, Value}]).
 
 -spec(store(#xl_memdb_memory{}, [{term(), term()}]) -> error_m:monad(ok)).
-store(#xl_memdb_memory{data = #memory{updater = Updater}}, List) ->
+store(#xl_memdb_memory{memory = #memory{updater = Updater}}, List) ->
     xl_erlang:send_and_receive(Updater, {mutate, fun(ETS) ->
         try
             true = ets:insert(ETS, lists:map(fun
@@ -68,27 +68,27 @@ store(#xl_memdb_memory{data = #memory{updater = Updater}}, List) ->
     end}).
 
 -spec(get(#xl_memdb_memory{}, term()) -> option_m:monad(term())).
-get(#xl_memdb_memory{data = #memory{ets = ETS}}, Key) ->
+get(#xl_memdb_memory{memory = #memory{ets = ETS}}, Key) ->
     case xl_ets:lookup_object(ETS, Key) of
         {ok, {Key, Value, _Meta}} -> {ok, Value};
         undefined -> undefined
     end.
 
 -spec(release(#xl_memdb_memory{}) -> error_m:monad(ok)).
-release(#xl_memdb_memory{data = #memory{updater = Updater}}) ->
+release(#xl_memdb_memory{memory = #memory{updater = Updater}}) ->
     xl_erlang:send_and_receive(Updater, exit).
 
 -spec(reload(#xl_memdb_memory{}, ets:tab()) -> #xl_memdb_memory{}).
-reload(Memory = #xl_memdb_memory{data = #memory{updater = Updater}}, NewETS) ->
+reload(Memory = #xl_memdb_memory{memory = #memory{updater = Updater}}, NewETS) ->
     xl_erlang:send_and_receive(Updater, {reload, NewETS}),
     Memory#xl_memdb_memory{
-        data = Memory#xl_memdb_memory.data#memory{
+        memory = Memory#xl_memdb_memory.memory#memory{
             ets = NewETS
         }
     }.
 
 -spec(update(#xl_memdb_memory{}, term(), fun((term()) -> option_m:monad(term()))) -> error_m:monad(term())).
-update(#xl_memdb_memory{data = #memory{updater = Updater}}, Key, F) ->
+update(#xl_memdb_memory{memory = #memory{updater = Updater}}, Key, F) ->
     xl_erlang:send_and_receive(Updater, {mutate, fun(ETS) ->
         do([option_m ||
             V <- case xl_ets:lookup_object(ETS, Key) of
@@ -105,15 +105,12 @@ update(#xl_memdb_memory{data = #memory{updater = Updater}}, Key, F) ->
         ])
     end}).
 
--spec(ets(#xl_memdb_memory{}) -> error_m:monad(ets:tab())).
-ets(#xl_memdb_memory{data = #memory{updater = Updater}}) -> xl_erlang:send_and_receive(Updater, ets).
-
 -spec(items(#xl_memdb_memory{}) -> [{term(), term()}]).
-items(#xl_memdb_memory{data = #memory{ets = ETS}}) ->
+items(#xl_memdb_memory{memory = #memory{ets = ETS}}) ->
     lists:map(fun({Key, Value, _}) -> {Key, Value} end, ets:tab2list(ETS)).
 
 -spec(updates(#xl_memdb_memory{}, pos_integer()) -> xl_stream:stream(term())).
-updates(#xl_memdb_memory{data = #memory{ets = ETS}}, Since) ->
+updates(#xl_memdb_memory{memory = #memory{ets = ETS}}, Since) ->
     xl_ets:cursor(ETS, fun({_Key, _Value, LastUpdate}) -> LastUpdate > Since end).
 
 %% @hidden
@@ -143,3 +140,13 @@ update_loop(ETS) ->
             update_loop(NewETS)
     end.
 
+-spec(load(#xl_memdb_memory{}, file:name()) -> error_m:monad(ok)).
+load(#xl_memdb_memory{}, _Location) ->
+    erlang:error(not_implemented).
+
+-spec(dump(#xl_memdb_memory{}, file:name()) -> error_m:monad(ok)).
+dump(_, _) ->
+    erlang:error(not_implemented).
+
+status(_) ->
+    erlang:error(not_implemented).

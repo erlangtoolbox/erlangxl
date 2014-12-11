@@ -24,5 +24,5 @@
 
 -record(xl_memdb_memory, {
     module :: module,
-    data :: any()
+    memory :: any()
 }).

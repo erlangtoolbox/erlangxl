@@ -26,17 +26,18 @@
 -include("xl_memdb_memory.hrl").
 
 %% API
--export([store/3, release/1, get/2, reload/2, store/2, update/3, new/2, ets/1, items/1, updates/2]).
+-export([store/3, release/1, get/2, store/2, update/3, new/3, items/1, updates/2, load/2, dump/2, status/1]).
 
 -callback(store(#xl_memdb_memory{}, term(), term()) -> error_m:monad(term())).
 -callback(store(#xl_memdb_memory{}, [{term(), term()}]) -> error_m:monad(ok)).
 -callback(get(#xl_memdb_memory{}, term()) -> option_m:monad(term())).
 -callback(release(#xl_memdb_memory{}) -> error_m:monad(ok)).
--callback(reload(#xl_memdb_memory{}, ets:tab()) -> #xl_memdb_memory{}).
 -callback(update(#xl_memdb_memory{}, term(), fun((term()) -> option_m:monad(term()))) -> error_m:monad(term())).
--callback(ets(#xl_memdb_memory{}) -> error_m:monad(ets:tab())).
 -callback(items(#xl_memdb_memory{}) -> [{term(), term()}]).
 -callback(updates(#xl_memdb_memory{}, pos_integer()) -> xl_stream:stream(term())).
+-callback(load(#xl_memdb_memory{}, file:name()) -> error_m:monad(ok)).
+-callback(dump(#xl_memdb_memory{}, file:name()) -> error_m:monad(ok)).
+-callback(status(#xl_memdb_memory{}) -> term()).
 
 -spec(store(#xl_memdb_memory{}, term(), term()) -> error_m:monad(term())).
 store(Memory = #xl_memdb_memory{module = Module}, Key, Value) -> Module:store(Memory, Key, Value).
@@ -50,21 +51,25 @@ get(Memory = #xl_memdb_memory{module = Module}, Key) -> Module:get(Memory, Key).
 -spec(release(#xl_memdb_memory{}) -> error_m:monad(ok)).
 release(Memory = #xl_memdb_memory{module = Module}) -> Module:release(Memory).
 
--spec(reload(#xl_memdb_memory{}, ets:tab()) -> #xl_memdb_memory{}).
-reload(Memory = #xl_memdb_memory{module = Module}, NewETS) -> Module:reload(Memory, NewETS).
-
 -spec(update(#xl_memdb_memory{}, term(), fun((term()) -> option_m:monad(term()))) -> error_m:monad(term())).
 update(Memory = #xl_memdb_memory{module = Module}, Key, F) -> Module:update(Memory, Key, F).
 
--spec(new(atom(), sync|async) -> #xl_memdb_memory{}).
-new(Name, sync) -> xl_memdb_sync_memory:new(Name);
-new(Name, async) -> xl_memdb_async_memory:new(Name).
+-spec(status(#xl_memdb_memory{}) -> error_m:monad(term())).
+status(Memory = #xl_memdb_memory{module = Module}) -> Module:status(Memory).
 
--spec(ets(#xl_memdb_memory{}) -> error_m:monad(ets:tab())).
-ets(Memory = #xl_memdb_memory{module = Module}) -> Module:ets(Memory).
+-spec(new(atom(), atom(), term()) -> #xl_memdb_memory{}).
+new(Name, tdb, _Options) -> xl_memdb_tdb_memory:new(Name);
+new(Name, ets, _Options) -> xl_memdb_ets_memory:new(Name);
+new(Name, rets, Options) -> xl_memdb_rets_memory:new(Name, Options).
 
 -spec(items(#xl_memdb_memory{}) -> [{term(), term()}]).
 items(Memory = #xl_memdb_memory{module = Module}) -> Module:items(Memory).
 
 -spec(updates(#xl_memdb_memory{}, pos_integer()) -> xl_stream:stream(term())).
 updates(Memory = #xl_memdb_memory{module = Module}, Since) -> Module:updates(Memory, Since).
+
+-spec(load(#xl_memdb_memory{}, file:name()) -> error_m:monad(ok)).
+load(Memory = #xl_memdb_memory{module = Module}, Location) -> Module:load(Memory, Location).
+
+-spec(dump(#xl_memdb_memory{}, file:name()) -> error_m:monad(ok)).
+dump(Memory = #xl_memdb_memory{module = Module}, Location) -> Module:dump(Memory, Location).
