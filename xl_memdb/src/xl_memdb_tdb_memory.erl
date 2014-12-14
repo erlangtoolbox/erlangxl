@@ -29,17 +29,18 @@
 
 -behaviour(xl_memdb_memory).
 %% API
--export([store/3, get/2, release/1, reload/2, new/1, store/2, update/3, items/1, updates/2, load/2, dump/2, status/1]).
+-export([store/3, get/2, release/1, reload/2, new/2, store/2, update/3, items/1, updates/2, load/2, dump/2, status/1]).
 
 -record(memory, {
     ets :: ets:tab(),
     updater :: pid()
 }).
 
--spec(new(atom()) -> #xl_memdb_memory{}).
-new(Name) ->
+-spec(new(atom(), term()) -> #xl_memdb_memory{}).
+new(Name, Options) ->
     ETS = xl_ets_server:create(xl_string:join_atom([Name, '_', xl_uid:next()]), [public, named_table, set]),
-    #xl_memdb_memory{
+    RSyncName = xl_string:join_atom([Name, rsync]),
+    Memory = #xl_memdb_memory{
         module = ?MODULE,
         memory = #memory{
             ets = ETS,
@@ -48,7 +49,9 @@ new(Name) ->
                 update_loop(ETS)
             end)
         }
-    }.
+    },
+    xl_memdb_rsync:start(RSyncName, Options, Memory),
+    Memory.
 
 -spec(store(#xl_memdb_memory{}, term(), term()) -> error_m:monad(term())).
 store(Memory, Key, Value) -> store(Memory, [{Key, Value}]).
